@@ -35,7 +35,7 @@ INDEX_CAPTION = is_enabled(environ.get('SAVE_CAPTION', "True"), True) # Save cap
 COVERX = is_enabled(environ.get('COVERX', "True"), True) # Use cover image for indexed files (default: True)
 # If you disable it then bot will use a default thumb for all files
 
-PICS_URL = (environ.get('PICS', 'https://image.zaw-myo.workers.dev/image/786a2a23-b28d-4b46-bb94-db839ae6b4e1')).split() #random anime girl img each time from aniwallpaper (Experimental)
+PICS_URL = (environ.get('PICS', 'https://image.zaw-myo.workers.dev/image/91ac8370-606e-4e0f-aafd-4a52878669f5')).split() #random anime girl img each time from aniwallpaper (Experimental)
 PICS = (environ.get('PICS', 'https://graph.org/file/56b5deb73f3b132e2bb73.jpg https://graph.org/file/5303692652d91d52180c2.jpg https://graph.org/file/425b6f46efc7c6d64105f.jpg https://graph.org/file/876867e761c6c7a29855b.jpg')).split()  # Sample pic
 NOR_IMG = environ.get("NOR_IMG", "https://graph.org/file/e20b5fdaf217252964202.jpg")
 MELCOW_PHOTO = environ.get("MELCOW_PHOTO", "https://graph.org/file/56b5deb73f3b132e2bb73.jpg")
@@ -49,7 +49,7 @@ FSUB_PICS = (environ.get('FSUB_PICS', 'https://graph.org/file/7478ff3eac37f4329c
 ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '6045160821').split()] # Replace with the actual admin ID(s) to add
 CHANNELS = [int(ch) if id_pattern.search(ch) else ch for ch in environ.get('CHANNELS', '-1002998237653 -1002432923495 -1002177098038 -1002311455280 -1002228576325 -1002379115085 -1002203125942 -1002388961956 -1002181251938 -1002336384474 -1002225794978 -1002228607997 -1001974180754 -1002230358129').split()]  # Channel id for auto indexing (make sure bot is admin)
 
-LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1003353664436'))  # Log channel id (make sure bot is admin)
+LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1003592775917'))  # Log channel id (make sure bot is admin)
 BIN_CHANNEL = int(environ.get('BIN_CHANNEL', '-1002224509783'))  # Bin channel id (make sure bot is admin)
 PREMIUM_LOGS = int(environ.get('PREMIUM_LOGS', '0'))  # Premium logs channel id
 DELETE_CHANNELS = [int(dch) if id_pattern.search(dch) else dch for dch in environ.get('DELETE_CHANNELS', '-100').split()] #(make sure bot is admin)
@@ -78,13 +78,13 @@ STAR_PREMIUM_PLANS = {
 # ============================
 # MongoDB Configuration
 # ============================
-DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://REXIE:REXIE@cluster0.sgyt5hw.mongodb.net/?appName=Cluster0")  # MongoDB URI for the database
+DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://PSPKX:PSPKX@cluster0.fxmqpmj.mongodb.net/?appName=Cluster0")  # MongoDB URI for the database
 DATABASE_NAME = environ.get('DATABASE_NAME', "Cluster0") # Database name (default: cluster)
 COLLECTION_NAME = environ.get('COLLECTION_NAME', 'dreamcinezone_files') # Collection name (default: dreamcinezone_files)
 
 # If MULTIPLE_DB Is True Then Fill DATABASE_URI2 Value Else You Will Get Error.
 MULTIPLE_DB = is_enabled(os.environ.get('MULTIPLE_DB', "True"), True) # Type True For Turn On MULTIPLE DB FUNTION 
-DATABASE_URI2 = environ.get('DATABASE_URI2', "mongodb+srv://REXIEE:REXIEE@cluster0.jn8vx7d.mongodb.net/?appName=Cluster0")  # MongoDB URI for the second database (if MULTIPLE_DB is True)
+DATABASE_URI2 = environ.get('DATABASE_URI2', "mongodb+srv://PSPKK:PSPKK@cluster0.aiduxai.mongodb.net/?appName=Cluster0")  # MongoDB URI for the second database (if MULTIPLE_DB is True)
 # ============================
 # Movie Notification & Update Settings
 # ============================
@@ -101,8 +101,8 @@ LANDSCAPE_POSTER = is_enabled(environ.get('LANDSCAPE_POSTER', "True"), True) # S
 # Verification Settings
 # ============================
 IS_VERIFY = is_enabled(environ.get('IS_VERIFY', 'True'), True)  # Verification On (True) / Off (False)
-LOG_VR_CHANNEL = int(environ.get('LOG_VR_CHANNEL', '-1003550673916')) #Verification Channel Id 
-LOG_API_CHANNEL = int(environ.get('LOG_API_CHANNEL', '-1003528270367')) #If Anyone Set Your Bot In Any Group And Set Shortner In That Group Then In This Channel The All Details Come
+LOG_VR_CHANNEL = int(environ.get('LOG_VR_CHANNEL', '-1003592775917')) #Verification Channel Id 
+LOG_API_CHANNEL = int(environ.get('LOG_API_CHANNEL', '-1003592775917')) #If Anyone Set Your Bot In Any Group And Set Shortner In That Group Then In This Channel The All Details Come
 VERIFY_IMG = environ.get("VERIFY_IMG", "https://telegra.ph/file/9ecc5d6e4df5b83424896.jpg")
 
 TUTORIAL = environ.get("TUTORIAL", "https://t.me/Vega_Backup/6")   # Tutorial link for verification
