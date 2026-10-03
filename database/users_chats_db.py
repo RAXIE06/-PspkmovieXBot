@@ -454,4 +454,40 @@ if MULTIPLE_DB and DATABASE_URI2:
 else:
     db2 = db
 
+from datetime import datetime, timedelta
 
+async def add_premium_user(user_id: int, days: int):
+    user = await db.users.find_one({"id": int(user_id)})
+    now = datetime.utcnow()
+    if user and user.get("premium_expiry") and user["premium_expiry"] > now:
+        new_expiry = user["premium_expiry"] + timedelta(days=days)
+    else:
+        new_expiry = now + timedelta(days=days)
+    await db.users.update_one(
+        {"id": int(user_id)},
+        {"$set": {"is_premium": True, "premium_expiry": new_expiry}},
+        upsert=True
+    )
+    return new_expiry
+
+async def check_premium_status(user_id: int):
+    user = await db.users.find_one({"id": int(user_id)})
+    if not user:
+        return False, None
+    expiry = user.get("premium_expiry")
+    if expiry and expiry > datetime.utcnow():
+        return True, expiry
+    return False, None
+
+async def is_utr_already_used(utr: str):
+    found = await db.payments.find_one({"utr": str(utr)})
+    return bool(found)
+
+async def save_payment_record(user_id: int, utr: str, amount: float, days: int):
+    await db.payments.insert_one({
+        "user_id": int(user_id),
+        "utr": str(utr),
+        "amount": float(amount),
+        "days": int(days),
+        "date": datetime.utcnow()
+    })
