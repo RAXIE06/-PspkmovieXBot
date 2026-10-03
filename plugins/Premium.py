@@ -18,7 +18,6 @@ from database.users_chats_db import (
     save_payment_record
 )
 
-# Plans Configuration
 PLANS = {
     "plan_7": {"days": 7, "price": 10, "label": "◉ 07 ᴅᴀʏꜱ - 10 ₹"},
     "plan_15": {"days": 15, "price": 20, "label": "◉ 15 ᴅᴀʏꜱ - 20 ₹"},
@@ -56,7 +55,7 @@ async def buy_premium_cmd(client: Client, message: Message):
     )
     await message.reply_text(caption, reply_markup=InlineKeyboardMarkup(buttons))
 
-# 2. Plan Select Callback -> QR Code
+# 2. Plan Select Callback -> Send QR
 @Client.on_callback_query(filters.regex(r"^buy_"))
 async def send_qr_handler(client: Client, callback_query):
     plan_key = callback_query.data.split("_", 1)[1]
@@ -71,7 +70,7 @@ async def send_qr_handler(client: Client, callback_query):
     USER_ORDERS[user_id] = {
         "amount": amount,
         "days": days,
-        "waiting_for_utr": False
+        "waiting_for_utr": True
     }
     
     upi_intent = f"upi://pay?pa={BHARATPE_UPI_ID}&pn=MovieBot&am={amount}&cu=INR&tn=Premium_{user_id}"
@@ -87,17 +86,16 @@ async def send_qr_handler(client: Client, callback_query):
     bio.seek(0)
     
     text = (
-        f"💳 **Plan:** {days} Days\n"
+        f"💳 **Selected Plan:** {days} Days\n"
         f"💰 **Amount:** ₹{amount}\n\n"
-        f"📌 **Payment Instructions:**\n"
-        f"1. Is QR code ko PhonePe / GPay / Paytm se scan karke exact **₹{amount}** pay karein.\n"
-        f"2. Pay karne ke baad receipt se **12-digit UTR** copy karein.\n"
-        f"3. Niche **'Submit 12-Digit UTR'** dabakar number send karein."
+        f"📌 **Instructions:**\n"
+        f"1. Is QR code par PhonePe / GPay / Paytm se exact **₹{amount}** pay karein.\n"
+        f"2. Pay karne ke baad receipt se **12-digit UTR number** copy karke yahan chat me bhej dein.\n"
+        f"*(Agar movie search karni ho to direct movie ka naam likhein ya cancel karein)*"
     )
     
     buttons = [
-        [InlineKeyboardButton("✅ Submit 12-Digit UTR", callback_data=f"enter_utr_{user_id}")],
-        [InlineKeyboardButton("❌ Cancel", callback_data="close_plan")]
+        [InlineKeyboardButton("❌ Cancel Order", callback_data=f"cancel_order_{user_id}")]
     ]
     
     await callback_query.message.reply_photo(
@@ -107,98 +105,97 @@ async def send_qr_handler(client: Client, callback_query):
     )
     await callback_query.answer()
 
-# 3. UTR prompt handler
-@Client.on_callback_query(filters.regex(r"^enter_utr_"))
-async def ask_utr_callback(client: Client, callback_query):
+# Cancel Order Callback
+@Client.on_callback_query(filters.regex(r"^cancel_order_"))
+async def cancel_order_handler(client: Client, callback_query):
     user_id = callback_query.from_user.id
-    if user_id not in USER_ORDERS:
-        return await callback_query.answer("Pehle /plan select karein!", show_alert=True)
-        
-    USER_ORDERS[user_id]["waiting_for_utr"] = True
-    await callback_query.message.reply_text(
-        "✍️ **Apna 12-Digit UTR number message me send karein:**\n(Example: `409823129845`)"
-    )
-    await callback_query.answer()
+    if user_id in USER_ORDERS:
+        del USER_ORDERS[user_id]
+    await callback_query.message.delete()
+    await callback_query.answer("Order cancel kar diya gaya hai. Ab aap normally search kar sakte hain!", show_alert=True)
 
-# 4. Read UTR and Verify via BharatPe
-@Client.on_message(filters.private & filters.text & ~filters.command(["start", "buy", "plan", "help", "myplan"]))
+# 3. UTR Listener (Sirf tab chalega jab message 12-digit number ho)
+@Client.on_message(filters.private & filters.regex(r"^\d{12}$"))
 async def utr_checker_msg(client: Client, message: Message):
     user_id = message.from_user.id
-    if user_id not in USER_ORDERS or not USER_ORDERS[user_id].get("waiting_for_utr"):
+    
+    # Agar user ne plan select hi nahi kiya
+    if user_id not in USER_ORDERS:
         return
-
+        
     utr = message.text.strip()
-    if not (utr.isdigit() and len(utr) == 12):
-        return await message.reply_text("❌ Galat format! UTR sirf 12 digits ka number hona chahiye.")
-
+    
     if await is_utr_already_used(utr):
         return await message.reply_text("⚠️ Ye UTR pehle hi kisi ne use kar liya hai!")
 
-    status_msg = await message.reply_text("🔄 **BharatPe par verify ho raha hai... Kripya 5 second rukhein.**")
+    status_msg = await message.reply_text("🔄 **BharatPe par verify ho raha hai... 5 second rukhein.**")
     
     order = USER_ORDERS[user_id]
     expected_amount = order["amount"]
     days = order["days"]
     
-    is_valid = await verify_bharatpe(utr, expected_amount)
+    is_valid, msg = await verify_bharatpe(utr, expected_amount)
     
     if is_valid:
-        await save_payment_record(user_id=user_id, utr=utr, amount=expected_amount, days=days)
-        new_expiry = await add_premium_user(user_id=user_id, days=days)
-        del USER_ORDERS[user_id]
-        
-        await status_msg.edit_text(
-            f"🎉 **Payment Verified Successfully!**\n\n"
-            f"👑 **Plan Activated:** {days} Days\n"
-            f"📅 **Expiry Date:** `{new_expiry.strftime('%d-%m-%Y %H:%M:%S')} UTC`\n\n"
-            f"Aapka Premium activate ho chuka hai!"
-        )
-    else:
-        await status_msg.edit_text(
-            "❌ **Payment Verify Nahi Hui!**\n\n"
-            "• UTR number check karein.\n"
-            "• Payment confirm hone me 1 minute lag sakta hai.\n"
-            "Thodi der baad dubara try karein."
-        )
+        await saveYeh dono issues aapke Telegram bot ke **FSM (Finite State Machine / User State)** logic ke galat flow ki wajah se ho rahe hain. 
 
-# 5. Check Active Plan: /myplan
-@Client.on_message(filters.command("myplan") & filters.private)
-async def myplan_cmd(client: Client, message: Message):
-    is_premium, expiry = await check_premium_status(message.from_user.id)
-    if is_premium:
-        await message.reply_text(
-            f"👑 **Aapka Premium Active Hai!**\n\n"
-            f"📅 **Expiry Date:** `{expiry.strftime('%d-%m-%Y %H:%M:%S')} UTC`"
-        )
-    else:
-        await message.reply_text("❌ Aapke paas koi active plan nahi hai. /plan dabayein.")
+Jab user `/plan` select karta hai, toh bot user ka state change karke `WAITING_FOR_UTR` (ya payment state) me set kar deta hai. Lekin bot ke paas iss state se bahar nikalne ya state clear karne ka koi timeout ya reset logic nahi hai. Is wajah se har aane wala message (chahe movie ka naam ho ya command) UTR verification handler me hi ja raha hai.
 
-# Close button
-@Client.on_callback_query(filters.regex("close_plan"))
-async def close_plan_btn(client: Client, callback_query):
-    await callback_query.message.delete()
+---
 
-# 6. BharatPe API Call
-async def verify_bharatpe(utr: str, expected_amount: float) -> bool:
-    url = f"https://merchant.bharatpe.com/api/v1/merchants/{BHARATPE_MERCHANT_ID}/transactions"
-    headers = {
-        "token": BHARATPE_TOKEN,
-        "User-Agent": "Mozilla/5.0"
-    }
+### Issue 1: State Stuck & Format Error
+* **Karan:** Jab user ne QR generate kiya, user ka state `WAITING_FOR_UTR` set ho gaya. Jab usne movie search karne ke liye text bheja (jaise "Jawan"), bot ne samjha ki yeh UTR number hai. Check me regex fail hua (kyunki movie name 12 digits ka number nahi hota), aur usne bol diya: *"Galat format! UTR sirf 12 digits ka number hona chahiye."*
+* **Solution:**
+  1. **Cancel Button dein:** QR code ke niche ek inline button lagayein: `❌ Cancel / Back`. Is par click karte hi state clear ho jaye (`await state.clear()` ya `user_states.pop(user_id)`).
+  2. **Commands ko state se free karein:** Agar text `/` se start hota hai ya movie query jaisa lagta hai, toh pehle check karein ya commands ko state ke upar priority dein.
+  3. **Auto-timeout lagayein:** 10–15 minute baad user ka state automatically clear ho jana chahiye.
+
+---
+
+### Issue 2: Payment ke baad no response & Forever Stuck
+* **Karan:** 
+  1. Jab aapne 12 digits ka valid UTR bheja, toh bot ne regex format toh pass kar liya, lekin UTR verify karne wale function (API call, database entry, ya admin notification) me koi **unhandled error/exception** aa gaya (jaise API timeout, database column mismatch, ya missing env variable).
+  2. Exception aane par code crash ho gaya aur `state.clear()` wali line run hi nahi hui.
+  3. State clear na hone ke karan user abhi bhi usi UTR state me fasa hua hai, isliye ab kuch bhi likhne par wahi UTR format error aa raha hai.
+
+---
+
+### Kaise Fix Karein (Code Logic Breakdown)
+
+Agar aap **aiogram** ya **python-telegram-bot** use kar rahe hain, toh flow ko is tarah wrap karein:
+
+#### 1. UTR Handler ke andar `try...except` aur `state.clear()` lagayein:
+
+```python
+# aiogram example
+@dp.message(PaymentStates.waiting_for_utr)
+async def process_utr(message: types.Message, state: FSMContext):
+    text = message.text.strip()
+    
+    # 1. Check agar user ne cancel likha ho ya command di ho
+    if text.startswith("/") or text.lower() in ["cancel", "back"]:
+        await state.clear()
+        await message.answer("Payment process cancel kar diya gaya hai. Ab aap movie search kar sakte hain.")
+        return
+
+    # 2. UTR Validation (12 Digits)
+    if not (text.isdigit() and len(text) == 12):
+        await message.answer("Galat format! UTR sirf 12 digits ka number hona chahiye.\n(Cancel karne ke liye /cancel type karein)")
+        return
+
+    # 3. Verification & State Clear
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=15) as resp:
-                if resp.status != 200:
-                    return False
-                data = await resp.json()
-                transactions = data.get("data", {}).get("transactions", [])
-                for txn in transactions:
-                    txn_utr = str(txn.get("bankReferenceNo") or txn.get("utr") or "")
-                    txn_amount = float(txn.get("amount", 0))
-                    status = txn.get("status", "").upper()
-                    
-                    if txn_utr == utr and txn_amount == float(expected_amount) and status in ["SUCCESS", "PAID"]:
-                        return True
+        # Aapka verification logic / DB check / Admin alert
+        is_success = await verify_payment(user_id=message.from_user.id, utr=text)
+        
+        if is_success:
+            await state.clear()  # <-- State clear hona sabse zaroori hai!
+            await message.answer("✅ Payment successful! Aapka Premium activate ho gaya hai.")
+        else:
+            await message.answer("❌ UTR verify nahi ho saka ya pehle use ho chuka hai. Dobara check karein.")
+            
     except Exception as e:
-        print(f"Error checking BharatPe: {e}")
-    return False
+        print(f"Error in UTR verification: {e}")
+        # Error aane par user ko fasaye mat rakho
+        await state.clear() 
+        await message.answer("⚠️ Technical issue ki wajah se payment verify nahi ho paya. Admin se contact karein.")
