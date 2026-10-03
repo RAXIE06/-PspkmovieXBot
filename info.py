@@ -279,3 +279,8 @@ LOG_STR += ("BUTTON_MODE is found, filename and file size will be shown in a sin
 LOG_STR += (f"CUSTOM_FILE_CAPTION enabled with value {CUSTOM_FILE_CAPTION}, your files will be sent along with this customized caption.\n" if CUSTOM_FILE_CAPTION else "No CUSTOM_FILE_CAPTION Found, Default captions of file will be used.\n")
 LOG_STR += ("Long IMDB storyline enabled." if LONG_IMDB_DESCRIPTION else "LONG_IMDB_DESCRIPTION is disabled, Plot will be shorter.\n")
 LOG_STR += ("Spell Check Mode is enabled, bot will be suggesting related movies if movie name is misspelled.\n" if SPELL_CHECK_REPLY else "Spell Check Mode is disabled.\n")
+
+# BharatPe Auto-Verify Settings
+BHARATPE_MERCHANT_ID = environ.get('BHARATPE_MERCHANT_ID', '45188944')
+BHARATPE_TOKEN = environ.get('BHARATPE_TOKEN', '1c040c6d7a0641cd9fad0d3a935025db')
+BHARATPE_UPI_ID = environ.get('BHARATPE_UPI_ID', 'BHARATPE.8000028351@fbpe')
