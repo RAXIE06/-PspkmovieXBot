@@ -1,7 +1,7 @@
 import io
 import qrcode
 import aiohttp
-from datetime import datetime
+from datetime import datetime, timedelta
 
 try:
     from pyrogram import Client, filters
@@ -10,7 +10,7 @@ except ImportError:
     from kurigram import Client, filters
     from kurigram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
-from info import BHARATPE_MERCHANT_ID, BHARATPE_TOKEN, BHARATPE_UPI_ID
+from info import BHARATPE_MERCHANT_ID, BHARATPE_TOKEN, BHARATPE_UPI_ID, ADMINS
 from database.users_chats_db import (
     add_premium_user,
     check_premium_status,
@@ -31,9 +31,36 @@ PLANS = {
 
 USER_ORDERS = {}
 
-# 1. Plans List Command
+# --- MANUAL ADMIN COMMANDS ---
+
+@Client.on_message(filters.command("add_premium") & filters.user(ADMINS))
+async def add_premium_manual(client: Client, message: Message):
+    if len(message.command) < 3:
+        return await message.reply_text("Usage: `/add_premium <user_id> <days>`")
+    try:
+        t_user = int(message.command[1])
+        days = int(message.command[2])
+        new_exp = await add_premium_user(t_user, days)
+        await message.reply_text(f"✅ User `{t_user}` ko {days} din ka premium de diya gaya!\nExpiry: `{new_exp}`")
+        try:
+            await client.send_message(t_user, f"🎉 Admin ne aapka {days} din ka Premium plan activate kar diya hai!")
+        except Exception:
+            pass
+    except Exception as e:
+        await message.reply_text(f"Error: {e}")
+
+@Client.on_message(filters.command("myplan") & filters.private)
+async def check_my_plan(client: Client, message: Message):
+    is_prem, exp = await check_premium_status(message.from_user.id)
+    if is_prem:
+        await message.reply_text(f"👑 **Premium Active**\n\n📅 Expiry: `{exp.strftime('%d-%m-%Y %H:%M:%S')} UTC`")
+    else:
+        await message.reply_text("❌ Aapke paas koi active premium plan nahi hai. /plan dabayein.")
+
+# --- AUTOMATIC UPI SYSTEM ---
+
 @Client.on_message(filters.command(["buy", "premium", "plan"]) & filters.private)
-async def buy_premium_cmd(client: Client, message: Message):
+async def plan_menu_cmd(client: Client, message: Message):
     buttons = []
     temp_row = []
     for key, data in PLANS.items():
@@ -47,17 +74,14 @@ async def buy_premium_cmd(client: Client, message: Message):
     
     caption = (
         "👑 **PREMIUM MEMBERSHIP PLANS** 👑\n\n"
-        "⚡ **Features:**\n"
-        "• Direct Files (No Verification / No Ads)\n"
-        "• High Speed Download Links\n"
-        "• Unlimited Movie Searches\n\n"
-        "👇 **Niche diye gaye plans me se select karein:**"
+        "⚡ Direct Files (No Verification / No Ads)\n"
+        "🚀 High Speed Download Links\n\n"
+        "👇 *Plan select karein:*"
     )
     await message.reply_text(caption, reply_markup=InlineKeyboardMarkup(buttons))
 
-# 2. Plan Select Callback -> Dynamic QR Code
 @Client.on_callback_query(filters.regex(r"^buy_"))
-async def send_qr_handler(client: Client, callback_query):
+async def generate_qr_callback(client: Client, callback_query):
     plan_key = callback_query.data.split("_", 1)[1]
     plan = PLANS.get(plan_key)
     if not plan:
@@ -67,10 +91,7 @@ async def send_qr_handler(client: Client, callback_query):
     days = plan["days"]
     user_id = callback_query.from_user.id
     
-    USER_ORDERS[user_id] = {
-        "amount": amount,
-        "days": days
-    }
+    USER_ORDERS[user_id] = {"amount": amount, "days": days}
     
     upi_intent = f"upi://pay?pa={BHARATPE_UPI_ID}&pn=MovieBot&am={amount}&cu=INR&tn=Premium_{user_id}"
     
@@ -87,112 +108,72 @@ async def send_qr_handler(client: Client, callback_query):
     text = (
         f"💳 **Selected Plan:** {days} Days\n"
         f"💰 **Amount:** ₹{amount}\n\n"
-        f"📌 **Payment Instructions:**\n"
-        f"1. Is QR code par PhonePe / GPay / Paytm se exact **₹{amount}** pay karein.\n"
-        f"2. Pay karne ke baad receipt se **12-digit UTR** number chat me bhej dein.\n"
-        f"*(Aap bina cancel kare direct movie ka naam bhi search kar sakte hain)*"
+        f"📌 **Step 1:** Kisi bhi UPI app (GPay/PhonePe/Paytm) se exact **₹{amount}** scan karke pay karein.\n"
+        f"📌 **Step 2:** Payment ke baad receipt se **12-digit UTR** yahan chat me message karein."
     )
     
-    buttons = [
-        [InlineKeyboardButton("Close", callback_data="close_plan")]
-    ]
+    buttons = [[InlineKeyboardButton("Close", callback_data="close_plan")]]
     
-    await callback_query.message.reply_photo(
-        photo=bio,
-        caption=text,
-        reply_markup=InlineKeyboardMarkup(buttons)
-    )
+    await callback_query.message.reply_photo(photo=bio, caption=text, reply_markup=InlineKeyboardMarkup(buttons))
     await callback_query.answer()
 
-# 3. UTR Listener with Group -1 (Taki pmfilter se pehle ye execute ho)
-@Client.on_message(filters.private & filters.text & ~filters.command(["start", "buy", "plan", "myplan", "help"]), group=-1)
-async def utr_checker_msg(client: Client, message: Message):
-    user_id = message.from_user.id
-    text = message.text.strip()
-    
-    # Check karein agar user ne /plan open kiya hua hai
-    if user_id not in USER_ORDERS:
-        return  # Agar plan nahi select kiya, to message aage badhne do (pmfilter movie search karega)
-        
-    # Agar text 12 digits ka number nahi hai, tab bhi movie search chalne do
-    if not (text.isdigit() and len(text) == 12):
-        return
-
-    # Message ko yahi roko taki pmfilter isko movie samajh kar search na kare
-    message.stop_propagation()
-
-    utr = text
-
-    if await is_utr_already_used(utr):
-        return await message.reply_text("⚠ Ye UTR pehle hi use ho chuka hai!")
-
-    status_msg = await message.reply_text("🔄 **Payment verify ho rahi hai... Kripya 5-10 second rukhein.**")
-    
-    order = USER_ORDERS[user_id]
-    expected_amount = order["amount"]
-    days = order["days"]
-    
-    is_valid = await check_bharatpe_payment(utr, expected_amount)
-    
-    # State clear karo
-    del USER_ORDERS[user_id]
-    
-    if is_valid:
-        await save_payment_record(user_id=user_id, utr=utr, amount=expected_amount, days=days)
-        new_expiry = await add_premium_user(user_id=user_id, days=days)
-        
-        await status_msg.edit_text(
-            f"🎉 **Payment Verified Successfully!**\n\n"
-            f"👑 **Plan Activated:** {days} Days\n"
-            f"📅 **Expiry:** `{new_expiry.strftime('%d-%m-%Y %H:%M:%S')} UTC`\n\n"
-            f"Aapka Premium activate ho gaya hai!"
-        )
-    else:
-        await status_msg.edit_text(
-            "❌ **Payment Verify Nahi Hui!**\n\n"
-            "• UTR number check karein.\n"
-            "• Payment bank me settle hone me 1 minute lag sakta hai.\n"
-            "Agar pay kar diya hai toh 1 minute baad dubara UTR bhejein."
-        )
-
-# 4. Check Plan Command: /myplan
-@Client.on_message(filters.command("myplan") & filters.private)
-async def myplan_cmd(client: Client, message: Message):
-    is_premium, expiry = await check_premium_status(message.from_user.id)
-    if is_premium:
-        await message.reply_text(
-            f"👑 **Aapka Premium Active Hai!**\n\n"
-            f"📅 **Expiry Date:** `{expiry.strftime('%d-%m-%Y %H:%M:%S')} UTC`"
-        )
-    else:
-        await message.reply_text("❌ Aapke paas koi active plan nahi hai. /plan dabakar buy karein.")
-
-# Close button handler
 @Client.on_callback_query(filters.regex("close_plan"))
-async def close_plan_btn(client: Client, callback_query):
+async def close_btn_action(client: Client, callback_query):
     await callback_query.message.delete()
 
-# 5. BharatPe Verification Call
-async def check_bharatpe_payment(utr: str, expected_amount: float) -> bool:
+# --- UTR PROCESSOR ---
+
+@Client.on_message(filters.private & filters.regex(r"^\d{12}$"), group=-1)
+async def auto_verify_utr(client: Client, message: Message):
+    user_id = message.from_user.id
+    if user_id not in USER_ORDERS:
+        return
+        
+    message.stop_propagation()
+    utr = message.text.strip()
+    
+    if await is_utr_already_used(utr):
+        return await message.reply_text("⚠ Ye UTR pehle hi use ho chuka hai!")
+        
+    status_msg = await message.reply_text("🔄 **Payment check ho rahi hai... 5 second rukhein.**")
+    
+    order = USER_ORDERS[user_id]
+    amount = order["amount"]
+    days = order["days"]
+    
+    del USER_ORDERS[user_id]
+    
+    is_valid = await check_bharatpe_status(utr, amount)
+    
+    if is_valid:
+        await save_payment_record(user_id=user_id, utr=utr, amount=amount, days=days)
+        new_expiry = await add_premium_user(user_id=user_id, days=days)
+        await status_msg.edit_text(
+            f"🎉 **Payment Verified Successfully!**\n\n"
+            f"👑 **Plan:** {days} Days\n"
+            f"📅 **Expiry:** `{new_expiry.strftime('%d-%m-%Y %H:%M:%S')} UTC`"
+        )
+    else:
+        await status_msg.edit_text(
+            "❌ **Payment Auto-Verify Nahi Hui!**\n\n"
+            f"Agar aapne ₹{amount} pay kar diye hain toh ghabraye nahi, admin ko ye UTR `{utr}` bhej dein, wo turant activate kar denge."
+        )
+
+async def check_bharatpe_status(utr: str, expected_amount: float) -> bool:
     url = f"https://merchant.bharatpe.com/api/v1/merchants/{BHARATPE_MERCHANT_ID}/transactions"
-    headers = {
-        "token": BHARATPE_TOKEN,
-        "User-Agent": "Mozilla/5.0"
-    }
+    headers = {"token": str(BHARATPE_TOKEN), "User-Agent": "Mozilla/5.0"}
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=15) as resp:
+            async with session.get(url, headers=headers, timeout=10) as resp:
                 if resp.status != 200:
                     return False
                 data = await resp.json()
-                transactions = data.get("data", {}).get("transactions", [])
-                for txn in transactions:
-                    txn_utr = str(txn.get("bankReferenceNo") or txn.get("utr") or "")
-                    txn_amount = float(txn.get("amount", 0))
-                    status = txn.get("status", "").upper()
-                    
-                    if txn_utr == utr and txn_amount == float(expected_amount) and status in ["SUCCESS", "PAID"]:
+                for txn in data.get("data", {}).get("transactions", []):
+                    t_utr = str(txn.get("bankReferenceNo") or txn.get("utr") or "")
+                    t_amt = float(txn.get("amount", 0))
+                    status = str(txn.get("status", "")).upper()
+                    if t_utr == utr and t_amt == float(expected_amount) and status in ["SUCCESS", "PAID"]:
                         return True
-    except Exception as e:
-        print(f"Error checking BharatPe: {e}")
+    except Exception:
+        pass
     return False
