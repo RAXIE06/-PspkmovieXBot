@@ -1,0 +1,9 @@
+@dp.message(Command("cancel"))
+async def cancel_handler(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is None:
+        await message.answer("Koi active process nahi hai.")
+        return
+    
+    await state.clear()
+    await message.answer("Process cancel kar diya gaya hai. Ab normal search chalega.")
