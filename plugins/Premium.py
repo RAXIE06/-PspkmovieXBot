@@ -104,21 +104,29 @@ async def send_qr_handler(client: Client, callback_query):
     )
     await callback_query.answer()
 
-# 3. UTR Listener (Sirf tab chalega jab message sirf 12-digit number ho)
-@Client.on_message(filters.private & filters.regex(r"^\d{12}$"))
+# 3. UTR Listener with Group -1 (Taki pmfilter se pehle ye execute ho)
+@Client.on_message(filters.private & filters.text & ~filters.command(["start", "buy", "plan", "myplan", "help"]), group=-1)
 async def utr_checker_msg(client: Client, message: Message):
     user_id = message.from_user.id
+    text = message.text.strip()
     
-    # Agar user ne plan select hi nahi kiya, normal text ki tarah ignore karo
+    # Check karein agar user ne /plan open kiya hua hai
     if user_id not in USER_ORDERS:
+        return  # Agar plan nahi select kiya, to message aage badhne do (pmfilter movie search karega)
+        
+    # Agar text 12 digits ka number nahi hai, tab bhi movie search chalne do
+    if not (text.isdigit() and len(text) == 12):
         return
 
-    utr = message.text.strip()
-    
-    if await is_utr_already_used(utr):
-        return await message.reply_text("⚠️️ Ye UTR pehle hi use ho chuka hai!")
+    # Message ko yahi roko taki pmfilter isko movie samajh kar search na kare
+    message.stop_propagation()
 
-    status_msg = await message.reply_text("🔄 **Payment verify ho rahi hai... 5 second rukhein.**")
+    utr = text
+
+    if await is_utr_already_used(utr):
+        return await message.reply_text("⚠ Ye UTR pehle hi use ho chuka hai!")
+
+    status_msg = await message.reply_text("🔄 **Payment verify ho rahi hai... Kripya 5-10 second rukhein.**")
     
     order = USER_ORDERS[user_id]
     expected_amount = order["amount"]
@@ -126,7 +134,7 @@ async def utr_checker_msg(client: Client, message: Message):
     
     is_valid = await check_bharatpe_payment(utr, expected_amount)
     
-    # State se user ko free kar do taaki koi lock na rahe
+    # State clear karo
     del USER_ORDERS[user_id]
     
     if is_valid:
@@ -137,14 +145,14 @@ async def utr_checker_msg(client: Client, message: Message):
             f"🎉 **Payment Verified Successfully!**\n\n"
             f"👑 **Plan Activated:** {days} Days\n"
             f"📅 **Expiry:** `{new_expiry.strftime('%d-%m-%Y %H:%M:%S')} UTC`\n\n"
-            f"Aapka Premium activate ho gaya hai! Ab bina ads ke direct enjoy karein."
+            f"Aapka Premium activate ho gaya hai!"
         )
     else:
         await status_msg.edit_text(
             "❌ **Payment Verify Nahi Hui!**\n\n"
             "• UTR number check karein.\n"
-            "• Payment confirm hone me 1 minute lag sakta hai.\n"
-            "Agar pay kar diya hai toh 1 minute baad dubara 12-digit UTR send karein."
+            "• Payment bank me settle hone me 1 minute lag sakta hai.\n"
+            "Agar pay kar diya hai toh 1 minute baad dubara UTR bhejein."
         )
 
 # 4. Check Plan Command: /myplan
