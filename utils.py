@@ -1115,3 +1115,45 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
     except Exception as e:
         logging.error(f"Error in get_cap: {e}")
         pass
+
+import aiohttp
+import logging
+from info import BHARATPE_MERCHANT_ID, BHARATPE_TOKEN
+
+async def verify_bharatpe_transaction(target_utr: str, expected_amount: float):
+    if not BHARATPE_MERCHANT_ID or not BHARATPE_TOKEN:
+        return False, "BharatPe Merchant ID ya Token set nahi hai. Bot owner se contact karein."
+
+    url = f"https://merchant.bharatpe.com/api/v1/merchants/{BHARATPE_MERCHANT_ID}/transactions"
+    headers = {
+        "token": BHARATPE_TOKEN,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, timeout=15) as resp:
+                if resp.status != 200:
+                    return False, "BharatPe verification server se connection nahi bana. Thodi der baad try karein."
+                
+                data = await resp.json()
+                tx_list = data.get("data", {}).get("transactions", []) or data.get("transactionList", [])
+                
+                target_utr = str(target_utr).strip()
+                for tx in tx_list:
+                    utr = str(tx.get("bankReferenceNo") or tx.get("utr") or tx.get("rrn") or "").strip()
+                    amount = float(tx.get("amount") or 0.0)
+                    status = str(tx.get("status") or "").upper()
+                    
+                    if utr == target_utr:
+                        if status not in ["SUCCESS", "PAID", "COMPLETED", "SETTLED"]:
+                            return False, f"Payment status abhi '{status}' hai. Successful nahi hua."
+                        if amount < expected_amount:
+                            return False, f"Galat amount! Plan ₹{expected_amount} ka hai lekin payment ₹{amount} ki mili."
+                        return True, "Payment Verified Successfully!"
+                
+                return False, "Ye UTR record me nahi mila. Payment hone ke 1-2 minute baad dobara try karein."
+    except Exception as e:
+        logging.error(f"BharatPe API Error: {e}")
+        return False, "Verification API error. Kripya thoda wait karke try karein."
+        
