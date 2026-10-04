@@ -491,3 +491,20 @@ async def save_payment_record(user_id: int, utr: str, amount: float, days: int):
         "days": int(days),
         "date": datetime.utcnow()
     })
+
+# Payments Collection
+payments = db['payments']
+
+async def is_utr_used(utr: str):
+    found = await payments.find_one({"utr": str(utr).strip()})
+    return bool(found)
+
+async def record_payment(user_id: int, utr: str, amount: float, days: int):
+    await payments.insert_one({
+        "user_id": int(user_id),
+        "utr": str(utr).strip(),
+        "amount": float(amount),
+        "days": int(days),
+        "verified_at": datetime.now()
+    })
+    
