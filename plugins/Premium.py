@@ -1,179 +1,127 @@
-import io
-import qrcode
-import aiohttp
-from datetime import datetime, timedelta
+import urllib.parse
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
+from Script import script
+from info import UPI_ID, UPI_NAME, PREMIUM_PLANS, LOG_CHANNEL
+from database.users_chats_db import is_utr_used, record_payment
+from utils import verify_bharatpe_transaction
 
-try:
-    from pyrogram import Client, filters
-    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
-except ImportError:
-    from kurigram import Client, filters
-    from kurigram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+USER_PLAN_SESSIONS = {}
 
-from info import BHARATPE_MERCHANT_ID, BHARATPE_TOKEN, BHARATPE_UPI_ID, ADMINS
-from database.users_chats_db import (
-    add_premium_user,
-    check_premium_status,
-    is_utr_already_used,
-    save_payment_record
-)
-
-PLANS = {
-    "plan_7": {"days": 7, "price": 10, "label": "◉ 07 ᴅᴀʏꜱ - 10 ₹"},
-    "plan_15": {"days": 15, "price": 20, "label": "◉ 15 ᴅᴀʏꜱ - 20 ₹"},
-    "plan_30": {"days": 30, "price": 40, "label": "◉ 30 ᴅᴀʏꜱ - 40 ₹"},
-    "plan_45": {"days": 45, "price": 55, "label": "◉ 45 ᴅᴀʏꜱ - 55 ₹"},
-    "plan_60": {"days": 60, "price": 75, "label": "◉ 60 ᴅᴀʏꜱ - 75 ₹"},
-    "plan_180": {"days": 180, "price": 200, "label": "◉ 180 ᴅᴀʏꜱ - 200 ₹"},
-    "plan_240": {"days": 240, "price": 270, "label": "◉ 240 ᴅᴀʏꜱ - 270 ₹"},
-    "plan_365": {"days": 365, "price": 399, "label": "◉ 365 ᴅᴀʏꜱ - 399 ₹"},
-}
-
-USER_ORDERS = {}
-
-# --- MANUAL ADMIN COMMANDS ---
-
-@Client.on_message(filters.command("add_premium") & filters.user(ADMINS))
-async def add_premium_manual(client: Client, message: Message):
-    if len(message.command) < 3:
-        return await message.reply_text("Usage: `/add_premium <user_id> <days>`")
-    try:
-        t_user = int(message.command[1])
-        days = int(message.command[2])
-        new_exp = await add_premium_user(t_user, days)
-        await message.reply_text(f"✅ User `{t_user}` ko {days} din ka premium de diya gaya!\nExpiry: `{new_exp}`")
-        try:
-            await client.send_message(t_user, f"🎉 Admin ne aapka {days} din ka Premium plan activate kar diya hai!")
-        except Exception:
-            pass
-    except Exception as e:
-        await message.reply_text(f"Error: {e}")
-
-@Client.on_message(filters.command("myplan") & filters.private)
-async def check_my_plan(client: Client, message: Message):
-    is_prem, exp = await check_premium_status(message.from_user.id)
-    if is_prem:
-        await message.reply_text(f"👑 **Premium Active**\n\n📅 Expiry: `{exp.strftime('%d-%m-%Y %H:%M:%S')} UTC`")
-    else:
-        await message.reply_text("❌ Aapke paas koi active premium plan nahi hai. /plan dabayein.")
-
-# --- AUTOMATIC UPI SYSTEM ---
-
-@Client.on_message(filters.command(["buy", "premium", "plan"]) & filters.private)
-async def plan_menu_cmd(client: Client, message: Message):
+def get_plan_keyboard():
     buttons = []
-    temp_row = []
-    for key, data in PLANS.items():
-        temp_row.append(InlineKeyboardButton(data["label"], callback_data=f"buy_{key}"))
-        if len(temp_row) == 2:
-            buttons.append(temp_row)
-            temp_row = []
-    if temp_row:
-        buttons.append(temp_row)
-    buttons.append([InlineKeyboardButton("Close", callback_data="close_plan")])
-    
+    row = []
+    for amount, days in PREMIUM_PLANS.items():
+        row.append(InlineKeyboardButton(f"⚡ {days} Days - ₹{amount}", callback_data=f"buyplan_{amount}"))
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    buttons.append([InlineKeyboardButton("❓ Premium Kaise Buy Karein?", callback_data="how_to_buy")])
+    buttons.append([InlineKeyboardButton("❌ Close", callback_data="close_data")])
+    return InlineKeyboardMarkup(buttons)
+
+@Client.on_message(filters.command(["plan", "premium"]) & filters.private)
+async def plans_cmd(client: Client, message: Message):
+    await message.reply_text(
+        text=script.PREMIUM_TEXT,
+        reply_markup=get_plan_keyboard()
+    )
+
+@Client.on_callback_query(filters.regex(r"^how_to_buy$"))
+async def how_to_buy_cb(client: Client, query: CallbackQuery):
+    btn = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Plans", callback_data="back_to_plans")]])
+    await query.message.edit_text(script.HOW_TO_BUY_TXT, reply_markup=btn)
+    await query.answer()
+
+@Client.on_callback_query(filters.regex(r"^back_to_plans$"))
+async def back_to_plans_cb(client: Client, query: CallbackQuery):
+    await query.message.edit_text(script.PREMIUM_TEXT, reply_markup=get_plan_keyboard())
+    await query.answer()
+
+@Client.on_callback_query(filters.regex(r"^buyplan_(\d+)"))
+async def plan_select_cb(client: Client, query: CallbackQuery):
+    amount = int(query.data.split("_")[1])
+    days = PREMIUM_PLANS.get(amount)
+    user_id = query.from_user.id
+
+    USER_PLAN_SESSIONS[user_id] = {"amount": amount, "days": days, "step": "WAITING_UTR"}
+
+    note = f"Prem_{user_id}"
+    upi_url = f"upi://pay?pa={UPI_ID}&pn={urllib.parse.quote(UPI_NAME)}&am={amount:.2f}&cu=INR&tn={note}"
+    qr_img = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={urllib.parse.quote(upi_url)}"
+
     caption = (
-        "👑 **PREMIUM MEMBERSHIP PLANS** 👑\n\n"
-        "⚡ Direct Files (No Verification / No Ads)\n"
-        "🚀 High Speed Download Links\n\n"
-        "👇 *Plan select karein:*"
+        f"<b>⚡ Selected Plan: ₹{amount} ({days} Days)</b>\n\n"
+        f"1. Upar diye gaye <b>QR Code</b> ko scan karke exact <b>₹{amount}</b> pay karein.\n"
+        f"2. Pay karne ke baad 12-digit <b>UTR / Transaction Ref No.</b> chat me send karein.\n\n"
+        f"<i>⚠️ Galat amount pay na karein.</i>"
     )
-    await message.reply_text(caption, reply_markup=InlineKeyboardMarkup(buttons))
 
-@Client.on_callback_query(filters.regex(r"^buy_"))
-async def generate_qr_callback(client: Client, callback_query):
-    plan_key = callback_query.data.split("_", 1)[1]
-    plan = PLANS.get(plan_key)
-    if not plan:
-        return await callback_query.answer("Invalid plan!", show_alert=True)
-    
-    amount = plan["price"]
-    days = plan["days"]
-    user_id = callback_query.from_user.id
-    
-    USER_ORDERS[user_id] = {"amount": amount, "days": days}
-    
-    upi_intent = f"upi://pay?pa={BHARATPE_UPI_ID}&pn=MovieBot&am={amount}&cu=INR&tn=Premium_{user_id}"
-    
-    qr = qrcode.QRCode(box_size=10, border=2)
-    qr.add_data(upi_intent)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    bio = io.BytesIO()
-    bio.name = "qr.png"
-    img.save(bio, "PNG")
-    bio.seek(0)
-    
-    text = (
-        f"💳 **Selected Plan:** {days} Days\n"
-        f"💰 **Amount:** ₹{amount}\n\n"
-        f"📌 **Step 1:** Kisi bhi UPI app (GPay/PhonePe/Paytm) se exact **₹{amount}** scan karke pay karein.\n"
-        f"📌 **Step 2:** Payment ke baad receipt se **12-digit UTR** yahan chat me message karein."
-    )
-    
-    buttons = [[InlineKeyboardButton("Close", callback_data="close_plan")]]
-    
-    await callback_query.message.reply_photo(photo=bio, caption=text, reply_markup=InlineKeyboardMarkup(buttons))
-    await callback_query.answer()
+    btn = InlineKeyboardMarkup([
+        [InlineKeyboardButton("❓ Kaise Pay & UTR Dalein?", callback_data="how_to_buy")],
+        [InlineKeyboardButton("🔙 Back to Plans", callback_data="back_to_plans")]
+    ])
 
-@Client.on_callback_query(filters.regex("close_plan"))
-async def close_btn_action(client: Client, callback_query):
-    await callback_query.message.delete()
+    await query.message.reply_photo(photo=qr_img, caption=caption, reply_markup=btn)
+    await query.answer()
 
-# --- UTR PROCESSOR ---
-
-@Client.on_message(filters.private & filters.regex(r"^\d{12}$"), group=-1)
-async def auto_verify_utr(client: Client, message: Message):
+@Client.on_message(filters.text & filters.private, group=-1)
+async def auto_verify_utr_handler(client: Client, message: Message):
     user_id = message.from_user.id
-    if user_id not in USER_ORDERS:
+    session = USER_PLAN_SESSIONS.get(user_id)
+    if not session or session.get("step") != "WAITING_UTR":
         return
-        
-    message.stop_propagation()
-    utr = message.text.strip()
-    
-    if await is_utr_already_used(utr):
-        return await message.reply_text("⚠ Ye UTR pehle hi use ho chuka hai!")
-        
-    status_msg = await message.reply_text("🔄 **Payment check ho rahi hai... 5 second rukhein.**")
-    
-    order = USER_ORDERS[user_id]
-    amount = order["amount"]
-    days = order["days"]
-    
-    del USER_ORDERS[user_id]
-    
-    is_valid = await check_bharatpe_status(utr, amount)
-    
+
+    text = message.text.strip()
+    if message.text.startswith("/"):
+        return
+
+    if not text.isdigit() or len(text) < 10:
+        return await message.reply_text("❌ Kripya valid 12-digit UTR number enter karein.")
+
+    utr = text
+    if await is_utr_used(utr):
+        return await message.reply_text("⚠️ Ye UTR pehle se hi kisi user dwara use kiya ja chuka hai.")
+
+    amount = session["amount"]
+    days = session["days"]
+
+    wait_msg = await message.reply_text("🔄 Payment verify ho raha hai, kripya 10-15 seconds wait karein...")
+
+    is_valid, msg = await verify_bharatpe_transaction(utr, amount)
+
     if is_valid:
-        await save_payment_record(user_id=user_id, utr=utr, amount=amount, days=days)
-        new_expiry = await add_premium_user(user_id=user_id, days=days)
-        await status_msg.edit_text(
-            f"🎉 **Payment Verified Successfully!**\n\n"
-            f"👑 **Plan:** {days} Days\n"
-            f"📅 **Expiry:** `{new_expiry.strftime('%d-%m-%Y %H:%M:%S')} UTC`"
-        )
-    else:
-        await status_msg.edit_text(
-            "❌ **Payment Auto-Verify Nahi Hui!**\n\n"
-            f"Agar aapne ₹{amount} pay kar diye hain toh ghabraye nahi, admin ko ye UTR `{utr}` bhej dein, wo turant activate kar denge."
+        await record_payment(user_id, utr, amount, days)
+        
+        # Existing bot ke premium activation logic se link
+        from database.users_chats_db import db
+        import datetime
+        expiry = datetime.date.today() + datetime.timedelta(days=days)
+        await db.users.update_one({"id": user_id}, {"$set": {"expiry_time": str(expiry)}}, upsert=True)
+
+        del USER_PLAN_SESSIONS[user_id]
+
+        await wait_msg.edit_text(
+            f"🎉 <b>Payment Verified Successfully!</b>\n\n"
+            f"Aapka <b>{days} Days</b> ka Premium activate kar diya gaya hai!\n"
+            f"Expiry Date: <code>{expiry}</code>\n\n"
+            f"Enjoy unlimited features!"
         )
 
-async def check_bharatpe_status(utr: str, expected_amount: float) -> bool:
-    url = f"https://merchant.bharatpe.com/api/v1/merchants/{BHARATPE_MERCHANT_ID}/transactions"
-    headers = {"token": str(BHARATPE_TOKEN), "User-Agent": "Mozilla/5.0"}
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=10) as resp:
-                if resp.status != 200:
-                    return False
-                data = await resp.json()
-                for txn in data.get("data", {}).get("transactions", []):
-                    t_utr = str(txn.get("bankReferenceNo") or txn.get("utr") or "")
-                    t_amt = float(txn.get("amount", 0))
-                    status = str(txn.get("status", "")).upper()
-                    if t_utr == utr and t_amt == float(expected_amount) and status in ["SUCCESS", "PAID"]:
-                        return True
-    except Exception:
-        pass
-    return False
+        if LOG_CHANNEL:
+            try:
+                await client.send_message(
+                    LOG_CHANNEL,
+                    f"💎 <b>Auto-Premium Success</b>\n\n"
+                    f"User ID: <code>{user_id}</code>\n"
+                    f"Name: {message.from_user.mention}\n"
+                    f"Amount: ₹{amount}\n"
+                    f"Days: {days}\n"
+                    f"UTR: <code>{utr}</code>"
+                )
+            except Exception:
+                pass
+    else:
+        await wait_msg.edit_text(f"❌ <b>Verification Failed:</b>\n{msg}\n\nAgar paise kat chuke hain toh 1-2 minute baad dubara UTR bhejein.")
