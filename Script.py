@@ -396,15 +396,21 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
 ‼️ ᴀꜰᴛᴇʀ ꜱᴇɴᴅɪɴɢ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ɢɪᴠᴇ ᴜꜱ ꜱᴏᴍᴇᴛɪᴍᴇꜱ ᴛᴏ ᴀᴅᴅ ʏᴏᴜ ɪɴ ᴘʀᴇᴍɪᴜᴍ ʟɪꜱᴛ."""  
 
 
-    PREPLANS_TXT = PREMIUM_TXT = """<b>👋 ʜᴇʏ {},
+    # Payments Collection
+payments = db['payments']
 
-<blockquote>🎖️ <b>ᴀᴠᴀɪʟᴀʙʟᴇ ᴘʟᴀɴꜱ</b></blockquote>
+async def is_utr_used(utr: str):
+    found = await payments.find_one({"utr": str(utr).strip()})
+    return bool(found)
 
-◉ 07 ᴅᴀʏꜱ - 10 ₹  
-◉ 15 ᴅᴀʏꜱ - 20 ₹  
-◉ 30 ᴅᴀʏꜱ - 40 ₹  
-◉ 45 ᴅᴀʏꜱ - 55 ₹  
-◉ 60 ᴅᴀʏꜱ - 75 ₹  
+async def record_payment(user_id: int, utr: str, amount: float, days: int):
+    await payments.insert_one({
+        "user_id": int(user_id),
+        "utr": str(utr).strip(),
+        "amount": float(amount),
+        "days": int(days),
+        "verified_at": datetime.now()
+    })
 
 •─────•─────────•─────•
 
