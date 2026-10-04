@@ -1102,83 +1102,88 @@ async def verify_bharatpe_transaction(target_utr: str, expected_amount: float):
     if not BHARATPE_MERCHANT_ID or not BHARATPE_TOKEN:
         return False, "BharatPe Merchant ID ya Token config vars me set nahi hai."
 
-    # BharatPe ke active API endpoints
-    candidate_urls = [
-        f"https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?merchantId={BHARATPE_MERCHANT_ID}",
-        f"https://api.bharatpe.in/v1/merchants/{BHARATPE_MERCHANT_ID}/transactions",
-        f"https://merchant.bharatpe.in/api/v1/merchants/{BHARATPE_MERCHANT_ID}/transactions"
+    merchant_id = str(BHARATPE_MERCHANT_ID).strip()
+    token = str(BHARATPE_TOKEN).strip()
+    target_utr = str(target_utr).strip()
+
+    # BharatPe dates format (YYYY-MM-DD)
+    today = datetime.datetime.now()
+    start_date = (today - datetime.timedelta(days=2)).strftime("%Y-%m-%d")
+    end_date = today.strftime("%Y-%m-%d")
+
+    # BharatPe Web Dashboard ke exact URL variations
+    test_urls = [
+        f"https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?merchantId={merchant_id}&module=PAYMENT_QR&sDate={start_date}&eDate={end_date}",
+        f"https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?merchantId={merchant_id}&module=PAYMENT_QR",
+        f"https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?merchantId={merchant_id}"
     ]
 
-    token_clean = str(BHARATPE_TOKEN).strip()
     headers = {
-        "token": token_clean,
-        "Authorization": f"Bearer {token_clean}",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "application/json"
+        "token": token,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://merchant.bharatpe.in",
+        "Referer": "https://merchant.bharatpe.in/"
     }
 
-    last_err = ""
-    timeout = aiohttp.ClientTimeout(total=12)
-
-    async with aiohttp.ClientSession(timeout=timeout) as session:
-        for url in candidate_urls:
-            try:
+    try:
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            for url in test_urls:
                 async with session.get(url, headers=headers) as resp:
-                    status_code = resp.status
-                    text_response = await resp.text()
+                    status = resp.status
+                    body = await resp.text()
 
-                    logging.info(f"[BharatPe Check] URL: {url} | Status: {status_code}")
+                    logging.info(f"[BharatPe Response] URL: {url} | Status: {status} | Body: {body[:250]}")
 
-                    if status_code in [401, 403]:
-                        return False, "BharatPe Token expire ho gaya hai. Kripya naya Token update karein."
-
-                    if status_code != 200:
-                        last_err = f"HTTP {status_code}"
-                        continue
-
-                    try:
-                        data = json.loads(text_response)
-                    except Exception:
-                        continue
-
-                    tx_list = (
-                        data.get("data", {}).get("transactions", [])
-                        or data.get("transactionList", [])
-                        or data.get("data", [])
-                        or []
-                    )
-
-                    target_utr = str(target_utr).strip()
-                    for tx in tx_list:
-                        if not isinstance(tx, dict):
+                    if status == 200:
+                        try:
+                            data = json.loads(body)
+                        except Exception:
                             continue
 
-                        utr = str(
-                            tx.get("bankReferenceNo")
-                            or tx.get("utr")
-                            or tx.get("rrn")
-                            or tx.get("transactionId")
-                            or ""
-                        ).strip()
+                        # Extract transaction list from response
+                        tx_list = (
+                            data.get("data", {}).get("transactions", [])
+                            or data.get("data", {}).get("transactionList", [])
+                            or data.get("transactions", [])
+                            or data.get("data", [])
+                            or []
+                        )
 
-                        amount = float(tx.get("amount") or 0.0)
-                        status = str(tx.get("status") or "").upper()
+                        for tx in tx_list:
+                            if not isinstance(tx, dict):
+                                continue
 
-                        if utr == target_utr:
-                            if status not in ["SUCCESS", "PAID", "COMPLETED", "SETTLED"]:
-                                return False, f"Payment status abhi '{status}' hai. Successful hone par dobara bhejein."
-                            if amount < expected_amount:
-                                return False, f"Galat amount! Expected: ₹{expected_amount}, Mila: ₹{amount}."
-                            return True, "Payment Verified Successfully!"
+                            utr = str(
+                                tx.get("bankReferenceNo")
+                                or tx.get("utr")
+                                or tx.get("rrn")
+                                or tx.get("transactionId")
+                                or ""
+                            ).strip()
 
-                    return False, "Ye UTR record me nahi mila. Agar payment abhi ki hai toh 1-2 minute baad dubara try karein."
+                            amount = float(tx.get("amount") or tx.get("txAmount") or 0.0)
+                            status_val = str(tx.get("status") or tx.get("txStatus") or "").upper()
 
-            except aiohttp.ClientConnectorDNSError:
-                last_err = "Domain resolve error"
-                continue
-            except Exception as e:
-                last_err = f"{type(e).__name__} - {e}"
-                continue
+                            if utr == target_utr:
+                                if status_val not in ["SUCCESS", "PAID", "COMPLETED", "SETTLED"]:
+                                    return False, f"Payment status abhi '{status_val}' hai. Kripya thoda intezar karein."
+                                if amount < expected_amount:
+                                    return False, f"Galat amount! Expected: ₹{expected_amount}, mila: ₹{amount}."
+                                return True, "Payment Verified Successfully!"
 
-    return False, f"BharatPe Connect Error: {last_err}"
-    
+                        return False, "Ye UTR record me nahi mila. Agar payment abhi ki hai toh 1 minute baad dobara bhejein."
+
+                    elif status in [401, 403]:
+                        logging.error(f"[BharatPe Auth Failed] HTTP {status}: {body}")
+                        return False, "BharatPe Token invalid ya expire ho gaya hai. Website se naya token update karein."
+                    else:
+                        logging.warning(f"[BharatPe Try Next] HTTP {status}: {body}")
+                        continue
+
+        return False, "BharatPe server se transactions fetch nahi ho pa rahe hain. Logs check karein."
+
+    except Exception as e:
+        logging.error(f"BharatPe Exception: {e}")
+        return False, f"API Exception: {type(e).__name__} - {str(e)}"
