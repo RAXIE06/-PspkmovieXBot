@@ -3,14 +3,13 @@ import logging
 import pytz  
 import motor.motor_asyncio
 from info import (
-    DATABASE_NAME,DATABASE_URI,DATABASE_URI2, MULTIPLE_DB, MAINTENANCE, PM_SEARCH,
+    DATABASE_NAME, DATABASE_URI, DATABASE_URI2, MULTIPLE_DB, MAINTENANCE, PM_SEARCH,
     BUTTON_MODE, P_TTI_SHOW_OFF, PROTECT_CONTENT, IMDB, SPELL_CHECK_REPLY, MELCOW_NEW_USERS, 
     AUTO_DELETE, AUTO_FFILTER, MAX_BTN, IMDB_TEMPLATE, LOG_VR_CHANNEL, TUTORIAL, TUTORIAL_2,
     TUTORIAL_3, SHORTENER_API, SHORTENER_API2, SHORTENER_API3, SHORTENER_WEBSITE, SHORTENER_WEBSITE2,
     SHORTENER_WEBSITE3, IS_VERIFY, TWO_VERIFY_GAP, THREE_VERIFY_GAP, CUSTOM_FILE_CAPTION, AUTH_CHANNELS,
     MOVIE_UPDATE_NOTIFICATION
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ class Database:
         # Collections
         self.col = self.db.users
         self.grp = self.db.groups
-        self.users = self.db.uersz #Premium users
+        self.users = self.db.uersz # Premium users
         self.req = self.db.requests
         self.botcol = self.db.bot_settings
         self.misc = self.db.misc
@@ -30,6 +29,7 @@ class Database:
         self.filename_col = self.db.filename
         self.movie_updates = self.db.movie_updates
         self.connection = self.db.connections
+        self.payments = self.db.payments
 
     async def add_name(self, filename):
         if await self.movie_updates.find_one({'_id': filename}):
@@ -41,9 +41,8 @@ class Database:
         await self.movie_updates.delete_many({})
         logger.info("All filenames notification have been deleted.")
         return True
- 
-     
-    async def add_join_req(self, user_id: int, channel_id: int): #update
+
+    async def add_join_req(self, user_id: int, channel_id: int):
         await self.req.update_one(
             {'user_id': user_id},
             {
@@ -85,7 +84,7 @@ class Database:
         await self.col.insert_one(user)
     
     async def is_user_exist(self, id):
-        user = await self.col.find_one({'id':int(id)})
+        user = await self.col.find_one({'id': int(id)})
         return bool(user)
     
     async def total_users_count(self):
@@ -111,7 +110,7 @@ class Database:
             is_banned=False,
             ban_reason=''
         )
-        user = await self.col.find_one({'id':int(id)})
+        user = await self.col.find_one({'id': int(id)})
         if not user:
             return default
         return user.get('ban_status', default)
@@ -137,14 +136,14 @@ class Database:
         await self.grp.insert_one(chat)
     
     async def get_chat(self, chat):
-        chat = await self.grp.find_one({'id':int(chat)})
+        chat = await self.grp.find_one({'id': int(chat)})
         return False if not chat else chat.get('chat_status')
     
     async def re_enable_chat(self, id):
-        chat_status=dict(
+        chat_status = dict(
             is_disabled=False,
             reason="",
-            )
+        )
         await self.grp.update_one({'id': int(id)}, {'$set': {'chat_status': chat_status}})
         
     async def update_settings(self, id, settings):
@@ -208,10 +207,10 @@ class Database:
             raise  
 
     async def disable_chat(self, chat, reason="No Reason"):
-        chat_status=dict(
+        chat_status = dict(
             is_disabled=True,
             reason=reason,
-            )
+        )
         await self.grp.update_one({'id': int(chat)}, {'$set': {'chat_status': chat_status}})
 
     async def total_chat_count(self):
@@ -227,6 +226,7 @@ class Database:
     async def get_user(self, user_id):
         user_data = await self.users.find_one({"id": user_id})
         return user_data
+
     async def update_user(self, user_data):
         await self.users.update_one({"id": user_data["id"]}, {"$set": user_data}, upsert=True)
   
@@ -240,10 +240,11 @@ class Database:
                 "last_verified": datetime.datetime(2020, 5, 17, 0, 0, 0, tzinfo=ist_timezone),
                 "second_time_verified": datetime.datetime(2019, 5, 17, 0, 0, 0, tzinfo=ist_timezone),
             }
-            user = await self.misc.insert_one(res)
+            await self.misc.insert_one(res)
+            user = await self.misc.find_one({"user_id": user_id})
         return user
 
-    async def update_notcopy_user(self, user_id, value:dict):
+    async def update_notcopy_user(self, user_id, value: dict):
         user_id = int(user_id)
         myquery = {"user_id": user_id}
         newvalues = {"$set": value}
@@ -283,7 +284,7 @@ class Database:
         user = await self.get_notcopy_user(user_id)
         if not user.get("second_time_verified"):
             ist_timezone = pytz.timezone('Asia/Kolkata')
-            await self.update_notcopy_user(user_id, {"second_time_verified":datetime.datetime(2019, 5, 17, 0, 0, 0, tzinfo=ist_timezone)})
+            await self.update_notcopy_user(user_id, {"second_time_verified": datetime.datetime(2019, 5, 17, 0, 0, 0, tzinfo=ist_timezone)})
             user = await self.get_notcopy_user(user_id)
         if await self.is_user_verified(user_id):
             try:
@@ -305,7 +306,7 @@ class Database:
         user = await self.get_notcopy_user(user_id)
         if not user.get("third_time_verified"):
             ist_timezone = pytz.timezone('Asia/Kolkata')
-            await self.update_notcopy_user(user_id, {"third_time_verified":datetime.datetime(2018, 5, 17, 0, 0, 0, tzinfo=ist_timezone)})
+            await self.update_notcopy_user(user_id, {"third_time_verified": datetime.datetime(2018, 5, 17, 0, 0, 0, tzinfo=ist_timezone)})
             user = await self.get_notcopy_user(user_id)
         if await self.user_verified(user_id):
             try:
@@ -324,7 +325,7 @@ class Database:
         return False
    
     async def create_verify_id(self, user_id: int, hash):
-        res = {"user_id": user_id, "hash":hash, "verified":False}
+        res = {"user_id": user_id, "hash": hash, "verified": False}
         return await self.verify_id.insert_one(res)
 
     async def get_verify_id_info(self, user_id: int, hash):
@@ -332,7 +333,7 @@ class Database:
 
     async def update_verify_id_info(self, user_id, hash, value: dict):
         myquery = {"user_id": user_id, "hash": hash}
-        newvalues = { "$set": value }
+        newvalues = {"$set": value}
         return await self.verify_id.update_one(myquery, newvalues)
         
     async def has_premium_access(self, user_id):
@@ -346,8 +347,6 @@ class Database:
             else:
                 await self.users.update_one({"id": user_id}, {"$set": {"expiry_time": None}})
         return False
-        
-    
 
     async def update_one(self, filter_query, update_data):
         try:
@@ -376,8 +375,7 @@ class Database:
         return False
 
     async def give_free_trial(self, user_id):
-        user_id = user_id
-        seconds = 5*60         
+        seconds = 5 * 60         
         expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
         user_data = {"id": user_id, "expiry_time": expiry_time, "has_free_trial": True}
         await self.users.update_one({"id": user_id}, {"$set": user_data}, upsert=True)
@@ -394,7 +392,7 @@ class Database:
         
     async def all_premium_users(self):
         count = await self.users.count_documents({
-        "expiry_time": {"$gt": datetime.datetime.now()}
+            "expiry_time": {"$gt": datetime.datetime.now()}
         })
         return count
     
@@ -410,7 +408,7 @@ class Database:
         )
 
     async def connect_group(self, group_id, user_id):
-        user= await self.connection.find_one({'_id': user_id})
+        user = await self.connection.find_one({'_id': user_id})
         if user:
             if group_id not in user["group_ids"]:
                 await self.connection.update_one({'_id': user_id}, {"$push": {"group_ids": group_id}})
@@ -447,25 +445,26 @@ class Database:
 
     async def update_maintenance_status(self, bot_id, enable):
         await self.update_bot_setting(bot_id, 'MAINTENANCE', enable)
-     
+
 db = Database(DATABASE_URI, DATABASE_NAME)    
 if MULTIPLE_DB and DATABASE_URI2:
     db2 = Database(DATABASE_URI2, DATABASE_NAME)
 else:
     db2 = db
 
-from datetime import datetime, timedelta
+# ==================== PAYMENT & PREMIUM HELPERS ==================== #
 
 async def add_premium_user(user_id: int, days: int):
+    now = datetime.datetime.now()
     user = await db.users.find_one({"id": int(user_id)})
-    now = datetime.utcnow()
-    if user and user.get("premium_expiry") and user["premium_expiry"] > now:
-        new_expiry = user["premium_expiry"] + timedelta(days=days)
+    if user and user.get("expiry_time") and isinstance(user["expiry_time"], datetime.datetime) and user["expiry_time"] > now:
+        new_expiry = user["expiry_time"] + datetime.timedelta(days=days)
     else:
-        new_expiry = now + timedelta(days=days)
+        new_expiry = now + datetime.timedelta(days=days)
+        
     await db.users.update_one(
         {"id": int(user_id)},
-        {"$set": {"is_premium": True, "premium_expiry": new_expiry}},
+        {"$set": {"expiry_time": new_expiry, "has_free_trial": True}},
         upsert=True
     )
     return new_expiry
@@ -474,37 +473,20 @@ async def check_premium_status(user_id: int):
     user = await db.users.find_one({"id": int(user_id)})
     if not user:
         return False, None
-    expiry = user.get("premium_expiry")
-    if expiry and expiry > datetime.utcnow():
+    expiry = user.get("expiry_time")
+    if expiry and isinstance(expiry, datetime.datetime) and expiry > datetime.datetime.now():
         return True, expiry
     return False, None
 
-async def is_utr_already_used(utr: str):
-    found = await db.payments.find_one({"utr": str(utr)})
-    return bool(found)
-
-async def save_payment_record(user_id: int, utr: str, amount: float, days: int):
-    await db.payments.insert_one({
-        "user_id": int(user_id),
-        "utr": str(utr),
-        "amount": float(amount),
-        "days": int(days),
-        "date": datetime.utcnow()
-    })
-
-# Payments Collection
-payments = db['payments']
-
-async def is_utr_used(utr: str):
-    found = await payments.find_one({"utr": str(utr).strip()})
+async def is_utr_used(utr: str) -> bool:
+    found = await db.payments.find_one({"utr": str(utr).strip()})
     return bool(found)
 
 async def record_payment(user_id: int, utr: str, amount: float, days: int):
-    await payments.insert_one({
+    await db.payments.insert_one({
         "user_id": int(user_id),
         "utr": str(utr).strip(),
         "amount": float(amount),
         "days": int(days),
-        "verified_at": datetime.now()
+        "verified_at": datetime.datetime.now()
     })
-    
