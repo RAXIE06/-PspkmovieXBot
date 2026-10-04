@@ -281,10 +281,10 @@ LOG_STR += ("Long IMDB storyline enabled." if LONG_IMDB_DESCRIPTION else "LONG_I
 LOG_STR += ("Spell Check Mode is enabled, bot will be suggesting related movies if movie name is misspelled.\n" if SPELL_CHECK_REPLY else "Spell Check Mode is disabled.\n")
 
 # ==================== BHARATPE & AUTO PAYMENT CONFIG ==================== #
-BHARATPE_MERCHANT_ID = environ.get('BHARATPE_MERCHANT_ID', '')
-BHARATPE_TOKEN = environ.get('BHARATPE_TOKEN', '')
-UPI_ID = environ.get('UPI_ID', '')
-UPI_NAME = environ.get('UPI_NAME', 'Movie Bot')
+BHARATPE_MERCHANT_ID = environ.get('BHARATPE_MERCHANT_ID', '45188944')
+BHARATPE_TOKEN = environ.get('BHARATPE_TOKEN', '1c040c6d7a0641cd9fad0d3a935025db')
+UPI_ID = environ.get('UPI_ID', 'BHARATPE.8000028351@fbpe')
+UPI_NAME = environ.get('UPI_NAME', 'Nitish Kumar')
 
 # Updated Plans (Amount : Days)
 PREMIUM_PLANS = {
