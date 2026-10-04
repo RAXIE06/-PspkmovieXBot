@@ -314,14 +314,29 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
 
 
 
-    PREMIUM_TEXT = """<blockquote>🎖️ <b>ᴀᴠᴀɪʟᴀʙʟᴇ ᴘʟᴀɴs</b></blockquote>
+    PREMIUM_TEXT = """<b>✨ <u>AVAILABLE PREMIUM PLANS</u> ✨</b>
 
+◉ <b>07 ᴅᴀʏꜱ</b> - 10 ₹
+◉ <b>15 ᴅᴀʏꜱ</b> - 20 ₹
+◉ <b>30 ᴅᴀʏꜱ</b> - 40 ₹
+◉ <b>45 ᴅᴀʏꜱ</b> - 55 ₹
+◉ <b>60 ᴅᴀʏꜱ</b> - 75 ₹
+◉ <b>180 ᴅᴀʏꜱ</b> - 200 ₹
+◉ <b>240 ᴅᴀʏꜱ</b> - 270 ₹
+◉ <b>365 ᴅᴀʏꜱ</b> - 399 ₹
 
-◉ 07 ᴅᴀʏꜱ - 10 ₹  / 10 ꜱᴛᴀʀ
-◉ 15 ᴅᴀʏꜱ - 20 ₹  / 20 ꜱᴛᴀʀ
-◉ 30 ᴅᴀʏꜱ - 40 ₹  / 40 ꜱᴛᴀʀ
-◉ 45 ᴅᴀʏꜱ - 55 ₹  / 55 ꜱᴛᴀʀ
-◉ 60 ᴅᴀʏꜱ - 75 ₹  / 75 ꜱᴛᴀʀ
+<i>Niche diye gaye buttons se plan select karein aur automatic verification se instant premium activate karein!</i>"""
+
+    HOW_TO_BUY_TXT = """<b>📖 <u>Premium Kaise Buy Karein (Guide):</u></b>
+
+1️⃣ <b>Plan Select Karein:</b> Apne pasand ka plan button click karein.
+2️⃣ <b>QR Code Scan Karein:</b> Bot exact amount ka QR code bhejega.
+3️⃣ <b>Payment Karein:</b> Kisi bhi UPI App (PhonePe, GPay, Paytm) se QR code scan karke exact payment karein.
+4️⃣ <b>UTR Copy Karein:</b> Payment hone ke baad 12-digit ka <b>UTR / Ref No.</b> copy karein.
+5️⃣ <b>UTR Enter Karein:</b> '✅ I Have Paid (Enter UTR)' button dabakar 12-digit number chat me send karein.
+6️⃣ <b>Instant Activation:</b> Bot payment auto verify karke turant aapka Premium activate kar dega!
+
+⚠️ <i>Dhyan rahe: Ek UTR sirf ek baar use ho sakta hai.</i>"""
 
 •─────•─────────•─────•
 🏷️ <a href='https://t.me/Royal_X_RoxStar'>ꜱᴜʙꜱᴄʀɪᴘᴛɪᴏɴ ᴘʀᴏᴏꜰ</a>
