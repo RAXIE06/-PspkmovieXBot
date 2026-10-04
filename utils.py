@@ -1,22 +1,34 @@
 import re
 import os
+import json
 import logging
 import random
 import string
-from info import ULTRA_FAST_MODE, MAX_LIST_ELM, BAD_WORDS, LONG_IMDB_DESCRIPTION, IS_VERIFY, MAX_B_TN, TUTORIAL, TUTORIAL_2, TUTORIAL_3, LOG_CHANNEL, TMDB_ON_SEARCH
-from imdbkit import IMDBKit # pyrefly: ignore 
 import asyncio
+from typing import Union, List
+
 from pyrogram.types import Message, InlineKeyboardButton
-from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid, ChatAdminRequired
+from pyrogram.errors import (
+    InputUserDeactivated,
+    UserNotParticipant,
+    FloodWait,
+    UserIsBlocked,
+    PeerIdInvalid,
+    ChatAdminRequired
+)
 from pyrogram import enums
-from typing import Union
-from Script import script
-from typing import List
-from database.users_chats_db import db
 from bs4 import BeautifulSoup
 import aiohttp
 from shortzy import Shortzy
+from imdbkit import IMDBKit  # pyrefly: ignore 
 
+from info import (
+    ULTRA_FAST_MODE, MAX_LIST_ELM, BAD_WORDS, LONG_IMDB_DESCRIPTION,
+    IS_VERIFY, MAX_B_TN, TUTORIAL, TUTORIAL_2, TUTORIAL_3,
+    LOG_CHANNEL, TMDB_ON_SEARCH, BHARATPE_MERCHANT_ID, BHARATPE_TOKEN
+)
+from Script import script
+from database.users_chats_db import db
 from plugins.Dreamxfutures.Imdbposter import get_movie_detailsx
 
 logger = logging.getLogger(__name__)
@@ -41,7 +53,7 @@ class temp(object):
     BANNED_USERS = []
     BANNED_CHATS = []
     ME = None
-    CURRENT=int(os.environ.get("SKIP", 2))
+    CURRENT = int(os.environ.get("SKIP", 2))
     CANCEL = False
     B_USERS_CANCEL = False
     B_GROUPS_CANCEL = False 
@@ -107,7 +119,6 @@ async def is_subscribed(bot, user_id, fsub_channels):
     
     async def check_channel(channel_id):
         try:
-            # No need to get chat object separately
             await bot.get_chat_member(channel_id, user_id)
         except UserNotParticipant:
             try:
@@ -138,7 +149,7 @@ async def is_check_admin(bot, chat_id, user_id):
     
 async def users_broadcast(user_id, message, is_pin):
     try:
-        m=await message.copy(chat_id=user_id)
+        m = await message.copy(chat_id=user_id)
         if is_pin:
             await m.pin(both_sides=True)
         return True, "Success"
@@ -220,10 +231,6 @@ async def get_status(bot_id):
         return False  
 
 async def add_name_to_db(filename):
-    """
-    Helper function to add a filename to the database.
-    """
-    
     return await db.add_name(filename) 
 
 
@@ -231,7 +238,6 @@ def listx_to_str(k):
     if k is None or k == "":
         return "N/A"
     
-    # Handle non-iterable types first
     if not hasattr(k, '__iter__') or isinstance(k, (str, int, float)):
         return str(k)
     
@@ -340,13 +346,11 @@ async def get_poster(query, bulk=False, id=False, file=None):
         "url": movie.url or f"https://www.imdb.com/title/{imdb_id}"
     }
     
-#Remove Nahi Kiya Hu.....Agar Tujha Remove Karna Hai To Kar Dena
 async def old_get_poster(query, bulk=False, id=False, file=None):
     if not id:
         query = (query.strip()).lower()
         title = query
         year = re.findall(r'[1-2]\d{3}$', query, re.IGNORECASE)
-        imdb
         if year:
             year = list_to_str(year[:1])
             title = (query.replace(year, "")).strip()
@@ -360,12 +364,12 @@ async def old_get_poster(query, bulk=False, id=False, file=None):
         if not movieid:
             return None
         if year:
-            filtered=list(filter(lambda k: str(k.get('year')) == str(year), movieid))
+            filtered = list(filter(lambda k: str(k.get('year')) == str(year), movieid))
             if not filtered:
                 filtered = movieid
         else:
             filtered = movieid
-        movieid=list(filter(lambda k: k.get('kind') in ['movie', 'tv series'], filtered))
+        movieid = list(filter(lambda k: k.get('kind') in ['movie', 'tv series'], filtered))
         if not movieid:
             movieid = filtered
         if bulk:
@@ -417,10 +421,10 @@ async def old_get_poster(query, bulk=False, id=False, file=None):
         "certificates": list_to_str(movie.get("certificates")),
         "languages": list_to_str(movie.get("languages")),
         "director": list_to_str(movie.get("director")),
-        "writer":list_to_str(movie.get("writer")),
-        "producer":list_to_str(movie.get("producer")),
-        "composer":list_to_str(movie.get("composer")) ,
-        "cinematographer":list_to_str(movie.get("cinematographer")),
+        "writer": list_to_str(movie.get("writer")),
+        "producer": list_to_str(movie.get("producer")),
+        "composer": list_to_str(movie.get("composer")),
+        "cinematographer": list_to_str(movie.get("cinematographer")),
         "music_team": list_to_str(movie.get("music department")),
         "distributors": list_to_str(movie.get("distributors")),
         'release_date': date,
@@ -429,19 +433,13 @@ async def old_get_poster(query, bulk=False, id=False, file=None):
         'poster': movie.get('full-size cover url'),
         'plot': plot,
         'rating': str(movie.get("rating")),
-        'url':f'https://www.imdb.com/title/tt{movieid}'
+        'url': f'https://www.imdb.com/title/tt{movieid}'
     }
     
 async def get_posterx(query, bulk=False, id=False, file=None):
-    """
-    Fetches movie details from TMDB using the get_movie_detailsx helper
-    and formats the output to be compatible with the original get_poster function.
-    """
     if not id:
-        # The get_movie_detailsx function handles searching by query string.
         details = await get_movie_detailsx(query, file=file)
     else:
-        # Assumes the 'id' is a TMDB ID or IMDb ID that get_movie_detailsx can handle.
         details = await get_movie_detailsx(query, id=True)
 
     if not details or details.get("error"):
@@ -457,8 +455,6 @@ async def get_posterx(query, bulk=False, id=False, file=None):
     if plot and len(plot) > 800:
         plot = plot[0:800] + "..."
 
-    # --- Mapping TMDB keys to the original IMDb key format ---
-
     def list_to_str(val):
         if isinstance(val, list):
             return ", ".join(str(x) for x in val if x)
@@ -467,7 +463,7 @@ async def get_posterx(query, bulk=False, id=False, file=None):
     return {
         'title': details.get('title'),
         'votes': details.get('votes'),
-        "aka": None,  # Not typically provided by TMDB in this format
+        "aka": None,
         "seasons": details.get('seasons'),
         "box_office": details.get('box_office'),
         'localized_title': details.get('localized_title'),
@@ -483,13 +479,13 @@ async def get_posterx(query, bulk=False, id=False, file=None):
         "producer": list_to_str(details.get("producer")),
         "composer": list_to_str(details.get("composer")),
         "cinematographer": list_to_str(details.get("cinematographer")),
-        "music_team": None, # Not provided by the TMDB API wrapper
+        "music_team": None,
         "distributors": list_to_str(details.get("distributors")),
         'release_date': details.get('release_date'),
         'year': details.get('year'),
         'genres': list_to_str(details.get("genres")),
         'poster': details.get('poster_url'),
-        'backdrop' : details.get('backdrop_url'),
+        'backdrop': details.get('backdrop_url'),
         'plot': plot,
         'rating': str(details.get("rating", "N/A")),
         'url': details.get('tmdb_url')
@@ -611,7 +607,6 @@ def generate_settings_text(settings, title, reset_done=False):
 📝 <b>ʟᴏɢ ᴄʜᴀɴɴᴇʟ ɪᴅ</b> - <code>{settings.get("log", "N/A")}</code>
 🚫 <b>ꜰꜱᴜʙ ᴄʜᴀɴɴᴇʟ ɪᴅ</b> - <code>{settings.get("fsub", "N/A")}</code>
 
-
 🎯 <b>ɪᴍᴅʙ ᴛᴇᴍᴘʟᴀᴛᴇ</b> - <code>{settings.get("template", "N/A")}</code>
 
 📂 <b>ꜰɪʟᴇ ᴄᴀᴘᴛɪᴏɴ</b> - <code>{settings.get("caption", "N/A")}</code>
@@ -661,8 +656,8 @@ async def group_setting_buttons(grp_id):
                 InlineKeyboardButton('ᴍᴀx ʙᴜᴛᴛᴏɴꜱ', callback_data=f'setgs#max_btn#{settings["max_btn"]}#{grp_id}',),
                 InlineKeyboardButton('10' if settings["max_btn"] else f'{MAX_B_TN}', callback_data=f'setgs#max_btn#{settings["max_btn"]}#{grp_id}',),
             ],[
-                InlineKeyboardButton('ꜱᴘᴇʟʟ ᴄʜᴇᴄᴋ',callback_data=f'setgs#spell_check#{settings["spell_check"]}#{str(grp_id)}'),
-                InlineKeyboardButton('✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',callback_data=f'setgs#spell_check#{settings["spell_check"]}#{str(grp_id)}')
+                InlineKeyboardButton('ꜱᴘᴇʟʟ ᴄʜᴇᴄᴋ', callback_data=f'setgs#spell_check#{settings["spell_check"]}#{str(grp_id)}'),
+                InlineKeyboardButton('✔ Oɴ' if settings["spell_check"] else '✘ Oғғ', callback_data=f'setgs#spell_check#{settings["spell_check"]}#{str(grp_id)}')
             ],[
                 InlineKeyboardButton('Vᴇʀɪғʏ', callback_data=f'setgs#is_verify#{settings.get("is_verify", IS_VERIFY)}#{grp_id}'),
                 InlineKeyboardButton('✔ Oɴ' if settings.get("is_verify", IS_VERIFY) else '✘ Oғғ', callback_data=f'setgs#is_verify#{settings.get("is_verify", IS_VERIFY)}#{grp_id}'),
@@ -684,14 +679,8 @@ async def group_setting_buttons(grp_id):
 def get_file_id(msg: Message):
     if msg.media:
         for message_type in (
-            "photo",
-            "animation",
-            "audio",
-            "document",
-            "video",
-            "video_note",
-            "voice",
-            "sticker"
+            "photo", "animation", "audio", "document",
+            "video", "video_note", "voice", "sticker"
         ):
             obj = getattr(msg, message_type)
             if obj:
@@ -710,13 +699,11 @@ def extract_user(message: Message) -> Union[int, str]:
             len(message.entities) > 1 and
             message.entities[1].type == enums.MessageEntityType.TEXT_MENTION
         ):
-           
             required_entity = message.entities[1]
             user_id = required_entity.user.id
             user_first_name = required_entity.user.first_name
         else:
             user_id = message.command[1]
-            # don't want to make a request -_-
             user_first_name = user_id
         try:
             user_id = int(user_id)
@@ -755,7 +742,6 @@ def last_online(from_user):
     elif from_user.status == enums.UserStatus.OFFLINE:
         time += from_user.last_online_date.strftime("%a, %d %b %Y, %H:%M:%S")
     return time
-
 
 def split_quotes(text: str) -> List:
     if not any(text.startswith(char) for char in START_CHAR):
@@ -815,7 +801,6 @@ def gfilterparser(text, keyword):
                     text=match.group(2),
                     url=match.group(4).replace(" ", "")
                 )])
-
         else:
             note_data += text[prev:to_check]
             prev = match.start(1) - 1
@@ -867,7 +852,6 @@ def parser(text, keyword):
                     text=match.group(2),
                     url=match.group(4).replace(" ", "")
                 )])
-
         else:
             note_data += text[prev:to_check]
             prev = match.start(1) - 1
@@ -900,7 +884,6 @@ async def log_error(client, error_message):
         )
     except Exception as e:
         logger.error("Failed to log error: %s", e)
-
 
 def get_time(seconds):
     periods = [(' ᴅᴀʏs', 86400), (' ʜᴏᴜʀ', 3600), (' ᴍɪɴᴜᴛᴇ', 60), (' sᴇᴄᴏɴᴅ', 1)]
@@ -938,8 +921,6 @@ def generate_season_variations(search_raw: str, season_number: int):
         f"{search_raw} season {season_number:02}",
     ]
 
-
-
 async def get_seconds(time_string):
     def extract_value_and_unit(ts):
         value = ""
@@ -967,7 +948,6 @@ async def get_seconds(time_string):
         return value * 86400 * 365
     else:
         return 0
-    
 
 def clean_search_text(search_raw: str) -> str:
     search_lower = search_raw.lower()
@@ -1002,54 +982,54 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                 cap = IMDB_CAP
                 cap += "\n\n<u>Your Requested Files Are Here</u>\n\n</b>"
                 for idx, file in enumerate(files, start=offset + 1):
-                        cap += (
-                            f"<b>{idx}. "
-                            f"<a href='https://telegram.me/{temp.U_NAME}"
-                            f"?start=file_{query.message.chat.id}_{file.file_id}'>"
-                            f"[{get_size(file.file_size)}] "
-                            f"{clean_filename(file.file_name)}\n\n"
-                            f"</a></b>"
-                        )
+                    cap += (
+                        f"<b>{idx}. "
+                        f"<a href='https://telegram.me/{temp.U_NAME}"
+                        f"?start=file_{query.message.chat.id}_{file.file_id}'>"
+                        f"[{get_size(file.file_size)}] "
+                        f"{clean_filename(file.file_name)}\n\n"
+                        f"</a></b>"
+                    )
             else:
                 if settings["imdb"]:
-                    imdb = await get_posterx(search, file=(files[0]).file_name) if TMDB_ON_SEARCH else await get_poster(search, file=(files[0]).file_name)
+                    imdb_data = await get_posterx(search, file=(files[0]).file_name) if TMDB_ON_SEARCH else await get_poster(search, file=(files[0]).file_name)
                 else:
-                    imdb = None
-                if imdb:
+                    imdb_data = None
+                if imdb_data:
                     TEMPLATE = script.IMDB_TEMPLATE_TXT
                     cap = TEMPLATE.format(
                         query=search, 
-                        title=imdb['title'],
-                        votes=imdb['votes'],
-                        aka=imdb["aka"],
-                        seasons=imdb["seasons"],
-                        box_office=imdb['box_office'],
-                        localized_title=imdb['localized_title'],
-                        kind=imdb['kind'],
-                        imdb_id=imdb["imdb_id"],
-                        cast=imdb["cast"],
-                        runtime=imdb["runtime"],
-                        countries=imdb["countries"],
-                        certificates=imdb["certificates"],
-                        languages=imdb["languages"],
-                        director=imdb["director"],
-                        writer=imdb["writer"],
-                        producer=imdb["producer"],
-                        composer=imdb["composer"],
-                        cinematographer=imdb["cinematographer"],
-                        music_team=imdb["music_team"],
-                        distributors=imdb["distributors"],
-                        release_date=imdb['release_date'],
-                        year=imdb['year'],
-                        genres=imdb['genres'],
-                        poster=imdb['poster'],
-                        plot=imdb['plot'],
-                        rating=imdb['rating'],
-                        url=imdb['url'],
+                        title=imdb_data['title'],
+                        votes=imdb_data['votes'],
+                        aka=imdb_data["aka"],
+                        seasons=imdb_data["seasons"],
+                        box_office=imdb_data['box_office'],
+                        localized_title=imdb_data['localized_title'],
+                        kind=imdb_data['kind'],
+                        imdb_id=imdb_data["imdb_id"],
+                        cast=imdb_data["cast"],
+                        runtime=imdb_data["runtime"],
+                        countries=imdb_data["countries"],
+                        certificates=imdb_data["certificates"],
+                        languages=imdb_data["languages"],
+                        director=imdb_data["director"],
+                        writer=imdb_data["writer"],
+                        producer=imdb_data["producer"],
+                        composer=imdb_data["composer"],
+                        cinematographer=imdb_data["cinematographer"],
+                        music_team=imdb_data["music_team"],
+                        distributors=imdb_data["distributors"],
+                        release_date=imdb_data['release_date'],
+                        year=imdb_data['year'],
+                        genres=imdb_data['genres'],
+                        poster=imdb_data['poster'],
+                        plot=imdb_data['plot'],
+                        rating=imdb_data['rating'],
+                        url=imdb_data['url'],
                         **locals()
                     )
                     
-                    for idx, file in enumerate(files, start=offset+1):
+                    for idx, file in enumerate(files, start=offset + 1):
                         cap += (
                             f"<b>{idx}. "
                             f"<a href='https://telegram.me/{temp.U_NAME}"
@@ -1103,57 +1083,85 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
 
             cap += "\n\n<u>Your Requested Files Are Here</u>\n\n</b>"
             for idx, file in enumerate(files, start=offset + 1):
-                        cap += (
-                            f"<b>{idx}. "
-                            f"<a href='https://telegram.me/{temp.U_NAME}"
-                            f"?start=file_{query.message.chat.id}_{file.file_id}'>"
-                            f"[{get_size(file.file_size)}] "
-                            f"{clean_filename(file.file_name)}\n\n"
-                            f"</a></b>"
-                        )
+                cap += (
+                    f"<b>{idx}. "
+                    f"<a href='https://telegram.me/{temp.U_NAME}"
+                    f"?start=file_{query.message.chat.id}_{file.file_id}'>"
+                    f"[{get_size(file.file_size)}] "
+                    f"{clean_filename(file.file_name)}\n\n"
+                    f"</a></b>"
+                )
         return cap
     except Exception as e:
         logging.error(f"Error in get_cap: {e}")
-        pass
+        return ""
 
-import aiohttp
-import logging
-from info import BHARATPE_MERCHANT_ID, BHARATPE_TOKEN
+# ==================== UPDATED BHARATPE VERIFIER ==================== #
 
 async def verify_bharatpe_transaction(target_utr: str, expected_amount: float):
     if not BHARATPE_MERCHANT_ID or not BHARATPE_TOKEN:
-        return False, "BharatPe Merchant ID ya Token set nahi hai. Bot owner se contact karein."
+        return False, "BharatPe Merchant ID ya Token config vars me set nahi hai."
 
     url = f"https://merchant.bharatpe.com/api/v1/merchants/{BHARATPE_MERCHANT_ID}/transactions"
     headers = {
-        "token": BHARATPE_TOKEN,
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "token": str(BHARATPE_TOKEN).strip(),
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json, text/plain, */*"
     }
     
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=15) as resp:
-                if resp.status != 200:
-                    return False, "BharatPe verification server se connection nahi bana. Thodi der baad try karein."
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url, headers=headers) as resp:
+                status_code = resp.status
+                text_response = await resp.text()
+
+                logging.info(f"[BharatPe Response] Code: {status_code} | Body: {text_response[:300]}")
+
+                if status_code in [401, 403]:
+                    return False, "BharatPe Token expire ho gaya hai. Kripya naya Token generate karke update karein."
                 
-                data = await resp.json()
-                tx_list = data.get("data", {}).get("transactions", []) or data.get("transactionList", [])
-                
+                if status_code != 200:
+                    return False, f"BharatPe Server Error (HTTP {status_code})."
+
+                try:
+                    data = json.loads(text_response)
+                except Exception:
+                    return False, "BharatPe response JSON format me nahi mila."
+
+                tx_list = (
+                    data.get("data", {}).get("transactions", [])
+                    or data.get("transactionList", [])
+                    or data.get("data", [])
+                    or []
+                )
+
                 target_utr = str(target_utr).strip()
                 for tx in tx_list:
-                    utr = str(tx.get("bankReferenceNo") or tx.get("utr") or tx.get("rrn") or "").strip()
+                    if not isinstance(tx, dict):
+                        continue
+                    
+                    utr = str(
+                        tx.get("bankReferenceNo")
+                        or tx.get("utr")
+                        or tx.get("rrn")
+                        or tx.get("transactionId")
+                        or ""
+                    ).strip()
+                    
                     amount = float(tx.get("amount") or 0.0)
                     status = str(tx.get("status") or "").upper()
                     
                     if utr == target_utr:
                         if status not in ["SUCCESS", "PAID", "COMPLETED", "SETTLED"]:
-                            return False, f"Payment status abhi '{status}' hai. Successful nahi hua."
+                            return False, f"Payment status abhi '{status}' hai. Successful hone par dobara bhejein."
                         if amount < expected_amount:
-                            return False, f"Galat amount! Plan ₹{expected_amount} ka hai lekin payment ₹{amount} ki mili."
+                            return False, f"Galat amount! Expected: ₹{expected_amount}, Mila: ₹{amount}."
                         return True, "Payment Verified Successfully!"
                 
-                return False, "Ye UTR record me nahi mila. Payment hone ke 1-2 minute baad dobara try karein."
+                return False, "Ye UTR record me nahi mila. Agar payment abhi ki hai toh 1-2 minute baad dubara try karein."
+    except asyncio.TimeoutError:
+        return False, "BharatPe server response timeout ho gaya. Dubara try karein."
     except Exception as e:
-        logging.error(f"BharatPe API Error: {e}")
-        return False, "Verification API error. Kripya thoda wait karke try karein."
-        
+        logging.error(f"BharatPe API Exception: {e}")
+        return False, f"Verification API Error: {type(e).__name__} - {str(e)}"
