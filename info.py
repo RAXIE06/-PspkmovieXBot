@@ -280,7 +280,20 @@ LOG_STR += (f"CUSTOM_FILE_CAPTION enabled with value {CUSTOM_FILE_CAPTION}, your
 LOG_STR += ("Long IMDB storyline enabled." if LONG_IMDB_DESCRIPTION else "LONG_IMDB_DESCRIPTION is disabled, Plot will be shorter.\n")
 LOG_STR += ("Spell Check Mode is enabled, bot will be suggesting related movies if movie name is misspelled.\n" if SPELL_CHECK_REPLY else "Spell Check Mode is disabled.\n")
 
-# BharatPe Auto-Verify Settings
-BHARATPE_MERCHANT_ID = environ.get('BHARATPE_MERCHANT_ID', '45188944')
-BHARATPE_TOKEN = environ.get('BHARATPE_TOKEN', '1c040c6d7a0641cd9fad0d3a935025db')
-BHARATPE_UPI_ID = environ.get('BHARATPE_UPI_ID', 'BHARATPE.8000028351@fbpe')
+# ==================== BHARATPE & AUTO PAYMENT CONFIG ==================== #
+BHARATPE_MERCHANT_ID = environ.get('BHARATPE_MERCHANT_ID', '')
+BHARATPE_TOKEN = environ.get('BHARATPE_TOKEN', '')
+UPI_ID = environ.get('UPI_ID', '')
+UPI_NAME = environ.get('UPI_NAME', 'Movie Bot')
+
+# Updated Plans (Amount : Days)
+PREMIUM_PLANS = {
+    10: 7,       # 07 Days - 10 Rs
+    20: 15,      # 15 Days - 20 Rs
+    40: 30,      # 30 Days - 40 Rs
+    55: 45,      # 45 Days - 55 Rs
+    75: 60,      # 60 Days - 75 Rs
+    200: 180,    # 180 Days - 200 Rs
+    270: 240,    # 240 Days - 270 Rs
+    399: 365     # 365 Days - 399 Rs
+}
