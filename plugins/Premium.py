@@ -97,11 +97,11 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
     days = PREMIUM_PLANS.get(base_amount)
     user_id = query.from_user.id
 
-    # Unique random paise generation taaki ek user dusre se alag ho
-    random_paise = random.randint(11, 89) / 100.0
-    exact_amount = round(base_amount + random_paise, 2)
+    # 2 se 15 paise ka random discount (Unique paise matching + Discount feel)
+    discount_paise = random.randint(2, 15) / 100.0
+    exact_amount = round(base_amount - discount_paise, 2)
 
-    # Cancel previous task if user clicks multiple plans
+    # Cancel previous background task if user clicks multiple plans
     if user_id in USER_PLAN_SESSIONS and "task" in USER_PLAN_SESSIONS[user_id]:
         USER_PLAN_SESSIONS[user_id]["task"].cancel()
 
@@ -110,10 +110,12 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
     qr_img = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={urllib.parse.quote(upi_url)}"
 
     caption = (
-        f"<b>⚡ Selected Plan: ₹{base_amount} ({days} Days)</b>\n\n"
-        f"💰 <b>Pay Exact: ₹{exact_amount}</b>\n"
-        f"📌 <i>Amount locked hai QR me, bas scan karke pay karein.</i>\n\n"
-        f"⚡ <b>Pay karte hi 10-20 second me auto premium unlock ho jayega!</b>"
+        f"⚡ <b>Selected Plan: {days} Days</b>\n"
+        f"💵 <b>Original Price:</b> <strike>₹{base_amount}</strike>\n"
+        f"🎉 <b>Instant Discount Applied!</b>\n\n"
+        f"💰 <b>Pay Exact: ₹{exact_amount}</b>\n\n"
+        f"📌 <i>Amount locked hai QR me, bas scan karke pay karein.</i>\n"
+        f"⚡ <b>Pay karte hi 10-20 seconds me auto-premium activate ho jayega!</b>"
     )
 
     btn = InlineKeyboardMarkup([
