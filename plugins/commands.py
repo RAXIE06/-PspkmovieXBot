@@ -14,12 +14,12 @@ from database.refer import referdb
 from database.config_db import mdb
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, CallbackQuery
 from pyrogram import Client, filters, enums, StopPropagation
-from pyrogram.errors import FloodWait, UserNotParticipant , ChannelInvalid, PeerIdInvalid
+from pyrogram.errors import FloodWait, UserNotParticipant, ChannelInvalid, PeerIdInvalid
 from database.ia_filterdb import Media, Media2, get_file_details, unpack_new_file_id, get_bad_files, save_file
 from database.users_chats_db import db
 from info import (
     LOG_CHANNEL, IMDB_TEMPLATE, IS_VERIFY, TUTORIAL, TUTORIAL_2, TUTORIAL_3, EMOJI_MODE, REACTIONS,
-    VERIFY_IMG, TWO_VERIFY_GAP, UPDATE_CHNL_LNK, PICS, PICS_URL, ADMINS, SUBSCRIPTION, OWNER_LNK , 
+    VERIFY_IMG, TWO_VERIFY_GAP, UPDATE_CHNL_LNK, PICS, PICS_URL, ADMINS, SUBSCRIPTION, OWNER_LNK, 
     OWNER_UPI_ID, QR_CODE, AUTH_CHANNELS, AUTH_REQ_CHANNELS, FSUB_PICS, THREE_VERIFY_GAP, CUSTOM_FILE_CAPTION,
     COVERX, PROTECT_CONTENT, DELETE_TIME, PREMIUM_STREAM_MODE, STREAM_MODE, SUPPORT_CHAT_ID, REQST_CHANNEL,
     LOG_API_CHANNEL, SHORTENER_API, SHORTENER_API2, SHORTENER_API3, SHORTENER_WEBSITE, SHORTENER_WEBSITE2, SHORTENER_WEBSITE3,
@@ -71,7 +71,7 @@ async def start(client, message):
             if key == "third_time_verified": 
                 num = 3 
             else: 
-                num =  2 if key == "second_time_verified" else 1 
+                num = 2 if key == "second_time_verified" else 1 
             if key == "third_time_verified": 
                 msg = script.THIRDT_VERIFY_COMPLETE_TEXT
             else: 
@@ -203,16 +203,12 @@ async def start(client, message):
                 referdb.add_refer_points(user_id, 0) 
                 await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))         
                 await client.send_message(chat_id=user_id, text=script.REFER_CONGRATS_ALRT.format(message.from_user.mention))   
-                seconds = 2592000
-                if seconds > 0:
-                    expiry_time = datetime.now() + timedelta(seconds=seconds)
-                    user_data = {"id": user_id, "expiry_time": expiry_time}
-                    await db.update_user(user_data)       
-                    await client.send_message(
-                        chat_id=user_id,
-                        text=f"<b>Hᴇʏ {uss.mention}\n\nYᴏᴜ ɢᴏᴛ 1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 10 ᴜsᴇʀs ❗</b>",
-                        disable_web_page_preview=True             
-                    )
+                await db.add_premium_user(user_id, 30)
+                await client.send_message(
+                    chat_id=user_id,
+                    text=f"<b>Hᴇʏ {uss.mention}\n\nYᴏᴜ ɢᴏᴛ 1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 10 ᴜsᴇʀs ❗</b>",
+                    disable_web_page_preview=True             
+                )
                 for admin in ADMINS:
                     await client.send_message(chat_id=admin, text=f"Sᴜᴄᴄᴇss ғᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ ᴛʜɪs ᴜsᴇʀ:\n\nuser Nᴀᴍᴇ: {uss.mention}\n\nUsᴇʀ ɪᴅ: {uss.id}!")    
             else:
@@ -246,6 +242,7 @@ async def start(client, message):
 
         file_details_task = asyncio.create_task(get_file_details(file_id))
 
+        # Check Premium access for ForceSub bypass
         if not await db.has_premium_access(message.from_user.id): 
             try:
                 btn = []
@@ -280,6 +277,7 @@ async def start(client, message):
 
 
         user_id = m.from_user.id
+        # Check Premium access for Shortener bypass
         if not await db.has_premium_access(user_id):
             try:
                 grp_id = int(grp_id)
@@ -467,6 +465,183 @@ async def start(client, message):
             except Exception as e:
                 logger.exception(f"Error In Deleting Sticker - {e}")
                 pass
+
+# ==================== MANUAL ADMIN PREMIUM COMMANDS ==================== #
+
+@Client.on_message(filters.command("add_premium") & filters.user(ADMINS))
+async def add_premium_cmd(client: Client, message: Message):
+    if len(message.command) < 3:
+        return await message.reply_text(
+            "<b>⚠️ ᴜꜱᴀɢᴇ / उपयोग:</b>\n"
+            "<code>/add_premium [User_ID] [Days]</code>\n\n"
+            "<b>ᴇxᴀᴍᴘʟᴇ:</b> <code>/add_premium 8058925613 30</code>"
+        )
+    
+    try:
+        user_id = int(message.command[1])
+        days = int(message.command[2])
+    except ValueError:
+        return await message.reply_text("<b>❌ User ID aur Days numbers hone chahiye!</b>")
+
+    try:
+        user = await client.get_users(user_id)
+        mention = user.mention
+    except Exception:
+        mention = f"User <code>{user_id}</code>"
+
+    tz = pytz.timezone(TIMEZONE)
+    now = datetime.now(tz)
+    
+    expiry_dt = await db.add_premium_user(user_id, days)
+    exp = expiry_dt.astimezone(tz) if getattr(expiry_dt, 'tzinfo', None) else tz.localize(expiry_dt)
+
+    j_date = now.strftime("%d-%m-%Y")
+    j_time = now.strftime("%I:%M:%S %p")
+    e_date = exp.strftime("%d-%m-%Y")
+    e_time = exp.strftime("%I:%M:%S %p")
+
+    receipt = (
+        f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
+        f"👤 <b>ᴜꜱᴇʀ :</b> {mention}\n"
+        f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
+        f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {days} Days\n"
+        f"📅 <b>ᴊᴏɪɴɪɴɢ ᴅᴀᴛᴇ :</b> <code>{j_date}</code>\n"
+        f"⏰ <b>ᴊᴏɪɴɪɴɢ ᴛɪᴍᴇ :</b> <code>{j_time}</code>\n"
+        f"⏳ <b>ᴇxᴘɪʀʏ ᴅᴀᴛᴇ :</b> <code>{e_date}</code>\n"
+        f"⏰ <b>ᴇxᴘɪʀʏ ᴛɪᴍᴇ :</b> <code>{e_time}</code>\n\n"
+        f"🚀 <i>Enjoy unlimited access without shorteners, force-subs, or ads!</i>"
+    )
+
+    await message.reply_text(receipt)
+
+    try:
+        await client.send_message(user_id, receipt)
+    except Exception:
+        pass
+
+    if LOG_CHANNEL:
+        try:
+            await client.send_message(
+                LOG_CHANNEL,
+                f"👑 <b>Admin Manual Premium Added</b>\n\n"
+                f"Admin: {message.from_user.mention}\n"
+                f"User: {mention} (<code>{user_id}</code>)\n"
+                f"Days: {days}\n"
+                f"Expiry: <code>{e_date} {e_time}</code>"
+            )
+        except Exception:
+            pass
+
+
+@Client.on_message(filters.command("remove_premium") & filters.user(ADMINS))
+async def remove_premium_cmd(client: Client, message: Message):
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/remove_premium [User_ID]</code>"
+        )
+    
+    try:
+        user_id = int(message.command[1])
+    except ValueError:
+        return await message.reply_text("<b>❌ User ID ek number honi chahiye!</b>")
+
+    await db.remove_premium_user(user_id)
+
+    try:
+        user = await client.get_users(user_id)
+        mention = user.mention
+    except Exception:
+        mention = f"<code>{user_id}</code>"
+
+    await message.reply_text(
+        f"✅ <b>ᴘʀᴇᴍɪᴜᴍ ʀᴇᴍᴏᴠᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ!</b>\n\n"
+        f"User {mention} ka premium access remove kar diya gaya hai."
+    )
+
+    try:
+        await client.send_message(
+            user_id,
+            script.PREMIUM_END_TEXT.format(mention)
+        )
+    except Exception:
+        pass
+
+
+@Client.on_message(filters.command("get_premium") & filters.user(ADMINS))
+async def get_premium_cmd(client: Client, message: Message):
+    if len(message.command) < 2:
+        return await message.reply_text("<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/get_premium [User_ID]</code>")
+    
+    try:
+        user_id = int(message.command[1])
+    except ValueError:
+        return await message.reply_text("<b>❌ User ID number honi chahiye!</b>")
+
+    user_data = await db.get_user(user_id)
+    if not user_data or not user_data.get("expiry_time"):
+        return await message.reply_text(f"❌ User <code>{user_id}</code> ke paas koi active Premium nahi hai.")
+
+    expiry = user_data.get("expiry_time")
+    tz = pytz.timezone(TIMEZONE)
+    if isinstance(expiry, str):
+        try:
+            expiry = datetime.strptime(expiry[:10], "%Y-%m-%d")
+        except Exception:
+            pass
+
+    if isinstance(expiry, datetime):
+        exp = expiry.astimezone(tz) if expiry.tzinfo else tz.localize(expiry)
+        exp_str = exp.strftime("%d-%m-%Y %I:%M:%S %p")
+    else:
+        exp_str = str(expiry)
+
+    is_active = await db.has_premium_access(user_id)
+    status_icon = "Active ✅" if is_active else "Expired ❌"
+
+    await message.reply_text(
+        f"👤 <b>User ID:</b> <code>{user_id}</code>\n"
+        f"⚡ <b>Status:</b> {status_icon}\n"
+        f"⏳ <b>Expiry:</b> <code>{exp_str}</code>"
+    )
+
+
+@Client.on_message(filters.command("myplan") & filters.private)
+async def myplan_cmd(client: Client, message: Message):
+    user_id = message.from_user.id
+    user_data = await db.get_user(user_id)
+    has_access = await db.has_premium_access(user_id)
+
+    if not has_access or not user_data or not user_data.get("expiry_time"):
+        btn = InlineKeyboardMarkup([[InlineKeyboardButton("⭐ Buy Premium Plans", callback_data="premium_info")]])
+        return await message.reply_text(
+            f"👋 <b>Hey {message.from_user.mention},</b>\n\n"
+            f"❌ Aapke paas abhi koi active Premium plan nahi hai.\n\n"
+            f"<i>Ad-free experience aur direct files ke liye premium plan lein:</i>",
+            reply_markup=btn
+        )
+
+    expiry = user_data.get("expiry_time")
+    tz = pytz.timezone(TIMEZONE)
+    if isinstance(expiry, str):
+        try:
+            expiry = datetime.strptime(expiry[:10], "%Y-%m-%d")
+        except Exception:
+            pass
+
+    if isinstance(expiry, datetime):
+        exp = expiry.astimezone(tz) if expiry.tzinfo else tz.localize(expiry)
+        exp_str = exp.strftime("%d-%m-%Y at %I:%M:%S %p")
+    else:
+        exp_str = str(expiry)
+
+    await message.reply_text(
+        f"👑 <b><u>ʏᴏᴜʀ ᴀᴄᴛɪᴠᴇ ᴘʀᴇᴍɪᴜᴍ ᴘʟᴀɴ</u></b>\n\n"
+        f"👤 <b>ᴜꜱᴇʀ :</b> {message.from_user.mention}\n"
+        f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
+        f"⚡ <b>ꜱᴛᴀᴛᴜꜱ :</b> Active ✅\n"
+        f"⏳ <b>ᴇxᴘɪʀᴇꜱ ᴏɴ :</b> <code>{exp_str}</code>\n\n"
+        f"<i>Aapka subscription active hai. Enjoy direct downloads! 🚀</i>"
+    )
 
 # ==================== UPGRADE CALLBACK HANDLER ==================== #
 
