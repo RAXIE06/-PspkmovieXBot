@@ -5,6 +5,8 @@ import logging
 import random
 import string
 import asyncio
+import imaplib
+import email
 from typing import Union, List
 
 from pyrogram.types import Message, InlineKeyboardButton
@@ -25,7 +27,7 @@ from imdbkit import IMDBKit  # pyrefly: ignore
 from info import (
     ULTRA_FAST_MODE, MAX_LIST_ELM, BAD_WORDS, LONG_IMDB_DESCRIPTION,
     IS_VERIFY, MAX_B_TN, TUTORIAL, TUTORIAL_2, TUTORIAL_3,
-    LOG_CHANNEL, TMDB_ON_SEARCH, BHARATPE_MERCHANT_ID, BHARATPE_TOKEN
+    LOG_CHANNEL, TMDB_ON_SEARCH, GMAIL_USER, GMAIL_PASS
 )
 from Script import script
 from database.users_chats_db import db
@@ -345,7 +347,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'rating': str(movie.rating),
         "url": movie.url or f"https://www.imdb.com/title/{imdb_id}"
     }
-    
+
 async def old_get_poster(query, bulk=False, id=False, file=None):
     if not id:
         query = (query.strip()).lower()
@@ -1096,94 +1098,64 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
         logging.error(f"Error in get_cap: {e}")
         return ""
 
-# ==================== UPDATED BHARATPE VERIFIER ==================== #
+# ==================== SLICE GMAIL PAYMENT VERIFIER ==================== #
 
-async def verify_bharatpe_transaction(target_utr: str, expected_amount: float):
-    if not BHARATPE_MERCHANT_ID or not BHARATPE_TOKEN:
-        return False, "BharatPe Merchant ID ya Token config vars me set nahi hai."
-
-    merchant_id = str(BHARATPE_MERCHANT_ID).strip()
-    token = str(BHARATPE_TOKEN).strip()
-    target_utr = str(target_utr).strip()
-
-    # BharatPe dates format (YYYY-MM-DD)
-    today = datetime.datetime.now()
-    start_date = (today - datetime.timedelta(days=2)).strftime("%Y-%m-%d")
-    end_date = today.strftime("%Y-%m-%d")
-
-    # BharatPe Web Dashboard ke exact URL variations
-    test_urls = [
-        f"https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?merchantId={merchant_id}&module=PAYMENT_QR&sDate={start_date}&eDate={end_date}",
-        f"https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?merchantId={merchant_id}&module=PAYMENT_QR",
-        f"https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?merchantId={merchant_id}"
-    ]
-
-    headers = {
-        "token": token,
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
-        "Origin": "https://merchant.bharatpe.in",
-        "Referer": "https://merchant.bharatpe.in/"
-    }
+def check_slice_email(expected_amount: float = None, target_utr: str = None):
+    if not GMAIL_USER or not GMAIL_PASS:
+        return False, "Gmail credentials missing (GMAIL_USER / GMAIL_PASS)."
 
     try:
-        timeout = aiohttp.ClientTimeout(total=15)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            for url in test_urls:
-                async with session.get(url, headers=headers) as resp:
-                    status = resp.status
-                    body = await resp.text()
+        mail = imaplib.IMAP4_SSL("imap.gmail.com")
+        mail.login(GMAIL_USER.strip(), GMAIL_PASS.strip().replace(" ", ""))
+        mail.select("INBOX")
 
-                    logging.info(f"[BharatPe Response] URL: {url} | Status: {status} | Body: {body[:250]}")
+        status, messages = mail.search(None, "ALL")
+        if status != "OK" or not messages[0]:
+            mail.logout()
+            return False, "No emails found in inbox."
 
-                    if status == 200:
+        mail_ids = messages[0].split()
+        recent_ids = mail_ids[-20:]
+        recent_ids.reverse()
+
+        for mid in recent_ids:
+            res, data = mail.fetch(mid, "(RFC822)")
+            if res != "OK":
+                continue
+
+            msg = email.message_from_bytes(data[0][1])
+            body = ""
+            if msg.is_multipart():
+                for part in msg.walk():
+                    if part.get_content_type() in ["text/plain", "text/html"]:
                         try:
-                            data = json.loads(body)
+                            body += part.get_payload(decode=True).decode(errors="ignore")
                         except Exception:
-                            continue
+                            pass
+            else:
+                try:
+                    body = msg.get_payload(decode=True).decode(errors="ignore")
+                except Exception:
+                    pass
 
-                        # Extract transaction list from response
-                        tx_list = (
-                            data.get("data", {}).get("transactions", [])
-                            or data.get("data", {}).get("transactionList", [])
-                            or data.get("transactions", [])
-                            or data.get("data", [])
-                            or []
-                        )
+            # 1. Fallback / Manual UTR Check
+            if target_utr and str(target_utr).strip() in body:
+                mail.logout()
+                return True, "Payment Verified by UTR!"
 
-                        for tx in tx_list:
-                            if not isinstance(tx, dict):
-                                continue
+            # 2. Automated Unique Amount (Paise) Check
+            if expected_amount:
+                amt_str = f"{expected_amount:.2f}"
+                if amt_str in body:
+                    mail.logout()
+                    return True, "Payment Verified by Exact Amount!"
 
-                            utr = str(
-                                tx.get("bankReferenceNo")
-                                or tx.get("utr")
-                                or tx.get("rrn")
-                                or tx.get("transactionId")
-                                or ""
-                            ).strip()
-
-                            amount = float(tx.get("amount") or tx.get("txAmount") or 0.0)
-                            status_val = str(tx.get("status") or tx.get("txStatus") or "").upper()
-
-                            if utr == target_utr:
-                                if status_val not in ["SUCCESS", "PAID", "COMPLETED", "SETTLED"]:
-                                    return False, f"Payment status abhi '{status_val}' hai. Kripya thoda intezar karein."
-                                if amount < expected_amount:
-                                    return False, f"Galat amount! Expected: ₹{expected_amount}, mila: ₹{amount}."
-                                return True, "Payment Verified Successfully!"
-
-                        return False, "Ye UTR record me nahi mila. Agar payment abhi ki hai toh 1 minute baad dobara bhejein."
-
-                    elif status in [401, 403]:
-                        logging.error(f"[BharatPe Auth Failed] HTTP {status}: {body}")
-                        return False, "BharatPe Token invalid ya expire ho gaya hai. Website se naya token update karein."
-                    else:
-                        logging.warning(f"[BharatPe Try Next] HTTP {status}: {body}")
-                        continue
-
-        return False, "BharatPe server se transactions fetch nahi ho pa rahe hain. Logs check karein."
+        mail.logout()
+        return False, "Transaction email me nahi mila."
 
     except Exception as e:
-        logging.error(f"BharatPe Exception: {e}")
-        return False, f"API Exception: {type(e).__name__} - {str(e)}"
+        logger.error(f"Gmail IMAP Exception: {e}")
+        return False, f"Email Read Error: {e}"
+
+async def verify_payment_from_email(expected_amount: float = None, target_utr: str = None):
+    return await asyncio.to_thread(check_slice_email, expected_amount, target_utr)
