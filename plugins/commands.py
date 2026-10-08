@@ -12,7 +12,7 @@ from Script import script
 from datetime import datetime, timedelta
 from database.refer import referdb
 from database.config_db import mdb
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, CallbackQuery
 from pyrogram import Client, filters, enums, StopPropagation
 from pyrogram.errors import FloodWait, UserNotParticipant , ChannelInvalid, PeerIdInvalid
 from database.ia_filterdb import Media, Media2, get_file_details, unpack_new_file_id, get_bad_files, save_file
@@ -23,9 +23,9 @@ from info import (
     OWNER_UPI_ID, QR_CODE, AUTH_CHANNELS, AUTH_REQ_CHANNELS, FSUB_PICS, THREE_VERIFY_GAP, CUSTOM_FILE_CAPTION,
     COVERX, PROTECT_CONTENT, DELETE_TIME, PREMIUM_STREAM_MODE, STREAM_MODE, SUPPORT_CHAT_ID, REQST_CHANNEL,
     LOG_API_CHANNEL, SHORTENER_API, SHORTENER_API2, SHORTENER_API3, SHORTENER_WEBSITE, SHORTENER_WEBSITE2, SHORTENER_WEBSITE3,
-    
 )
 from utils import get_settings, save_group_settings, is_subscribed, is_req_subscribed, get_size, get_shortlink, is_check_admin, temp, get_readable_time, get_time, generate_settings_text, log_error, clean_filename, get_random_mix_id
+from plugins.Premium import get_plan_keyboard
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ async def start(client, message):
                 num =  2 if key == "second_time_verified" else 1 
             if key == "third_time_verified": 
                 msg = script.THIRDT_VERIFY_COMPLETE_TEXT
-            else:
+            else: 
                 msg = script.SECOND_VERIFY_COMPLETE_TEXT if key == "second_time_verified" else script.VERIFY_COMPLETE_TEXT
             if message.command[1].startswith('sendall'):
                 verifiedfiles = f"https://telegram.me/{temp.U_NAME}?start=allfiles_{grp_id}_{file_id}"
@@ -131,9 +131,9 @@ async def start(client, message):
             elif curr_time < 17:
                 gtxt = "ɢᴏᴏᴅ ᴀғᴛᴇʀɴᴏᴏɴ 🌓" 
             elif curr_time < 21:
-                gtxt = "ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ 🌘"
+                gtxt = "ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ 🌘" 
             else:
-                gtxt = "ɢᴏᴏᴅ ɴɪɢʜᴛ 🌑"
+                gtxt = "ɢᴏᴏᴅ ɴɪɢʜᴛ 🌑" 
             try:      
                 PIC = f"{random.choice(PICS_URL)}?r={get_random_mix_id()}"
             except Exception:
@@ -164,10 +164,10 @@ async def start(client, message):
             elif curr_time < 17:
                 gtxt = "ɢᴏᴏᴅ ᴀғᴛᴇʀɴᴏᴏɴ 🌓" 
             elif curr_time < 21:
-                gtxt = "ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ 🌘"
+                gtxt = "ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ 🌘" 
             else:
-                gtxt = "ɢᴏᴏᴅ ɴɪɢʜᴛ 🌑"
-            try:
+                gtxt = "ɢᴏᴏᴅ ɴɪɢʜᴛ 🌑" 
+            try:      
                 PIC = f"{random.choice(PICS_URL)}?r={get_random_mix_id()}"
             except Exception:
                 PIC = random.choice(PICS)
@@ -196,45 +196,36 @@ async def start(client, message):
             try:
                 uss = await client.get_users(user_id)
             except Exception:
-                return 	    
+                return      
             referdb.add_user(message.from_user.id)
             fromuse = referdb.get_refer_points(user_id) + 10
             if fromuse == 100:
                 referdb.add_refer_points(user_id, 0) 
-                await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))		    
-                await client.send_message(chat_id=user_id, text=script.REFER_CONGRATS_ALRT.format(message.from_user.mention)) 	
+                await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))         
+                await client.send_message(chat_id=user_id, text=script.REFER_CONGRATS_ALRT.format(message.from_user.mention))   
                 seconds = 2592000
                 if seconds > 0:
                     expiry_time = datetime.now() + timedelta(seconds=seconds)
-                    user_data = {"id": user_id, "expiry_time": expiry_time}  # Using "id" instead of "user_id"  
-                    await db.update_user(user_data)  # Use the update_user method to update or insert user data		    
+                    user_data = {"id": user_id, "expiry_time": expiry_time}
+                    await db.update_user(user_data)       
                     await client.send_message(
                         chat_id=user_id,
                         text=f"<b>Hᴇʏ {uss.mention}\n\nYᴏᴜ ɢᴏᴛ 1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 10 ᴜsᴇʀs ❗</b>",
-                        disable_web_page_preview=True              
+                        disable_web_page_preview=True             
                     )
                 for admin in ADMINS:
-                    await client.send_message(chat_id=admin, text=f"Sᴜᴄᴄᴇss ғᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ ᴛʜɪs ᴜsᴇʀ:\n\nuser Nᴀᴍᴇ: {uss.mention}\n\nUsᴇʀ ɪᴅ: {uss.id}!")	
+                    await client.send_message(chat_id=admin, text=f"Sᴜᴄᴄᴇss ғᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ ᴛʜɪs ᴜsᴇʀ:\n\nuser Nᴀᴍᴇ: {uss.mention}\n\nUsᴇʀ ɪᴅ: {uss.id}!")    
             else:
                 referdb.add_refer_points(user_id, fromuse)
                 await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))
                 await client.send_message(user_id, script.REFER_CONGRATS_ALRT.format(message.from_user.mention))
             return
 
+        # Direct link to Auto-Verify Plan Keyboard
         if len(message.command) == 2 and message.command[1] in ["premium"]:
-            buttons = [[
-                        InlineKeyboardButton('📲 ꜱᴇɴᴅ ᴘᴀʏᴍᴇɴᴛ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ', url=OWNER_LNK)
-                      ],[
-                        InlineKeyboardButton('UPI ID Copy Karein ??', copy_text=OWNER_UPI_ID, style=enums.ButtonStyle.PRIMARY)
-                      ],[
-                        InlineKeyboardButton('❌ ᴄʟᴏꜱᴇ ❌', callback_data='close_data', style=enums.ButtonStyle.DANGER)
-                      ]]
-            reply_markup = InlineKeyboardMarkup(buttons)
-            await message.reply_photo(
-                photo=(SUBSCRIPTION),
-                caption=script.PREPLANS_TXT.format(message.from_user.mention, OWNER_UPI_ID, QR_CODE),
-                reply_markup=reply_markup,
-                parse_mode=enums.ParseMode.HTML
+            await message.reply_text(
+                text=script.PREMIUM_TEXT,
+                reply_markup=get_plan_keyboard()
             )
             return  
 
@@ -253,7 +244,6 @@ async def start(client, message):
             grp_id = 0
             file_id = data
 
-        # Fetch file details concurrently with user checks
         file_details_task = asyncio.create_task(get_file_details(file_id))
 
         if not await db.has_premium_access(message.from_user.id): 
@@ -334,7 +324,6 @@ async def start(client, message):
                 logger.error("Error In Verification: %s", e)
                 pass
 
-        # Now, await the file details task
         files_ = await file_details_task
 
         if data.startswith("allfiles"):
@@ -478,6 +467,16 @@ async def start(client, message):
             except Exception as e:
                 logger.exception(f"Error In Deleting Sticker - {e}")
                 pass
+
+# ==================== UPGRADE CALLBACK HANDLER ==================== #
+
+@Client.on_callback_query(filters.regex(r"^(premium_info|upgrade|buy_premium)$"))
+async def upgrade_callback_sync(client: Client, query: CallbackQuery):
+    await query.message.reply_text(
+        text=script.PREMIUM_TEXT,
+        reply_markup=get_plan_keyboard()
+    )
+    await query.answer()
 
 async def stream_buttons(user_id: int, file_id: str):
     if STREAM_MODE and not PREMIUM_STREAM_MODE:
@@ -719,8 +718,6 @@ async def save_template(client, message):
         f"✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴜᴘᴅᴀᴛᴇᴅ ᴛᴇᴍᴘʟᴀᴛᴇ ꜰᴏʀ <code>{title}</code> ᴛᴏ:\n\n{template}"
     )
 
-
-# Must add REQST_CHANNEL and SUPPORT_CHAT_ID to use this feature
 @Client.on_message((filters.command("request") | filters.regex(r"(?i)#request")) & filters.group)
 async def requests(bot, message):
     if message.chat.id != SUPPORT_CHAT_ID:
@@ -845,7 +842,6 @@ async def deletemultiplefiles(bot, message):
         reply_markup=InlineKeyboardMarkup(btn),
         parse_mode=enums.ParseMode.HTML
     )
-
 
 @Client.on_callback_query(filters.regex("topsearch"))
 async def topsearch_callback(client, callback_query):
@@ -1043,7 +1039,6 @@ async def save_caption(client, message):
     await message.reply_text(f"ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄʜᴀɴɢᴇᴅ ᴄᴀᴘᴛɪᴏɴ ꜰᴏʀ {title}\n\nᴄᴀᴘᴛɪᴏɴ - {caption}", disable_web_page_preview=True)
     await client.send_message(LOG_API_CHANNEL, f"#Set_Caption\n\nɢʀᴏᴜᴘ ɴᴀᴍᴇ : {title}\n\nɢʀᴏᴜᴘ ɪᴅ: {grp_id}\nɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n\nᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.username}")
 
-
 @Client.on_message(filters.command(["set_tutorial", "set_tutorial_2", "set_tutorial_3"]))
 async def set_tutorial(client, message: Message):
     grp_id = message.chat.id
@@ -1083,7 +1078,6 @@ async def set_tutorial(client, message: Message):
         f"ɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n"
         f"ᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.mention()}"
     )
-
 
 async def handle_shortner_command(c, m, shortner_key, api_key, log_prefix, fallback_url, fallback_api):
     grp_id = m.chat.id
@@ -1176,7 +1170,6 @@ async def set_log(client, message):
     log_message = f"#New_Log_Channel_Set\n\nɴᴀᴍᴇ - {user_info}\n\nɪᴅ - `{user_id}`\n\nʟᴏɢ ᴄʜᴀɴɴᴇʟ ɪᴅ - `{log}`\nɢʀᴏᴜᴘ ʟɪɴᴋ - `{grp_link}`\n\nɢʀᴏᴜᴘ ɪᴅ : `{grp_id}`"
     await client.send_message(LOG_API_CHANNEL, log_message, disable_web_page_preview=True) 
 
-
 @Client.on_message(filters.command('set_time'))
 async def set_time(client, message):
     chat_type = message.chat.type
@@ -1194,6 +1187,7 @@ async def set_time(client, message):
     await save_group_settings(grp_id, 'verify_time', time)
     await message.reply_text(f"<b>✅️ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ꜱᴇᴛ 2ɴᴅ ᴠᴇʀɪꜰʏ ᴛɪᴍᴇ ꜰᴏʀ {title}\n\nᴛɪᴍᴇ - <code>{time}</code></b>")
     await client.send_message(LOG_API_CHANNEL, f"#Set_2nd_Verify_Time\n\nɢʀᴏᴜᴘ ɴᴀᴍᴇ : {title}\n\nɢʀᴏᴜᴘ ɪᴅ : {grp_id}\n\nɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n\nᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.username}")
+
 @Client.on_message(filters.command('set_time_2'))
 async def set_time_2(client, message):
     chat_type = message.chat.type
@@ -1211,7 +1205,6 @@ async def set_time_2(client, message):
     await save_group_settings(grp_id, 'third_verify_time', time)
     await message.reply_text(f"<b>✅️ ꜱᴜᴄᴄESꜱꜰᴜʟʟʏ ꜱᴇᴛ 3ʀᴅ ᴠᴇʀɪꜰʏ ᴛɪᴍᴇ ꜰᴏʀ {title}\n\nᴛɪᴍᴇ - <code>{time}</code></b>")
     await client.send_message(LOG_API_CHANNEL, f"#Set_3rd_Verify_Time\n\nɢʀᴏᴜᴘ ɴᴀᴍᴇ : {title}\n\nɢʀᴏᴜᴘ ɪᴅ : {grp_id}\n\nɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n\nᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.username}")
-
 
 @Client.on_message(filters.command('details'))
 async def all_settings(client, message):
@@ -1381,7 +1374,6 @@ async def reset_trial(client, message):
         await message.reply_text(message_text)
     except Exception as e:
         await message.reply_text(f"An error occurred: {e}")
-
 
 @Client.on_message(filters.command('remove_fsub'))
 async def remove_fsub(client, message):
