@@ -224,11 +224,11 @@ class Database:
         return (await self.db.command("dbstats"))['dataSize']
 
     async def get_user(self, user_id):
-        user_data = await self.users.find_one({"id": user_id})
+        user_data = await self.users.find_one({"id": int(user_id)})
         return user_data
 
     async def update_user(self, user_data):
-        await self.users.update_one({"id": user_data["id"]}, {"$set": user_data}, upsert=True)
+        await self.users.update_one({"id": int(user_data["id"])}, {"$set": user_data}, upsert=True)
   
     async def get_notcopy_user(self, user_id):
         user_id = int(user_id)
@@ -337,16 +337,78 @@ class Database:
         return await self.verify_id.update_one(myquery, newvalues)
         
     async def has_premium_access(self, user_id):
-        user_data = await self.get_user(user_id)
-        if user_data:
-            expiry_time = user_data.get("expiry_time")
-            if expiry_time is None:
-                return False
-            elif isinstance(expiry_time, datetime.datetime) and datetime.datetime.now() <= expiry_time:
+        user_data = await self.get_user(int(user_id))
+        if not user_data:
+            return False
+            
+        expiry = user_data.get("expiry_time")
+        if not expiry:
+            return False
+
+        # Support String formats
+        if isinstance(expiry, str):
+            try:
+                expiry = datetime.datetime.strptime(expiry[:10], "%Y-%m-%d")
+            except Exception:
+                try:
+                    expiry = datetime.datetime.fromisoformat(expiry)
+                except Exception:
+                    return False
+
+        # Support Plain Date formats
+        if isinstance(expiry, datetime.date) and not isinstance(expiry, datetime.datetime):
+            expiry = datetime.datetime.combine(expiry, datetime.time.max)
+
+        # Verification with current timestamp
+        if isinstance(expiry, datetime.datetime):
+            if expiry.tzinfo:
+                expiry = expiry.replace(tzinfo=None)
+            if datetime.datetime.now() <= expiry:
                 return True
             else:
-                await self.users.update_one({"id": user_id}, {"$set": {"expiry_time": None}})
+                await self.users.update_one({"id": int(user_id)}, {"$set": {"expiry_time": None}})
+                return False
+
         return False
+
+    async def add_premium_user(self, user_id: int, days: int):
+        now = datetime.datetime.now()
+        user = await self.get_user(int(user_id))
+        if user and user.get("expiry_time"):
+            exp = user["expiry_time"]
+            if isinstance(exp, str):
+                try: 
+                    exp = datetime.datetime.strptime(exp[:10], "%Y-%m-%d")
+                except Exception: 
+                    exp = now
+            if isinstance(exp, datetime.date) and not isinstance(exp, datetime.datetime):
+                exp = datetime.datetime.combine(exp, datetime.time.max)
+            if isinstance(exp, datetime.datetime):
+                if exp.tzinfo:
+                    exp = exp.replace(tzinfo=None)
+                if exp > now:
+                    new_expiry = exp + datetime.timedelta(days=days)
+                else:
+                    new_expiry = now + datetime.timedelta(days=days)
+            else:
+                new_expiry = now + datetime.timedelta(days=days)
+        else:
+            new_expiry = now + datetime.timedelta(days=days)
+            
+        await self.users.update_one(
+            {"id": int(user_id)},
+            {"$set": {"expiry_time": new_expiry, "has_free_trial": True}},
+            upsert=True
+        )
+        return new_expiry
+
+    async def remove_premium_access(self, user_id):
+        return await self.users.update_one(
+            {"id": int(user_id)}, {"$set": {"expiry_time": None}}
+        )
+
+    async def remove_premium_user(self, user_id):
+        return await self.remove_premium_access(user_id)
 
     async def update_one(self, filter_query, update_data):
         try:
@@ -363,11 +425,6 @@ class Database:
                 expired_users.append(user)
         return expired_users
 
-    async def remove_premium_access(self, user_id):
-        return await self.update_one(
-            {"id": user_id}, {"$set": {"expiry_time": None}}
-        )
-
     async def check_trial_status(self, user_id):
         user_data = await self.get_user(user_id)
         if user_data:
@@ -377,8 +434,8 @@ class Database:
     async def give_free_trial(self, user_id):
         seconds = 5 * 60         
         expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
-        user_data = {"id": user_id, "expiry_time": expiry_time, "has_free_trial": True}
-        await self.users.update_one({"id": user_id}, {"$set": user_data}, upsert=True)
+        user_data = {"id": int(user_id), "expiry_time": expiry_time, "has_free_trial": True}
+        await self.users.update_one({"id": int(user_id)}, {"$set": user_data}, upsert=True)
 
     async def reset_free_trial(self, user_id=None):
         if user_id is None:
@@ -387,7 +444,7 @@ class Database:
             return result.modified_count
         else:
             update_data = {"$set": {"has_free_trial": False}}
-            result = await self.users.update_one({"id": user_id}, update_data)
+            result = await self.users.update_one({"id": int(user_id)}, update_data)
             return 1 if result.modified_count > 0 else 0  
         
     async def all_premium_users(self):
@@ -455,28 +512,14 @@ else:
 # ==================== PAYMENT & PREMIUM HELPERS ==================== #
 
 async def add_premium_user(user_id: int, days: int):
-    now = datetime.datetime.now()
-    user = await db.users.find_one({"id": int(user_id)})
-    if user and user.get("expiry_time") and isinstance(user["expiry_time"], datetime.datetime) and user["expiry_time"] > now:
-        new_expiry = user["expiry_time"] + datetime.timedelta(days=days)
-    else:
-        new_expiry = now + datetime.timedelta(days=days)
-        
-    await db.users.update_one(
-        {"id": int(user_id)},
-        {"$set": {"expiry_time": new_expiry, "has_free_trial": True}},
-        upsert=True
-    )
-    return new_expiry
+    return await db.add_premium_user(user_id, days)
 
 async def check_premium_status(user_id: int):
-    user = await db.users.find_one({"id": int(user_id)})
+    user = await db.get_user(int(user_id))
     if not user:
         return False, None
-    expiry = user.get("expiry_time")
-    if expiry and isinstance(expiry, datetime.datetime) and expiry > datetime.datetime.now():
-        return True, expiry
-    return False, None
+    has_access = await db.has_premium_access(user_id)
+    return has_access, user.get("expiry_time")
 
 async def is_utr_used(utr: str) -> bool:
     found = await db.payments.find_one({"utr": str(utr).strip()})
