@@ -1651,3 +1651,162 @@ async def clean_groups_handler(client, message):
         except Exception as e:
             logger.error("Error in clean_groups loop: %s", e)
     await msg.edit(f'**Clean Groups Complete**\n\nTotal Processed: {processed}\nDeleted: {deleted_count}')
+
+# ==================== MANUAL ADMIN PREMIUM COMMANDS ==================== #
+
+def is_admin_check(user_id: int):
+    return user_id in ADMINS or str(user_id) in [str(x) for x in ADMINS]
+
+@Client.on_message(filters.command("add_premium"))
+async def add_premium_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
+    if len(message.command) < 3:
+        return await message.reply_text(
+            "<b>⚠️ ᴜꜱᴀɢᴇ / उपयोग:</b>\n"
+            "<code>/add_premium [User_ID] [Days]</code>\n\n"
+            "<b>ᴇxᴀᴍᴘʟᴇ:</b> <code>/add_premium 8058925613 30</code>"
+        )
+    
+    try:
+        user_id = int(message.command[1])
+        days = int(message.command[2])
+    except ValueError:
+        return await message.reply_text("<b>❌ User ID aur Days numbers hone chahiye!</b>")
+
+    try:
+        user = await client.get_users(user_id)
+        mention = user.mention
+    except Exception:
+        mention = f"User <code>{user_id}</code>"
+
+    tz = pytz.timezone(TIMEZONE)
+    now = datetime.now(tz)
+    
+    expiry_dt = await db.add_premium_user(user_id, days)
+    exp = expiry_dt.astimezone(tz) if getattr(expiry_dt, 'tzinfo', None) else tz.localize(expiry_dt)
+
+    j_date = now.strftime("%d-%m-%Y")
+    j_time = now.strftime("%I:%M:%S %p")
+    e_date = exp.strftime("%d-%m-%Y")
+    e_time = exp.strftime("%I:%M:%S %p")
+
+    receipt = (
+        f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
+        f"👤 <b>ᴜꜱᴇʀ :</b> {mention}\n"
+        f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
+        f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {days} Days\n"
+        f"📅 <b>ᴊᴏɪɴɪɴɢ ᴅᴀᴛᴇ :</b> <code>{j_date}</code>\n"
+        f"⏰ <b>ᴊᴏɪɴɪɴɢ ᴛɪᴍᴇ :</b> <code>{j_time}</code>\n"
+        f"⏳ <b>ᴇxᴘɪʀʏ ᴅᴀᴛᴇ :</b> <code>{e_date}</code>\n"
+        f"⏰ <b>ᴇxᴘɪʀʏ ᴛɪᴍᴇ :</b> <code>{e_time}</code>\n\n"
+        f"🚀 <i>Enjoy unlimited access without shorteners, force-subs, or ads!</i>"
+    )
+
+    await message.reply_text(receipt)
+
+    try:
+        await client.send_message(user_id, receipt)
+    except Exception:
+        pass
+
+    if LOG_CHANNEL:
+        try:
+            await client.send_message(
+                LOG_CHANNEL,
+                f"👑 <b>Admin Manual Premium Added</b>\n\n"
+                f"Admin: {message.from_user.mention}\n"
+                f"User: {mention} (<code>{user_id}</code>)\n"
+                f"Days: {days}\n"
+                f"Expiry: <code>{e_date} {e_time}</code>"
+            )
+        except Exception:
+            pass
+
+
+@Client.on_message(filters.command("remove_premium"))
+async def remove_premium_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/remove_premium [User_ID]</code>"
+        )
+    
+    try:
+        user_id = int(message.command[1])
+    except ValueError:
+        return await message.reply_text("<b>❌ User ID ek number honi chahiye!</b>")
+
+    await db.remove_premium_user(user_id)
+
+    try:
+        user = await client.get_users(user_id)
+        mention = user.mention
+    except Exception:
+        mention = f"<code>{user_id}</code>"
+
+    await message.reply_text(
+        f"✅ <b>ᴘʀᴇᴍɪᴜᴍ ʀᴇᴍᴏᴠᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ!</b>\n\n"
+        f"User {mention} ka premium access remove kar diya gaya hai."
+    )
+
+    try:
+        await client.send_message(
+            user_id,
+            script.PREMIUM_END_TEXT.format(mention)
+        )
+    except Exception:
+        pass
+
+
+@Client.on_message(filters.command("get_premium"))
+async def get_premium_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
+    if len(message.command) < 2:
+        return await message.reply_text("<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/get_premium [User_ID]</code>")
+    
+    try:
+        user_id = int(message.command[1])
+    except ValueError:
+        return await message.reply_text("<b>❌ User ID number honi chahiye!</b>")
+
+    user_data = await db.get_user(user_id)
+    if not user_data or not user_data.get("expiry_time"):
+        return await message.reply_text(f"❌ User <code>{user_id}</code> ke paas koi active Premium nahi hai.")
+
+    expiry = user_data.get("expiry_time")
+    tz = pytz.timezone(TIMEZONE)
+    if isinstance(expiry, str):
+        try:
+            expiry = datetime.strptime(expiry[:10], "%Y-%m-%d")
+        except Exception:
+            pass
+
+    if isinstance(expiry, datetime):
+        exp = expiry.astimezone(tz) if expiry.tzinfo else tz.localize(expiry)
+        exp_str = exp.strftime("%d-%m-%Y %I:%M:%S %p")
+    else:
+        exp_str = str(expiry)
+
+    is_active = await db.has_premium_access(user_id)
+    status_icon = "Active ✅" if is_active else "Expired ❌"
+
+    await message.reply_text(
+        f"👤 <b>User ID:</b> <code>{user_id}</code>\n"
+        f"⚡ <b>Status:</b> {status_icon}\n"
+        f"⏳ <b>Expiry:</b> <code>{exp_str}</code>"
+    )
+
+
+@Client.on_message(filters.command("premium_users"))
+async def premium_users_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
+    count = await db.all_premium_users()
+    await message.reply_text(f"👑 <b>ᴛᴏᴛᴀʟ ᴀᴄᴛɪᴠᴇ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ:</b> <code>{count}</code>")
