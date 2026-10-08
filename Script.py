@@ -130,7 +130,7 @@ Nᴀᴍᴇ - {}
     PRE_STREAM_ALERT = """⚠️ ᴘʀᴇᴍɪᴜᴍ ᴄᴏɴᴛᴇɴᴛ ❗  
 🔓 ᴜɴʟᴏᴄᴋ ɪᴛ ʙʏ ᴜᴘɢʀᴀᴅɪɴɢ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ"""
 
-    CUDNT_FND = SPELLING_ERROR_TXT = """<b>‼️️ ꜱᴘᴇʟʟɪɴɢ ᴍɪꜱᴛᴀᴋᴇ ʙʀᴏ!</b>  
+    CUDNT_FND = SPELLING_ERROR_TXT = """<b>‼ ꜱᴘᴇʟʟɪɴɢ ᴍɪꜱᴛᴀᴋᴇ ʙʀᴏ!</b>  
 <b>😊 ɴᴏ ᴡᴏʀʀɪᴇꜱ — ᴄʜᴏᴏꜱᴇ ᴛʜᴇ ᴄᴏʀʀᴇᴄᴛ ᴏɴᴇ ʙᴇʟᴏᴡ 👇</b>
 
 <blockquote>👇 नीचे दिए गए विकल्पों में से movie के नाम की सही spelling चुनें</blockquote>"""
@@ -214,7 +214,7 @@ Nᴀᴍᴇ - {}
 
 <blockquote>👉 ᴊᴏɪɴ ᴀʟʟ ᴛʜᴇ ʙᴇʟᴏᴡ ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ.</blockquote></b>"""
 
-    BOT_ADD_TXT = """<b>ᴛʜᴀɴᴋʏᴏᴜ ғᴏʀ ᴀᴅᴅɪɴɢ ᴍᴇ ɪɴ {} ❣️️
+    BOT_ADD_TXT = """<b>ᴛʜᴀɴᴋʏᴏᴜ ғᴏʀ ᴀᴅᴅɪɴɢ ᴍᴇ ɪɴ {} ❣
 
 <blockquote>ɪғ ʏᴏᴜ ʜᴀᴠᴇ ᴀɴʏ ǫᴜᴇsᴛɪᴏɴs & ᴅᴏᴜʙᴛs ᴀʙᴏᴜᴛ ᴜsɪɴɢ ᴍᴇ ᴄᴏɴᴛᴀᴄᴛ sᴜᴘᴘᴏʀᴛ.</blockquote></b>"""
 
@@ -317,16 +317,24 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
 
 <i>Niche diye gaye buttons se plan select karein aur automatic verification se instant premium activate karein!</i>"""
 
-    HOW_TO_BUY_TXT = """<b>📖 <u>Premium Kaise Buy Karein (Guide):</u></b>
+    HOW_TO_BUY_TXT = """<b>📖 <u>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ? / प्रीमियम कैसे खरीदें?</u></b>
 
-1️⃣ <b>Plan Select Karein:</b> Apne pasand ka plan button click karein.
-2️⃣ <b>QR Code Scan Karein:</b> Bot exact amount ka QR code bhejega.
-3️⃣ <b>Payment Karein:</b> Kisi bhi UPI App (PhonePe, GPay, Paytm) se QR code scan karke exact payment karein.
-4️⃣ <b>UTR Copy Karein:</b> Payment hone ke baad 12-digit ka <b>UTR / Ref No.</b> copy karein.
-5️⃣ <b>UTR Enter Karein:</b> 12-digit number chat me send karein.
-6️⃣ <b>Instant Activation:</b> Bot payment auto verify karke turant aapka Premium activate kar dega!
+1️⃣ <b>Select Plan:</b>
+Choose your preferred plan from the buttons.
+<i>(Niche diye gaye buttons me se apna pasandida plan select karein.)</i>
 
-⚠️ <i>Dhyan rahe: Ek UTR sirf ek baar use ho sakta hai.</i>"""
+2️⃣ <b>Scan & Pay Exact:</b>
+Scan the QR code using any UPI app (GPay, PhonePe, Paytm) and pay the exact locked amount.
+<i>(Kisi bhi UPI app se QR scan karein aur lock kiya gaya exact amount pay karein.)</i>
+
+3️⃣ <b>Instant Auto-Activation:</b>
+Premium activates automatically in <b>10-20 seconds</b> after payment!
+<i>(Payment hote hi 10-20 seconds me automatically premium chalu ho jayega!)</i>
+
+⚠️ <b>Important Note / ध्यान दें:</b>
+• Amount change mat karein.
+• QR code <b>5 minute</b> me expire ho jata hai.
+• Agar kisi technical delay ki wajah se auto-active na ho, tabhi apna 12-digit <b>UTR / Transaction Ref No</b> chat me message karein."""
 
     PREMIUM_STAR_TEXT = """<b><blockquote>ᴘᴀʏᴍᴇɴᴛ ᴍᴇᴛʜᴏᴅ: ᴛᴇʟᴇɢʀᴀᴍ ꜱᴛᴀʀꜱ ⭐</blockquote>
 
@@ -347,16 +355,19 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
 
 ‼️ ᴀꜰᴛᴇʀ ꜱᴇɴᴅɪɴɢ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ᴘʟᴇᴀꜱᴇ ɢɪᴠᴇ ᴜꜱ ꜱᴏᴍᴇᴛɪᴍᴇ ᴛᴏ ᴀᴅᴅ ʏᴏᴜ ɪɴ ᴘʀᴇᴍɪᴜᴍ ʟɪꜱᴛ.</b>"""
 
-    PREMIUM_END_TEXT = """<b>ʜᴇʏ {},</b>
+    PREMIUM_END_TEXT = """<b>⚠️ <u>ʏᴏᴜʀ ᴘʀᴇᴍɪᴜᴍ ᴘʟᴀɴ ʜᴀꜱ ᴇxᴘɪʀᴇᴅ !</u></b>
 
-<b>ʏᴏᴜʀ ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇss ʜᴀs ʙᴇᴇɴ ʀᴇᴍᴏᴠᴇᴅ.</b>  
-<b>ᴛʜᴀɴᴋ ʏᴏᴜ ꜰᴏʀ ᴜsɪɴɢ ᴏᴜʀ sᴇʀᴠɪᴄᴇ 😊</b>  
-<b>ᴄʟɪᴄᴋ ᴏɴ /plan ᴛᴏ ᴄʜᴇᴄᴋ ᴏᴜʀ ᴏᴛʜᴇʀ ᴘʟᴀɴs.</b>
+<b>ʜᴇʏ {},</b>
 
-<blockquote>ᴀᴀᴘᴋᴀ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇss</b> ʜᴀᴛᴀ ᴅɪʏᴀ ɢᴀʏᴀ ʜᴀɪ।  
-ʜᴀᴍᴀʀɪ sᴇᴠᴀ ᴋᴀ ᴜᴘʏᴏɢ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ ᴅʜᴀɴʏᴀᴠᴀᴀᴅ 🥳  
-ʜᴀᴍᴀʀɪ ᴀɴʏᴀ ʏᴏᴊɴᴀᴏɴ ᴋɪ ᴊᴀᴀɴᴄʜ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ <b>/plan</b> ᴘᴀʀ ᴋʟɪᴄᴋ ᴋᴀʀᴇɪɴ।</blockquote>
-"""
+Your Premium Subscription has ended today.
+<i>(Aapka Premium Subscription expire ho chuka hai.)</i>
+
+⚡ <b>Renew now to enjoy:</b>
+• Direct files (No shorteners)
+• Force-Sub bypassed
+• Ad-free streaming & fast downloads
+
+👉 <b>Renew your plan here:</b> /plan"""
 
     BPREMIUM_TXT = """<blockquote>🎁 <b>ᴘʀᴇᴍɪᴜᴍ ꜰᴇᴀᴛᴜʀᴇꜱ</b> :</blockquote>
 
@@ -364,10 +375,10 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
 ○ ɴᴏ ɴᴇᴇᴅ ᴛᴏ ᴏᴘᴇɴ ʟɪɴᴋꜱ
 ○ ᴅɪʀᴇᴄᴛ ꜰɪʟᴇꜱ   
 ○ ᴀᴅ-ꜰʀᴇᴇ ᴇxᴘᴇʀɪᴇɴᴄᴇ 
-○ ʜɪɢʜ-ꜱᴘᴇᴇᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ                         
-○ ᴍᴜʟᴛɪ-ᴘʟᴀʏᴇʀ ꜱᴛʀᴇᴀᴍɪɴɢ ʟɪɴᴋꜱ                           
-○ ᴜɴʟɪᴍɪᴛᴇᴅ ᴍᴏᴠɪᴇꜱ & ꜱᴇʀɪᴇꜱ                                                                                
-○ ꜰᴜʟʟ ᴀᴅᴍɪɴ ꜱᴜᴘᴘᴏʀᴛ                              
+○ ʜɪɢʜ-ꜱᴘᴇᴇᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ                          
+○ ᴍᴜʟᴛɪ-ᴘʟᴀʏᴇʀ ꜱᴛʀᴇᴀᴍɪɴɢ ʟɪɴᴋꜱ                            
+○ ᴜɴʟɪᴍɪᴛᴇᴅ ᴍᴏᴠɪᴇꜱ & ꜱᴇʀɪᴇꜱ                                                                                                        
+○ ꜰᴜʟʟ ᴀᴅᴍɪɴ ꜱᴜᴘᴘᴏʀᴛ                               
 ○ ʀᴇǫᴜᴇꜱᴛ ᴡɪʟʟ ʙᴇ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ɪɴ 1ʜ [ ɪꜰ ᴀᴠᴀɪʟᴀʙʟᴇ ]
 
 • ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ ᴘʀᴇᴍɪᴜᴍ ʙʏ ʀᴇꜰᴇʀɪɴɢ ʏᴏᴜʀ ꜰʀɪᴇɴᴅꜱ ᴏʀ ʏᴏᴜ ᴄᴀɴ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ ꜱᴇʀᴠɪᴄᴇ 
