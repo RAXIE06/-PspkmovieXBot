@@ -348,12 +348,16 @@ class Database:
         # Support String formats
         if isinstance(expiry, str):
             try:
-                expiry = datetime.datetime.strptime(expiry[:10], "%Y-%m-%d")
+                expiry = datetime.datetime.fromisoformat(expiry)
             except Exception:
                 try:
-                    expiry = datetime.datetime.fromisoformat(expiry)
+                    expiry = datetime.datetime.strptime(expiry, "%Y-%m-%d %H:%M:%S")
                 except Exception:
-                    return False
+                    try:
+                        expiry = datetime.datetime.strptime(expiry[:10], "%Y-%m-%d")
+                        expiry = datetime.datetime.combine(expiry.date(), datetime.time.max)
+                    except Exception:
+                        return False
 
         # Support Plain Date formats
         if isinstance(expiry, datetime.date) and not isinstance(expiry, datetime.datetime):
@@ -374,18 +378,29 @@ class Database:
     async def add_premium_user(self, user_id: int, days: int):
         now = datetime.datetime.now()
         user = await self.get_user(int(user_id))
+        
+        # Check existing expiry for stacking
         if user and user.get("expiry_time"):
             exp = user["expiry_time"]
             if isinstance(exp, str):
-                try: 
-                    exp = datetime.datetime.strptime(exp[:10], "%Y-%m-%d")
-                except Exception: 
-                    exp = now
-            if isinstance(exp, datetime.date) and not isinstance(exp, datetime.datetime):
+                try:
+                    exp = datetime.datetime.fromisoformat(exp)
+                except Exception:
+                    try:
+                        exp = datetime.datetime.strptime(exp, "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        try:
+                            exp = datetime.datetime.strptime(exp[:10], "%Y-%m-%d")
+                            exp = datetime.datetime.combine(exp.date(), datetime.time.max)
+                        except Exception:
+                            exp = now
+            elif isinstance(exp, datetime.date) and not isinstance(exp, datetime.datetime):
                 exp = datetime.datetime.combine(exp, datetime.time.max)
+
             if isinstance(exp, datetime.datetime):
                 if exp.tzinfo:
                     exp = exp.replace(tzinfo=None)
+                # Agar plan active hai toh usme din add karo, warna abhi se shuru karo
                 if exp > now:
                     new_expiry = exp + datetime.timedelta(days=days)
                 else:
