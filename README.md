@@ -1,4 +1,4 @@
-<h1 align="center">⚡ The Flash Auto Filter Bot ⚡</h1>
+<h1 align="center">⚡ The Puchku Auto Filter Bot ⚡</h1>
 
 <p align="center">
   <b>Speed Beyond Limits — High-Speed Telegram Auto-Filter, File Indexing, 3-Step Verification, Premium Engine & Instant Media Streaming Bot.</b>
