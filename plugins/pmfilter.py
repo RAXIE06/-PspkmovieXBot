@@ -884,7 +884,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         await Media.collection.drop()
         if MULTIPLE_DB:    
             await Media2.collection.drop()
-        await query.answer("Eᴠᴇʀʏᴛʜɪɴɢ's Gᴏɴᴇ")
+        await query.answer("EᴠᴇʀYTʜɪɴɢ's Gᴏɴᴇ")
         await query.message.edit('ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ ᴀʟʟ ɪɴᴅᴇxᴇᴅ ꜰɪʟᴇꜱ ✅')
 
     elif query.data.startswith("checksub"):
@@ -1050,13 +1050,13 @@ async def cb_handler(client: Client, query: CallbackQuery):
             "Not_Available_In_The_Hindi": {
                 "btn_text": "⚜️ Not Available In The Hindi ⚜️", "alert_key": "hnalert", "answer": "Sᴇᴛ ᴛᴏ Nᴏᴛ Aᴠᴀɪʟᴀʙʟᴇ Iɴ Hɪɴᴅɪ !",
                 "pm": "<b>Hᴇʏ {mention}\n\nYᴏᴜʀ Rᴇǫᴜᴇsᴛ <code>{content}</code> ɪs Nᴏᴛ Aᴠᴀɪʟᴀʙʟᴇ ɪɴ Hɪɴᴅɪ ʀɪɢʜᴛ ɴᴏᴡ. Sᴏ ᴏᴜʀ ᴍᴏᴅᴇʀᴀᴛᴏʀs ᴄᴀɴ'ᴛ ᴜᴘʟᴏᴀᴅ ɪᴛ\n\n#Hɪɴᴅɪ_ɴᴏᴛ_ᴀᴠᴀɪʟᴀʙʟᴇ ❌</b>",
-                "sup": "<u>Hᴇʏ {mention}</u>\n\n<b><code>{content}</code> ɪs Nᴏᴛ Aᴠᴀɪʟᴀʙʟᴇ ɪɴ Hɪɴᴅɪ ʀɪɢʜᴛ ɴᴏᴡ. Sᴏ ᴏᴜʀ ᴍᴏᴅᴇʀᴀᴛᴏʀs ᴄᴀɴ'ᴛ ᴜᴘʟᴏᴀᴅ ɪᴛ\n\n#Hɪɴᴅɪ_ɴᴏᴛ_ᴀᴠᴀɪʟᴀʙʟᴇ ❌\n\n<small>Bʟᴏᴄᴋᴇᴅ? Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ʀᴇᴄᴇɪᴠᴇ ᴍᴇꜱꜱᴀɢᴇꜱ.</small></b>",
+                "sup": "<u>Hᴇʏ {mention}</u>\n\n<b><code>{content}</code> ɪs Nᴏᴛ Aᴠᴀɪʟᴀʙʟᴇ ɪɴ Hɪɴᴅɪ ʀɪɢʜᴛ ɴᴏᴡ. Sᴏ ᴏᴜʀ ᴍᴏᴅᴇʀᴀᴛᴏʀs ᴄᴀɴ'ᴛ ᴜᴘʟᴏᴀᴅ ɪᴛ\n\n#Hɪɴᴅɪ_ɴᴏᴛ_ᴀᴠᴀɪʟᴀʙʟᴇ ❌\n\n<small>Bʟᴏᴄᴋᴇᴅ? Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ʀᴇᴄᴇɪᴠᴇ ᴍᴇꜱꜱᴀɢES.</small></b>",
                 "search": False
             },
             "uploaded": {
                 "btn_text": "🟢 ᴜᴘʟᴏᴀᴅᴇᴅ 🟢", "alert_key": "upalert", "answer": "Sᴇᴛ ᴛᴏ Uᴘʟᴏᴀᴅᴇᴅ !",
                 "pm": "<b>Hᴇʏ {mention},\n\n<u>{content}</u> Yᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴜᴘʟᴏᴀᴅᴇᴅ ʙʏ ᴏᴜʀ ᴍᴏᴅᴇʀᴀᴛᴏʀs.\nKɪɴᴅʟʏ sᴇᴀʀᴄʜ ɪɴ ᴏᴜʀ Gʀᴏᴜᴘ.</b>\n\n#Uᴘʟᴏᴀᴅᴇᴅ✅",
-                "sup": "<u>{content}</u>\n\n<b>Hᴇʏ {mention}, Yᴏᴜʀ ʀᴇǫᴜESꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴜᴘʟᴏᴀᴅᴇᴅ ʙʏ ᴏᴜʀ ᴍᴏᴅᴇʀᴀᴛᴏʀs.Kɪɴᴅʟʏ sᴇᴀʀᴄʜ ɪɴ ᴏᴜʀ Gʀᴏᴜᴘ.</b>\n\n#Uᴘʟᴏᴀᴅᴇᴅ✅\n\n<small>Bʟᴏᴄᴋᴇᴅ? Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ʀᴇᴄᴇɪᴠᴇ ᴍᴇꜱꜱᴀɢᴇꜱ.</small>",
+                "sup": "<u>{content}</u>\n\n<b>Hᴇʏ {mention}, Yᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴜᴘʟᴏᴀᴅᴇᴅ ʙʏ ᴏᴜʀ ᴍᴏᴅᴇʀᴀᴛᴏʀs.Kɪɴᴅʟʏ sᴇᴀʀᴄʜ ɪɴ ᴏᴜʀ Gʀᴏᴜᴘ.</b>\n\n#Uᴘʟᴏᴀᴅᴇᴅ✅\n\n<small>Bʟᴏᴄᴋᴇᴅ? Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ʀᴇᴄᴇɪᴠᴇ ᴍᴇꜱꜱᴀɢᴇꜱ.</small>",
                 "search": True
             },
             "already_available": {
@@ -1519,7 +1519,7 @@ async def auto_filter(client, msg, spoll=False):
         else:
             message = msg.message.reply_to_message
             search, files, offset, total_results = spoll
-            m = await message.reply_text(f'🔎 sᴇᴀʀᴄʜɪɴɢ {search}', reply_to_message_id=message.id)
+            m = await message.reply_text(f'🔎 sᴇᴀʀᴄʜɪɴɢ {search}')
             settings = await get_settings(message.chat.id)
             await msg.message.delete()
         key = f"{message.chat.id}-{message.id}"
@@ -1784,7 +1784,12 @@ async def advantage_spell_chok(client, message):
 
     buttons.append([InlineKeyboardButton(
         text="🚫 ᴄʟᴏsᴇ 🚫", callback_data='close_data', style=enums.ButtonStyle.DANGER)])
-    d = await message.reply_text(text=script.CUDNT_FND.format(message.from_user.mention), reply_markup=InlineKeyboardMarkup(buttons), reply_to_message_id=message.id)
+    
+    # FIXED: reply_to_message_id hata diya gaya hai
+    d = await message.reply_text(
+        text=script.CUDNT_FND.format(message.from_user.mention), 
+        reply_markup=InlineKeyboardMarkup(buttons)
+    )
     await asyncio.sleep(60)
     await d.delete()
     try:
