@@ -61,7 +61,7 @@ async def start(client, message):
             _, userid, verify_id, file_id = m.command[1].split("_", 3)
             user_id = int(userid)
             grp_id = temp.VERIFICATIONS.get(user_id, 0)
-            settings = await get_settings(grp_id)         
+            settings = await get_settings(grp_id)          
             verify_id_info = await db.get_verify_id_info(user_id, verify_id)
             if not verify_id_info or verify_id_info["verified"]:
                 return await message.reply(script.LINK_EXPIRED_TXT)  
@@ -416,8 +416,10 @@ async def start(client, message):
                     f_caption,
                     reply_markup=InlineKeyboardMarkup(btn)
                 )
-                k = await msg.reply(script.DEL_MSG.format(get_time(DELETE_TIME)),
-                    quote=True, parse_mode=enums.ParseMode.HTML
+                k = await client.send_message(
+                    chat_id=message.from_user.id,
+                    text=script.DEL_MSG.format(get_time(DELETE_TIME)),
+                    parse_mode=enums.ParseMode.HTML
                 )
                 if sticker:
                     await sticker.delete()
@@ -456,8 +458,10 @@ async def start(client, message):
             reply_markup=InlineKeyboardMarkup(btn)
         )
         
-        k = await msg.reply(script.DEL_MSG.format(get_time(DELETE_TIME)),
-            quote=True, parse_mode=enums.ParseMode.HTML
+        k = await client.send_message(
+            chat_id=message.from_user.id,
+            text=script.DEL_MSG.format(get_time(DELETE_TIME)),
+            parse_mode=enums.ParseMode.HTML
         )
         if sticker:
             await sticker.delete()
@@ -746,9 +750,9 @@ async def log_file(bot, message):
 async def save_file_handler(bot, message):
     reply = message.reply_to_message
     if reply and reply.media:
-        msg = await message.reply("Pʀᴏᴄᴇssɪɴɢ...⏳", quote=True)
+        msg = await message.reply_text("Pʀᴏᴄᴇssɪɴɢ...⏳")
     else:
-        await message.reply('Rᴇᴘʟʏ ᴛᴏ ғɪʟᴇ ᴡɪᴛʜ /save ᴡʜɪᴄʜ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ sᴀᴠᴇ', quote=True)
+        await message.reply_text('Rᴇᴘʟʏ ᴛᴏ ғɪʟᴇ ᴡɪᴛʜ /save ᴡʜɪᴄʜ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ sᴀᴠᴇ')
         return
 
     try:
@@ -781,9 +785,9 @@ async def save_file_handler(bot, message):
 async def delete(bot, message):
     reply = message.reply_to_message
     if reply and reply.media:
-        msg = await message.reply("Pʀᴏᴄᴇssɪɴɢ...⏳", quote=True)
+        msg = await message.reply_text("Pʀᴏᴄᴇssɪɴɢ...⏳")
     else:
-        await message.reply('Rᴇᴘʟʏ ᴛᴏ ғɪʟᴇ ᴡɪᴛʜ /delete ᴡʜɪᴄʜ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴇʟᴇᴛᴇ', quote=True)
+        await message.reply_text('Rᴇᴘʟʏ ᴛᴏ ғɪʟᴇ ᴡɪᴛʜ /delete ᴡʜɪᴄʜ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴇʟᴇᴛᴇ')
         return
 
     for file_type in ("document", "video", "audio"):
@@ -859,15 +863,14 @@ async def delete_all_index(bot, message):
                     )
                 ],
             ]
-        ),
-        quote=True,
+        )
     )
 
 @Client.on_message(filters.command('settings'))
 async def settings(client, message):
     user_id = message.from_user.id if message.from_user else None
     if not user_id:
-        return await message.reply("ʏᴏᴜ'ʀᴇ ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ.")
+        return await message.reply_text("ʏᴏᴜ'ʀᴇ ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ.")
     chat_type = message.chat.type
     if chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         grp_id = message.chat.id
@@ -927,10 +930,10 @@ async def connect_group(client, message):
 
 @Client.on_message(filters.command('set_template'))
 async def save_template(client, message):
-    sts = await message.reply("ᴄʜᴇᴄᴋɪɴɢ ᴛᴇᴍᴘʟᴀᴛᴇ...")
+    sts = await message.reply_text("ᴄʜᴇᴄᴋɪɴɢ ᴛᴇᴍᴘʟᴀᴛᴇ...")
     user_id = message.from_user.id if message.from_user else None
     if not user_id:
-        return await message.reply("ʏᴏᴜ'ʀᴇ ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ.")
+        return await message.reply_text("ʏᴏᴜ'ʀᴇ ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ.")
 
     if message.chat.type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         return await sts.edit("⚠️ ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ɪɴ ᴀ ɢʀᴏᴜᴘ ᴄʜᴀᴛ.")
@@ -1315,10 +1318,10 @@ async def handle_shortner_command(c, m, shortner_key, api_key, log_prefix, fallb
     if not await is_check_admin(c, grp_id, m.from_user.id):
         return await m.reply_text(script.NT_ADMIN_ALRT_TXT)
     if len(m.command) != 3:
-        return await m.reply(
+        return await m.reply_text(
             f"<b>ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ʟɪᴋᴇ -\n\n`/{m.command[0]} your-shortener-domain.com your_api_key_here`</b>"
         )
-    sts = await m.reply("<b>♻️ ᴄʜᴇᴄᴋɪɴɢ...</b>")
+    sts = await m.reply_text("<b>♻️ ᴄʜᴇᴄᴋɪɴɢ...</b>")
     await asyncio.sleep(1.2)
     await sts.delete()
     if m.chat.type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
@@ -1372,9 +1375,9 @@ async def set_log(client, message):
     if not await is_check_admin(client, grp_id, message.from_user.id):
         return await message.reply_text(script.NT_ADMIN_ALRT_TXT)
     if len(message.text.split()) == 1:
-        await message.reply("<b>ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ʟɪᴋᴇ ᴛʜɪꜱ - \n\n`/set_log_channel -100******`</b>")
+        await message.reply_text("<b>ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ʟɪᴋᴇ ᴛʜɪꜱ - \n\n`/set_log_channel -100******`</b>")
         return
-    sts = await message.reply("<b>♻️ ᴄʜᴇᴄᴋɪɴɢ...</b>")
+    sts = await message.reply_text("<b>♻️ ᴄʜᴇᴄᴋɪɴɢ...</b>")
     await asyncio.sleep(1.2)
     await sts.delete()
     chat_type = message.chat.type
@@ -1526,7 +1529,7 @@ async def set_fsub(client, message):
     try:
         userid = message.from_user.id if message.from_user else None
         if not userid:
-            return await message.reply("<b>You are Anonymous admin you can't use this command !</b>")
+            return await message.reply_text("<b>You are Anonymous admin you can't use this command !</b>")
         if message.chat.type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
             return await message.reply_text("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴄᴀɴ ᴏɴʟʏ ʙᴇ ᴜsᴇᴅ ɪɴ ɢʀᴏᴜᴘs")
         grp_id = message.chat.id
@@ -1592,7 +1595,7 @@ async def reset_all_settings(client, message):
 async def reset_trial(client, message):
     user_id = message.from_user.id
     if user_id not in ADMINS:
-        await message.reply("ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴀɴʏ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ.")
+        await message.reply_text("ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴀɴʏ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ.")
         return
     try:
         if len(message.command) > 1:
@@ -1611,7 +1614,7 @@ async def remove_fsub(client, message):
     try:
         user = message.from_user
         if not user:
-            return await message.reply("ʏᴏᴜ ᴀʀᴇ ᴀɴᴏɴʏᴍᴏᴜs ᴀᴅᴍɪɴ — ʏᴏᴜ ᴄᴀɴ'ᴛ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!")
+            return await message.reply_text("ʏᴏᴜ ᴀʀᴇ ᴀɴᴏɴʏᴍᴏᴜs ᴀᴅᴍɪɴ — ʏᴏᴜ ᴄᴀɴ'ᴛ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ!")
         if message.chat.type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
             return await message.reply_text("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴄᴀɴ ᴏɴʟʏ ʙᴇ ᴜsᴇᴅ ɪɴ ɢʀᴏᴜᴘs.")
         grp_id = message.chat.id
@@ -1661,7 +1664,7 @@ async def remove_fsub(client, message):
         )
         await client.send_message(
             LOG_API_CHANNEL,
-            f"#ғsᴜʙ_ᴄʜᴀɴɴᴇʟ_ʀᴇᴍᴏᴠᴇᴅ\n\n👤 {user.mention} ʀᴇᴍᴏᴠᴇᴅ ғsᴜʙ ᴄʜᴀɴɴᴇʟ(s) ғʀᴏᴍ {title}:\n" +
+            f"#ғsᴜʙ_ᴄʜᴀɴɴᴇʟ_ʀᴇᴍᴏᴠᴇᴅ\n\n👤 {user.mention} ʀᴇᴍᴏᴠᴇᴅ ғsᴜʙ ᴄʜᴀɴɴᴇʟ(s) ғᴏʀ {title}:\n" +
             "\n".join(r_t)
         )
     except Exception as e:
@@ -1670,7 +1673,7 @@ async def remove_fsub(client, message):
 
 @Client.on_message(filters.command('clean_groups') & filters.user(ADMINS))
 async def clean_groups_handler(client, message):
-    msg = await message.reply('Cleaning groups... This may take a while.', quote=True)
+    msg = await message.reply_text('Cleaning groups... This may take a while.')
     deleted_count = 0
     total_groups = await db.total_chat_count()
     processed = 0
