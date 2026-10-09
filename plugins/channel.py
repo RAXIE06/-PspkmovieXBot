@@ -565,6 +565,81 @@ def generate_movie_message(movie_doc, base_name):
         ott=ott_str,
         quality=quality_str,
         language=language_str,
+
+        from pyrogram import Client, filters, enums
+from pyrogram.types import ChatMemberUpdated, InlineKeyboardButton, InlineKeyboardMarkup
+from info import AUTH_CHANNELS, AUTH_REQ_CHANNELS
+
+# Cache invite links so bot doesn't spam Telegram API
+LEAVE_ALERT_INVITE_LINKS = {}
+
+@Client.on_chat_member_updated()
+async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatMemberUpdated):
+    # Check if the update is from our auth channels
+    auth_list = set(AUTH_CHANNELS + AUTH_REQ_CHANNELS)
+    chat = chat_member_updated.chat
+    
+    if chat.id not in auth_list:
+        return
+
+    old_member = chat_member_updated.old_chat_member
+    new_member = chat_member_updated.new_chat_member
+
+    # Detect if user left or was removed
+    was_member = old_member and old_member.status in [
+        enums.ChatMemberStatus.MEMBER,
+        enums.ChatMemberStatus.ADMINISTRATOR,
+        enums.ChatMemberStatus.OWNER
+    ]
+    
+    is_left = new_member and new_member.status in [
+        enums.ChatMemberStatus.LEFT,
+        enums.ChatMemberStatus.BANNED
+    ]
+
+    if was_member and is_left:
+        user = chat_member_updated.from_user
+        if not user or user.is_bot:
+            return
+
+        # Get or create channel invite link
+        invite_link = LEAVE_ALERT_INVITE_LINKS.get(chat.id)
+        if not invite_link:
+            try:
+                if chat.username:
+                    invite_link = f"https://t.me/{chat.username}"
+                else:
+                    link = await client.create_chat_invite_link(chat.id)
+                    invite_link = link.invite_link
+                LEAVE_ALERT_INVITE_LINKS[chat.id] = invite_link
+            except Exception:
+                invite_link = None
+
+        buttons = []
+        if invite_link:
+            buttons.append([InlineKeyboardButton("📢 ʀᴇ-ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=invite_link)])
+
+        alert_text = (
+            f"⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n\n"
+            f"ʜᴇʏ <b>{user.mention}</b>, ʏᴏᴜ ʜᴀᴠᴇ ʟᴇꜰᴛ <b>{chat.title}</b>.\n\n"
+            f"📌 <i>Please note: To continue using the bot and downloading files without interruptions, staying joined in our channel is mandatory.</i>\n\n"
+            f"<blockquote>⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n"
+            f"ʜᴇʏ <b>{user.mention}</b>,\n"
+            f"ᴀᴀᴘɴᴇ <b>{chat.title}</b> ʟᴇᴀᴠᴇ ᴋᴀʀ ᴅɪʏᴀ ʜᴀɪ.\n"
+            f"📌 <b>Note:</b> Bot se movies aur files download karne ke liye channel me rehna zaroori hai. Dobara join karne ke liye neeche diye button par tap karein.</blockquote>"
+        )
+
+        try:
+            await client.send_message(
+                chat_id=user.id,
+                text=alert_text,
+                reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
+                parse_mode=enums.ParseMode.HTML,
+                disable_web_page_preview=True
+            )
+        except Exception:
+            # User might have blocked the bot or not started PM yet
+            pass
         episodes=epi_block,
         rating=rating_text,
         search_link=temp.B_LINK
