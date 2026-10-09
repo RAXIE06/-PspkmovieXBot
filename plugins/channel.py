@@ -6,10 +6,10 @@ from collections import defaultdict
 from plugins.Dreamxfutures.Imdbposter import get_movie_detailsx, fetch_image, get_movie_details
 from database.users_chats_db import db
 from pyrogram import Client, filters, enums
-from info import CHANNELS, MOVIE_UPDATE_CHANNEL, LINK_PREVIEW, ABOVE_PREVIEW, BAD_WORDS, LANDSCAPE_POSTER, TMDB_POSTER
+from info import CHANNELS, MOVIE_UPDATE_CHANNEL, LINK_PREVIEW, ABOVE_PREVIEW, BAD_WORDS, LANDSCAPE_POSTER, TMDB_POSTER, AUTH_CHANNELS, AUTH_REQ_CHANNELS
 from Script import script
 from database.ia_filterdb import save_file
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberUpdated
 from utils import temp
 from pymongo.errors import PyMongoError, DuplicateKeyError
 from pyrogram.errors import MessageIdInvalid, MessageNotModified, FloodWait
@@ -33,7 +33,7 @@ IGNORE_WORDS = {
     "japanese", "nf", "netflix", "sonyliv", "sony", "sliv", "amzn", "prime", 
     "primevideo", "hotstar", "zee5", "jio", "jhs", "aha", "hbo", "paramount", 
     "apple", "hoichoi", "sunnxt", "viki"
-}|BAD_WORDS
+} | BAD_WORDS
 
 # Constants
 CAPTION_LANGUAGES = {
@@ -78,11 +78,10 @@ QUALITY_PATTERN = re.compile(
     re.IGNORECASE
 )
 YEAR_PATTERN = re.compile(r"(?<![A-Za-z0-9])(?:19|20)\d{2}(?![A-Za-z0-9])")
-RANGE_REGEX = re.compile(r'\bS(\d{1,2})[^\w\n\r]*E(?:p(?:isode)?)?0*(\d{1,2})\s*(?:to|-)\s*(?:E(?:p(?:isode)?)?)?0*(\d{1,2})',re.IGNORECASE)
+RANGE_REGEX = re.compile(r'\bS(\d{1,2})[^\w\n\r]*E(?:p(?:isode)?)?0*(\d{1,2})\s*(?:to|-)\s*(?:E(?:p(?:isode)?)?)?0*(\d{1,2})', re.IGNORECASE)
 SINGLE_REGEX = re.compile(r'\bS(\d{1,2})[^\w\n\r]*E(?:p(?:isode)?)?0*(\d{1,3})', re.IGNORECASE)
 NAMED_REGEX = re.compile(r'Season\s*0*(\d{1,2})[\s\-,:]*Ep(?:isode)?\s*0*(\d{1,3})', re.IGNORECASE)
-EP_ONLY_RANGE = re.compile(r'\b(?:EP|Episode)0*(\d{1,3})\s*-\s*0*(\d{1,3})\b',re.IGNORECASE)
-
+EP_ONLY_RANGE = re.compile(r'\b(?:EP|Episode)0*(\d{1,3})\s*-\s*0*(\d{1,3})\b', re.IGNORECASE)
 
 MEDIA_FILTER = filters.document | filters.video | filters.audio
 locks = defaultdict(asyncio.Lock)
@@ -132,6 +131,7 @@ def schedule_update(bot, base_name, delay=5):
         delay,
         lambda: asyncio.create_task(update_movie_message(bot, base_name))
     )
+
 def extract_media_info(filename: str, caption: str):
     filename = normalize(clean_mentions_links(filename).title())
     caption_clean = clean_mentions_links(caption).lower() if caption else ""
@@ -185,32 +185,23 @@ def extract_media_info(filename: str, caption: str):
         if year:
             base_name += f" {year}"
 
-    # -------------------------
-    # NEW: strip season/episode tokens from final base_name
-    # -------------------------
     def _strip_season_episode_tokens(name: str) -> str:
-        """
-        Remove common season/episode markers from a title while preserving a trailing year.
-        Examples removed: S01, s01e02, 1x02, season 1, ep 02, episode 2, part 1
-        """
         if not name:
             return name
 
-        # Preserve trailing year (e.g. "Title (2020)" or "Title 2020")
         year_match = re.search(r'\(?\b(19|20)\d{2}\b\)?\s*$', name)
         year_part = ""
         if year_match:
             year_part = year_match.group(0)
             name = name[:year_match.start()].strip()
 
-        # Common patterns to remove
         patterns = [
-            r'\bS\d{1,2}E\d{1,2}\b',     # S01E02
-            r'\bS\d{1,2}\b',             # S01
-            r'\bE\d{1,2}\b',             # E02
-            r'\b\d{1,2}x\d{1,2}\b',      # 1x02
-            r'\bSeason\s*\d{1,2}\b',     # Season 1
-            r'\bEp(?:isode)?\.?\s*\d{1,3}\b',  # Ep02, Episode 2
+            r'\bS\d{1,2}E\d{1,2}\b',
+            r'\bS\d{1,2}\b',
+            r'\bE\d{1,2}\b',
+            r'\b\d{1,2}x\d{1,2}\b',
+            r'\bSeason\s*\d{1,2}\b',
+            r'\bEp(?:isode)?\.?\s*\d{1,3}\b',
             r'\bEpisode\s*\d{1,3}\b',
             r'\bPart\s*\d{1,2}\b'
         ]
@@ -218,11 +209,9 @@ def extract_media_info(filename: str, caption: str):
         for p in patterns:
             name = re.sub(p, ' ', name, flags=re.IGNORECASE)
 
-        # Remove leftover separators and extra whitespace
-        name = re.sub(r'[_\.\-]+', ' ', name)     # underscores/dots/hyphens
+        name = re.sub(r'[_\.\-]+', ' ', name)
         name = re.sub(r'\s+', ' ', name).strip()
 
-        # Reattach year in canonical form if we removed it earlier
         if year_part:
             y = re.search(r'(19|20)\d{2}', year_part)
             if y:
@@ -231,7 +220,6 @@ def extract_media_info(filename: str, caption: str):
         return name.strip()
 
     base_name = _strip_season_episode_tokens(base_name)
-    # If stripping accidentally removed everything, fall back to a safer value
     if not base_name:
         base_name = normalize(remove_ignored_words(normalize(processed_raw))) or filename
 
@@ -246,7 +234,6 @@ def extract_media_info(filename: str, caption: str):
         "ott_platform": ott_platform,
         "language": language
     }
-
 
 @Client.on_message(filters.chat(CHANNELS) & MEDIA_FILTER)
 async def media_handler(bot, message):
@@ -289,7 +276,7 @@ async def _process_with_lock(bot, filename, caption, media_info, base_name, proc
         db.movie_updates = db.db.movie_updates
 
     movie_doc = await db.movie_updates.find_one({"_id": base_name})
-    error_tmdb=False
+    error_tmdb = False
     file_data = {
         "filename": filename,
         "processed": processed,
@@ -306,7 +293,7 @@ async def _process_with_lock(bot, filename, caption, media_info, base_name, proc
         if TMDB_POSTER:
             details = await get_movie_detailsx(base_name)
             if not details or details.get("error") or (not details.get("poster_url") and not details.get("backdrop_url")):
-                error_tmdb=True
+                error_tmdb = True
                 logger.info("TMDB error switching to IMDB")
                 details = await get_movie_details(base_name) or {}
         else:
@@ -324,7 +311,7 @@ async def _process_with_lock(bot, filename, caption, media_info, base_name, proc
             "poster_url": details.get("backdrop_url") if LANDSCAPE_POSTER and TMDB_POSTER and details.get("backdrop_url") and not error_tmdb else details.get("poster_url"),
             "genres": genres,
             "rating": details.get("rating", "N/A"),
-            "imdb_url": details.get("url", "")if not TMDB_POSTER or error_tmdb else details.get("tmdb_url"),
+            "imdb_url": details.get("url", "") if not TMDB_POSTER or error_tmdb else details.get("tmdb_url"),
             "year": details.get("year") or media_info["year"],
             "tag": media_info["tag"],
             "ott_platform": media_info["ott_platform"],
@@ -373,7 +360,7 @@ async def send_movie_update(bot, base_name):
                     url=f"https://t.me/{temp.U_NAME}?start=getfile-{base_name.replace(' ', '-')}"
                 )
             ]])
-            size=(2560, 1440) if LANDSCAPE_POSTER and TMDB_POSTER and movie_doc.get("is_backdrop") and not movie_doc.get("error_tmdb") else (853, 1280)
+            size = (2560, 1440) if LANDSCAPE_POSTER and TMDB_POSTER and movie_doc.get("is_backdrop") and not movie_doc.get("error_tmdb") else (853, 1280)
             if movie_doc.get("poster_url") and not LINK_PREVIEW:
                 resized_poster = await fetch_image(movie_doc["poster_url"], size)
                 if resized_poster:
@@ -544,7 +531,7 @@ def generate_movie_message(movie_doc, base_name):
     quality_str = ", ".join(sorted(all_qualities)) if all_qualities else "N/A"
     language_str = ", ".join(sorted(all_languages)) if all_languages else "N/A"
     ott_str = ", ".join(sorted(all_ott_platforms)) if all_ott_platforms else "N/A"
-    rating=movie_doc.get("rating", "-")
+    rating = movie_doc.get("rating", "-")
     try:
         r = float(rating)
     except (TypeError, ValueError):
@@ -565,17 +552,16 @@ def generate_movie_message(movie_doc, base_name):
         ott=ott_str,
         quality=quality_str,
         language=language_str,
-
-        from pyrogram import Client, filters, enums
-from pyrogram.types import ChatMemberUpdated, InlineKeyboardButton, InlineKeyboardMarkup
-from info import AUTH_CHANNELS, AUTH_REQ_CHANNELS
+        episodes=epi_block,
+        rating=rating_text,
+        search_link=temp.B_LINK
+    )
 
 # Cache invite links so bot doesn't spam Telegram API
 LEAVE_ALERT_INVITE_LINKS = {}
 
 @Client.on_chat_member_updated()
 async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatMemberUpdated):
-    # Check if the update is from our auth channels
     auth_list = set(AUTH_CHANNELS + AUTH_REQ_CHANNELS)
     chat = chat_member_updated.chat
     
@@ -585,7 +571,6 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
     old_member = chat_member_updated.old_chat_member
     new_member = chat_member_updated.new_chat_member
 
-    # Detect if user left or was removed
     was_member = old_member and old_member.status in [
         enums.ChatMemberStatus.MEMBER,
         enums.ChatMemberStatus.ADMINISTRATOR,
@@ -602,7 +587,6 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
         if not user or user.is_bot:
             return
 
-        # Get or create channel invite link
         invite_link = LEAVE_ALERT_INVITE_LINKS.get(chat.id)
         if not invite_link:
             try:
@@ -638,9 +622,4 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
                 disable_web_page_preview=True
             )
         except Exception:
-            # User might have blocked the bot or not started PM yet
             pass
-        episodes=epi_block,
-        rating=rating_text,
-        search_link=temp.B_LINK
-)
