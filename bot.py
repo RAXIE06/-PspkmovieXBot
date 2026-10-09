@@ -25,7 +25,7 @@ Image.MAX_IMAGE_PIXELS = 500_000_000
 
 logging.config.fileConfig('logging.conf')
 logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
+logging.getLogger("pyrogram").setLevel(logging.WARNING)
 logging.getLogger("imdbpy").setLevel(logging.ERROR)
 logging.getLogger("aiohttp").setLevel(logging.ERROR)
 logging.getLogger("aiohttp.web").setLevel(logging.ERROR)
@@ -47,7 +47,7 @@ def get_plugins_names(plugins_dir="plugins"):
     ]
 
 async def dreamxbotz_start():
-    logging.info('\n\nInitializing DreamxBotz')
+    logging.info('\n\nInitializing The Flash Bot (PspkmovieXBot)')
     await dreamxbotz.start()
     bot_info = await dreamxbotz.get_me()
     dreamxbotz.username = bot_info.username
@@ -86,7 +86,11 @@ async def dreamxbotz_start():
     today = date.today()
     now = datetime.now(tz)
     current_time = now.strftime("%H:%M:%S %p")
-    await dreamxbotz.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(temp.B_LINK, today, current_time))
+    try:
+        await dreamxbotz.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(temp.B_LINK, today, current_time))
+    except Exception as e:
+        logging.warning(f"Failed to send restart message to LOG_CHANNEL: {e}")
+
     app = web.AppRunner(await web_server())
     await app.setup()
     bind_address = "0.0.0.0"
