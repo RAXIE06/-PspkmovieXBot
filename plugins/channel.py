@@ -567,30 +567,47 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
         old_member = chat_member_updated.old_chat_member
         new_member = chat_member_updated.new_chat_member
 
-        # Check if channel is in our auth list (handle both int and string ids)
-        auth_list = [int(x) for x in (AUTH_CHANNELS + AUTH_REQ_CHANNELS) if x]
-        if chat.id not in auth_list:
+        if not chat or not old_member or not new_member:
             return
 
-        # Check member status change
-        was_member = old_member and old_member.status in [
+        # Check if channel is in our auth list (handle both int and string ids safely)
+        all_auth = (AUTH_CHANNELS or []) + (AUTH_REQ_CHANNELS or [])
+        auth_list = []
+        for x in all_auth:
+            try:
+                if x:
+                    auth_list.append(int(x))
+            except Exception:
+                pass
+
+        if int(chat.id) not in auth_list:
+            return
+
+        # Check member status change: Pehle member tha, ab leave/kicked ho gaya
+        was_member = old_member.status in [
             enums.ChatMemberStatus.MEMBER,
             enums.ChatMemberStatus.ADMINISTRATOR,
             enums.ChatMemberStatus.OWNER,
             enums.ChatMemberStatus.RESTRICTED
         ]
         
-        is_left = new_member and new_member.status in [
+        is_left = new_member.status in [
             enums.ChatMemberStatus.LEFT,
             enums.ChatMemberStatus.BANNED
         ]
 
         if was_member and is_left:
-            user = chat_member_updated.from_user or (old_member.user if old_member else None)
+            # Multi-layer fallback user fetch karne ke liye
+            user = (
+                chat_member_updated.from_user 
+                or (new_member.user if new_member else None) 
+                or (old_member.user if old_member else None)
+            )
+
             if not user or user.is_bot:
                 return
 
-            logger.info(f"User {user.id} left channel {chat.title} ({chat.id}). Sending alert to bot chat...")
+            logger.info(f"[AUTH LEAVE DETECTED] User {user.id} left channel {chat.title} ({chat.id})")
 
             invite_link = LEAVE_ALERT_INVITE_LINKS.get(chat.id)
             if not invite_link:
@@ -602,7 +619,7 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
                         invite_link = link.invite_link
                     LEAVE_ALERT_INVITE_LINKS[chat.id] = invite_link
                 except Exception as e:
-                    logger.error(f"Invite link generation failed: {e}")
+                    logger.error(f"[AUTH LEAVE] Invite link generation failed: {e}")
                     invite_link = None
 
             buttons = []
@@ -615,7 +632,7 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
                 f"📌 <i>Please note: To continue using the bot and downloading files without interruptions, staying joined in our channel is mandatory.</i>\n\n"
                 f"<blockquote>⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n"
                 f"ʜᴇʏ <b>{user.mention}</b>,\n"
-                f"ᴀᴀᴘɴᴇ <b>{chat.title}</b> ʟᴇᴀᴠᴇ ᴋᴀʀ ᴅɪʏᴀ ʜᴀɪ.\n"
+                f"ᴀᴀᴘɴᴇ <b>{chat.title}</b> ʟᴇᴀᴠᴇ ᴋᴀʀ ᴅɪʏᴀ ʜᴀɪ.\n\n"
                 f"📌 <b>Note:</b> Bot se movies aur files download karne ke liye channel me rehna zaroori hai. Dobara join karne ke liye neeche diye button par tap karein.</blockquote>"
             )
 
@@ -623,9 +640,8 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
                 chat_id=user.id,
                 text=alert_text,
                 reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
-                parse_mode=enums.ParseMode.HTML,
-                disable_web_page_preview=True
+                parse_mode=enums.ParseMode.HTML
             )
-            logger.info(f"Leave alert successfully sent to user {user.id}")
+            logger.info(f"[AUTH LEAVE SENT] Leave alert successfully sent to user {user.id}")
     except Exception as e:
-        logger.error(f"Leave alert error: {e}")
+        logger.error(f"[AUTH LEAVE ERROR] {e}")
