@@ -562,58 +562,63 @@ LEAVE_ALERT_INVITE_LINKS = {}
 
 @Client.on_chat_member_updated()
 async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatMemberUpdated):
-    auth_list = set(AUTH_CHANNELS + AUTH_REQ_CHANNELS)
-    chat = chat_member_updated.chat
-    
-    if chat.id not in auth_list:
-        return
+    try:
+        chat = chat_member_updated.chat
+        old_member = chat_member_updated.old_chat_member
+        new_member = chat_member_updated.new_chat_member
 
-    old_member = chat_member_updated.old_chat_member
-    new_member = chat_member_updated.new_chat_member
-
-    was_member = old_member and old_member.status in [
-        enums.ChatMemberStatus.MEMBER,
-        enums.ChatMemberStatus.ADMINISTRATOR,
-        enums.ChatMemberStatus.OWNER
-    ]
-    
-    is_left = new_member and new_member.status in [
-        enums.ChatMemberStatus.LEFT,
-        enums.ChatMemberStatus.BANNED
-    ]
-
-    if was_member and is_left:
-        user = chat_member_updated.from_user
-        if not user or user.is_bot:
+        # Check if channel is in our auth list (handle both int and string ids)
+        auth_list = [int(x) for x in (AUTH_CHANNELS + AUTH_REQ_CHANNELS) if x]
+        if chat.id not in auth_list:
             return
 
-        invite_link = LEAVE_ALERT_INVITE_LINKS.get(chat.id)
-        if not invite_link:
-            try:
-                if chat.username:
-                    invite_link = f"https://t.me/{chat.username}"
-                else:
-                    link = await client.create_chat_invite_link(chat.id)
-                    invite_link = link.invite_link
-                LEAVE_ALERT_INVITE_LINKS[chat.id] = invite_link
-            except Exception:
-                invite_link = None
+        # Check member status change
+        was_member = old_member and old_member.status in [
+            enums.ChatMemberStatus.MEMBER,
+            enums.ChatMemberStatus.ADMINISTRATOR,
+            enums.ChatMemberStatus.OWNER,
+            enums.ChatMemberStatus.RESTRICTED
+        ]
+        
+        is_left = new_member and new_member.status in [
+            enums.ChatMemberStatus.LEFT,
+            enums.ChatMemberStatus.BANNED
+        ]
 
-        buttons = []
-        if invite_link:
-            buttons.append([InlineKeyboardButton("📢 ʀᴇ-ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=invite_link)])
+        if was_member and is_left:
+            user = chat_member_updated.from_user or (old_member.user if old_member else None)
+            if not user or user.is_bot:
+                return
 
-        alert_text = (
-            f"⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n\n"
-            f"ʜᴇʏ <b>{user.mention}</b>, ʏᴏᴜ ʜᴀᴠᴇ ʟᴇꜰᴛ <b>{chat.title}</b>.\n\n"
-            f"📌 <i>Please note: To continue using the bot and downloading files without interruptions, staying joined in our channel is mandatory.</i>\n\n"
-            f"<blockquote>⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n"
-            f"ʜᴇʏ <b>{user.mention}</b>,\n"
-            f"ᴀᴀᴘɴᴇ <b>{chat.title}</b> ʟᴇᴀᴠᴇ ᴋᴀʀ ᴅɪʏᴀ ʜᴀɪ.\n"
-            f"📌 <b>Note:</b> Bot se movies aur files download karne ke liye channel me rehna zaroori hai. Dobara join karne ke liye neeche diye button par tap karein.</blockquote>"
-        )
+            logger.info(f"User {user.id} left channel {chat.title} ({chat.id}). Sending alert to bot chat...")
 
-        try:
+            invite_link = LEAVE_ALERT_INVITE_LINKS.get(chat.id)
+            if not invite_link:
+                try:
+                    if chat.username:
+                        invite_link = f"https://t.me/{chat.username}"
+                    else:
+                        link = await client.create_chat_invite_link(chat.id)
+                        invite_link = link.invite_link
+                    LEAVE_ALERT_INVITE_LINKS[chat.id] = invite_link
+                except Exception as e:
+                    logger.error(f"Invite link generation failed: {e}")
+                    invite_link = None
+
+            buttons = []
+            if invite_link:
+                buttons.append([InlineKeyboardButton("📢 ʀᴇ-ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=invite_link)])
+
+            alert_text = (
+                f"⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n\n"
+                f"ʜᴇʏ <b>{user.mention}</b>, ʏᴏᴜ ʜᴀᴠᴇ ʟᴇꜰᴛ <b>{chat.title}</b>.\n\n"
+                f"📌 <i>Please note: To continue using the bot and downloading files without interruptions, staying joined in our channel is mandatory.</i>\n\n"
+                f"<blockquote>⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n"
+                f"ʜᴇʏ <b>{user.mention}</b>,\n"
+                f"ᴀᴀᴘɴᴇ <b>{chat.title}</b> ʟᴇᴀᴠᴇ ᴋᴀʀ ᴅɪʏᴀ ʜᴀɪ.\n"
+                f"📌 <b>Note:</b> Bot se movies aur files download karne ke liye channel me rehna zaroori hai. Dobara join karne ke liye neeche diye button par tap karein.</blockquote>"
+            )
+
             await client.send_message(
                 chat_id=user.id,
                 text=alert_text,
@@ -621,5 +626,6 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
                 parse_mode=enums.ParseMode.HTML,
                 disable_web_page_preview=True
             )
-        except Exception:
-            pass
+            logger.info(f"Leave alert successfully sent to user {user.id}")
+    except Exception as e:
+        logger.error(f"Leave alert error: {e}")
