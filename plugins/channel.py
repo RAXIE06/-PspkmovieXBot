@@ -570,7 +570,7 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
         if not chat or not old_member or not new_member:
             return
 
-        # 1. Auth Channels parsing (Support both string & int with/without -100)
+        # 1. Auth Channels parsing
         raw_auth_list = (AUTH_CHANNELS or []) + (AUTH_REQ_CHANNELS or [])
         auth_chat_ids = set()
         for ch_id in raw_auth_list:
@@ -580,8 +580,11 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
             except (ValueError, TypeError):
                 continue
 
-        if chat.id not in auth_chat_ids:
+        # Check if update belongs to configured Auth channels
+        if int(chat.id) not in auth_chat_ids:
             return
+
+        print(f"[AUTH UPDATE RECEIVED] Chat: {chat.title} ({chat.id}) | Old Status: {old_member.status} | New Status: {new_member.status}")
 
         # 2. Transition Filter: Must be an existing member leaving the channel
         was_member = old_member.status in [
@@ -609,15 +612,9 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
         if not user or user.is_bot:
             return
 
-        # 4. Check if the user is in the database (Ensures user has interacted with bot before)
-        is_known_user = await db.is_user_exist(user.id)
-        if not is_known_user:
-            logger.info(f"[LEAVE NOTIFY] Skipping user {user.id} (Never started bot).")
-            return
+        print(f"[AUTH LEAVE TRIGGERED] Sending rejoin message to User: {user.id} ({user.first_name})")
 
-        logger.info(f"[LEAVE NOTIFY] User {user.id} left auth channel {chat.title} ({chat.id})")
-
-        # 5. Resolve Invite Link
+        # 4. Resolve Invite Link
         invite_url = AUTH_CHANNEL_INVITE_CACHE.get(chat.id)
         if not invite_url:
             try:
@@ -628,7 +625,7 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
                     invite_url = invite.invite_link
                 AUTH_CHANNEL_INVITE_CACHE[chat.id] = invite_url
             except Exception as e:
-                logger.error(f"[LEAVE NOTIFY] Failed to create invite link for {chat.id}: {e}")
+                print(f"[LEAVE NOTIFY LINK ERROR] {e}")
                 invite_url = None
 
         buttons = []
@@ -641,7 +638,7 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
             f"<i>Tap the button below to rejoin the channel.</i>"
         )
 
-        # 6. Safe DM Dispatch
+        # 5. Direct DM Dispatch
         try:
             await client.send_message(
                 chat_id=user.id,
@@ -649,16 +646,13 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
                 reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
                 parse_mode=enums.ParseMode.HTML
             )
-            logger.info(f"[LEAVE NOTIFY] Successfully sent rejoin DM to {user.id}")
+            print(f"[AUTH LEAVE SUCCESS] Rejoin DM successfully delivered to {user.id}")
         except UserIsBlocked:
-            logger.info(f"[LEAVE NOTIFY] Could not DM {user.id}: Bot was blocked by user.")
+            print(f"[AUTH LEAVE FAILED] User {user.id} has blocked the bot.")
         except (PeerIdInvalid, InputUserDeactivated):
-            logger.info(f"[LEAVE NOTIFY] Could not DM {user.id}: Invalid peer or deactivated account.")
-        except FloodWait as fw:
-            logger.warning(f"[LEAVE NOTIFY] FloodWait of {fw.value}s encountered for DM to {user.id}")
-            await asyncio.sleep(fw.value)
-        except Exception as dm_err:
-            logger.warning(f"[LEAVE NOTIFY] Failed to send message to {user.id}: {dm_err}")
+            print(f"[AUTH LEAVE FAILED] User {user.id} never started the bot or account deleted.")
+        except Exception as e:
+            print(f"[AUTH LEAVE FAILED] Could not send DM to {user.id}: {e}")
 
     except Exception as e:
-        logger.error(f"[LEAVE NOTIFY ERROR] Unexpected error in leave handler: {e}")
+        print(f"[AUTH LEAVE HANDLER ERROR] {e}")
