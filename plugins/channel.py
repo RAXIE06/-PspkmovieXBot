@@ -12,7 +12,7 @@ from database.ia_filterdb import save_file
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberUpdated
 from utils import temp
 from pymongo.errors import PyMongoError, DuplicateKeyError
-from pyrogram.errors import MessageIdInvalid, MessageNotModified, FloodWait
+from pyrogram.errors import MessageIdInvalid, MessageNotModified, FloodWait, UserIsBlocked, PeerIdInvalid, InputUserDeactivated
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -557,8 +557,8 @@ def generate_movie_message(movie_doc, base_name):
         search_link=temp.B_LINK
     )
 
-# Cache invite links so bot doesn't spam Telegram API
-LEAVE_ALERT_INVITE_LINKS = {}
+# ==================== AUTO LEAVE NOTIFICATION SYSTEM ==================== #
+AUTH_CHANNEL_INVITE_CACHE = {}
 
 @Client.on_chat_member_updated()
 async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatMemberUpdated):
@@ -570,20 +570,20 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
         if not chat or not old_member or not new_member:
             return
 
-        # Check if channel is in our auth list (handle both int and string ids safely)
-        all_auth = (AUTH_CHANNELS or []) + (AUTH_REQ_CHANNELS or [])
-        auth_list = []
-        for x in all_auth:
+        # 1. Auth Channels parsing (Support both string & int with/without -100)
+        raw_auth_list = (AUTH_CHANNELS or []) + (AUTH_REQ_CHANNELS or [])
+        auth_chat_ids = set()
+        for ch_id in raw_auth_list:
             try:
-                if x:
-                    auth_list.append(int(x))
-            except Exception:
-                pass
+                if ch_id:
+                    auth_chat_ids.add(int(ch_id))
+            except (ValueError, TypeError):
+                continue
 
-        if int(chat.id) not in auth_list:
+        if chat.id not in auth_chat_ids:
             return
 
-        # Check member status change: Pehle member tha, ab leave/kicked ho gaya
+        # 2. Transition Filter: Must be an existing member leaving the channel
         was_member = old_member.status in [
             enums.ChatMemberStatus.MEMBER,
             enums.ChatMemberStatus.ADMINISTRATOR,
@@ -591,57 +591,74 @@ async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatM
             enums.ChatMemberStatus.RESTRICTED
         ]
         
-        is_left = new_member.status in [
+        is_departed = new_member.status in [
             enums.ChatMemberStatus.LEFT,
             enums.ChatMemberStatus.BANNED
         ]
 
-        if was_member and is_left:
-            # Multi-layer fallback user fetch karne ke liye
-            user = (
-                chat_member_updated.from_user 
-                or (new_member.user if new_member else None) 
-                or (old_member.user if old_member else None)
-            )
+        if not (was_member and is_departed):
+            return
 
-            if not user or user.is_bot:
-                return
+        # 3. Extract the target User
+        user = (
+            chat_member_updated.from_user 
+            or (new_member.user if new_member else None) 
+            or (old_member.user if old_member else None)
+        )
 
-            logger.info(f"[AUTH LEAVE DETECTED] User {user.id} left channel {chat.title} ({chat.id})")
+        if not user or user.is_bot:
+            return
 
-            invite_link = LEAVE_ALERT_INVITE_LINKS.get(chat.id)
-            if not invite_link:
-                try:
-                    if chat.username:
-                        invite_link = f"https://t.me/{chat.username}"
-                    else:
-                        link = await client.create_chat_invite_link(chat.id)
-                        invite_link = link.invite_link
-                    LEAVE_ALERT_INVITE_LINKS[chat.id] = invite_link
-                except Exception as e:
-                    logger.error(f"[AUTH LEAVE] Invite link generation failed: {e}")
-                    invite_link = None
+        # 4. Check if the user is in the database (Ensures user has interacted with bot before)
+        is_known_user = await db.is_user_exist(user.id)
+        if not is_known_user:
+            logger.info(f"[LEAVE NOTIFY] Skipping user {user.id} (Never started bot).")
+            return
 
-            buttons = []
-            if invite_link:
-                buttons.append([InlineKeyboardButton("📢 ʀᴇ-ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=invite_link)])
+        logger.info(f"[LEAVE NOTIFY] User {user.id} left auth channel {chat.title} ({chat.id})")
 
-            alert_text = (
-                f"⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n\n"
-                f"ʜᴇʏ <b>{user.mention}</b>, ʏᴏᴜ ʜᴀᴠᴇ ʟᴇꜰᴛ <b>{chat.title}</b>.\n\n"
-                f"📌 <i>Please note: To continue using the bot and downloading files without interruptions, staying joined in our channel is mandatory.</i>\n\n"
-                f"<blockquote>⚠️ <b>ᴀʟᴇʀᴛ: ʏᴏᴜ ʟᴇꜰᴛ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ!</b>\n"
-                f"ʜᴇʏ <b>{user.mention}</b>,\n"
-                f"ᴀᴀᴘɴᴇ <b>{chat.title}</b> ʟᴇᴀᴠᴇ ᴋᴀʀ ᴅɪʏᴀ ʜᴀɪ.\n\n"
-                f"📌 <b>Note:</b> Bot se movies aur files download karne ke liye channel me rehna zaroori hai. Dobara join karne ke liye neeche diye button par tap karein.</blockquote>"
-            )
+        # 5. Resolve Invite Link
+        invite_url = AUTH_CHANNEL_INVITE_CACHE.get(chat.id)
+        if not invite_url:
+            try:
+                if chat.username:
+                    invite_url = f"https://t.me/{chat.username}"
+                else:
+                    invite = await client.create_chat_invite_link(chat.id)
+                    invite_url = invite.invite_link
+                AUTH_CHANNEL_INVITE_CACHE[chat.id] = invite_url
+            except Exception as e:
+                logger.error(f"[LEAVE NOTIFY] Failed to create invite link for {chat.id}: {e}")
+                invite_url = None
 
+        buttons = []
+        if invite_url:
+            buttons.append([InlineKeyboardButton("🔔 JOIN CHANNEL", url=invite_url)])
+
+        dm_text = (
+            f"👋 <b>Hey! It looks like you've left our Updates Channel.</b>\n\n"
+            f"Please join again to continue using our Movie Bot without interruptions. 🍿\n\n"
+            f"<i>Tap the button below to rejoin the channel.</i>"
+        )
+
+        # 6. Safe DM Dispatch
+        try:
             await client.send_message(
                 chat_id=user.id,
-                text=alert_text,
+                text=dm_text,
                 reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
                 parse_mode=enums.ParseMode.HTML
             )
-            logger.info(f"[AUTH LEAVE SENT] Leave alert successfully sent to user {user.id}")
+            logger.info(f"[LEAVE NOTIFY] Successfully sent rejoin DM to {user.id}")
+        except UserIsBlocked:
+            logger.info(f"[LEAVE NOTIFY] Could not DM {user.id}: Bot was blocked by user.")
+        except (PeerIdInvalid, InputUserDeactivated):
+            logger.info(f"[LEAVE NOTIFY] Could not DM {user.id}: Invalid peer or deactivated account.")
+        except FloodWait as fw:
+            logger.warning(f"[LEAVE NOTIFY] FloodWait of {fw.value}s encountered for DM to {user.id}")
+            await asyncio.sleep(fw.value)
+        except Exception as dm_err:
+            logger.warning(f"[LEAVE NOTIFY] Failed to send message to {user.id}: {dm_err}")
+
     except Exception as e:
-        logger.error(f"[AUTH LEAVE ERROR] {e}")
+        logger.error(f"[LEAVE NOTIFY ERROR] Unexpected error in leave handler: {e}")
