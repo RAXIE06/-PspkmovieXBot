@@ -9,7 +9,11 @@ import requests
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from telegraph import Telegraph
-from pymediainfo import MediaInfo
+
+try:
+    from pymediainfo import MediaInfo
+except ImportError:
+    MediaInfo = None
 
 from database.ia_filterdb import get_file_details
 from info import BIN_CHANNEL
@@ -79,7 +83,7 @@ async def extract_data_handler(client: Client, query: CallbackQuery):
     try:
         files_ = await get_file_details(file_id)
         if not files_:
-            await query.message.reply_text("❌ File not found in DB.", quote=True)
+            await query.message.reply_text("❌ File not found in DB.")
             return
 
         if query.message and query.message.media:
@@ -111,56 +115,67 @@ async def extract_data_handler(client: Client, query: CallbackQuery):
             async for chunk in client.stream_media(log_msg, limit=chunk_limit):
                 await f.write(chunk)
 
-        lib_path = os.path.abspath("MediaInfo.dll") if os.path.exists("MediaInfo.dll") else None
-
-        media_info = await asyncio.wait_for(
-            asyncio.to_thread(MediaInfo.parse, temp_path, library_file=lib_path),
-            timeout=6
-        )
-
         audio_tracks = []
         subtitle_tracks = []
         video_info = []
 
-        seen_audio = set()
-        seen_subs = set()
-
-        for track in media_info.tracks:
-            ttype = (track.track_type or "").lower()
-
-            if ttype == "video":
-                codec = track.format or track.codec_id or "Unknown"
-                width = track.width or "?"
-                height = track.height or "?"
-                video_info.append(f"Video: {codec} {width}x{height}")
-
-            elif ttype == "audio":
-                lang = (
-                    track.other_language[0]
-                    if getattr(track, "other_language", None)
-                    else track.language or "und"
+        # Safe MediaInfo parsing - agar libmediainfo OS me na ho tab bhi bot crash nahi hoga
+        media_info = None
+        if MediaInfo is not None:
+            lib_path = os.path.abspath("MediaInfo.dll") if os.path.exists("MediaInfo.dll") else None
+            try:
+                media_info = await asyncio.wait_for(
+                    asyncio.to_thread(MediaInfo.parse, temp_path, library_file=lib_path),
+                    timeout=6
                 )
-                key = (lang, track.title)
-                if key not in seen_audio:
-                    seen_audio.add(key)
-                    audio_tracks.append({
-                        "language": lang,
-                        "title": track.title
-                    })
+            except Exception as ex:
+                logger.warning(f"MediaInfo parsing skipped/failed: {ex}")
+                media_info = None
 
-            elif ttype in ("text", "subtitle"):
-                lang = (
-                    track.other_language[0]
-                    if getattr(track, "other_language", None)
-                    else track.language or "und"
-                )
-                key = (lang, track.title)
-                if key not in seen_subs:
-                    seen_subs.add(key)
-                    subtitle_tracks.append({
-                        "language": lang,
-                        "title": track.title
-                    })
+        if media_info and getattr(media_info, "tracks", None):
+            seen_audio = set()
+            seen_subs = set()
+
+            for track in media_info.tracks:
+                ttype = (track.track_type or "").lower()
+
+                if ttype == "video":
+                    codec = track.format or track.codec_id or "Unknown"
+                    width = track.width or "?"
+                    height = track.height or "?"
+                    video_info.append(f"Video: {codec} {width}x{height}")
+
+                elif ttype == "audio":
+                    lang = (
+                        track.other_language[0]
+                        if getattr(track, "other_language", None)
+                        else track.language or "und"
+                    )
+                    key = (lang, track.title)
+                    if key not in seen_audio:
+                        seen_audio.add(key)
+                        audio_tracks.append({
+                            "language": lang,
+                            "title": track.title
+                        })
+
+                elif ttype in ("text", "subtitle"):
+                    lang = (
+                        track.other_language[0]
+                        if getattr(track, "other_language", None)
+                        else track.language or "und"
+                    )
+                    key = (lang, track.title)
+                    if key not in seen_subs:
+                        seen_subs.add(key)
+                        subtitle_tracks.append({
+                            "language": lang,
+                            "title": track.title
+                        })
+        else:
+            # Fallback agar MediaInfo system library absent ho
+            video_info.append("Video details: Stream Available")
+            audio_tracks.append({"language": "Multi/Default", "title": "Audio Track"})
 
         page_parts = []
         page_parts.append("<h3><b>Available Tracks</b></h3><br>")
@@ -205,7 +220,7 @@ async def extract_data_handler(client: Client, query: CallbackQuery):
                 author_name="DreamxBotz"
             )
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            await query.message.reply_text("⚠️ Telegraph is busy. Try again later.", quote=True)
+            await query.message.reply_text("⚠️ Telegraph is busy. Try again later.")
             return
 
         telegraph_url = response["url"]
@@ -229,8 +244,11 @@ async def extract_data_handler(client: Client, query: CallbackQuery):
 
     except Exception as e:
         logger.exception(e)
-        await query.message.reply_text(f"Error: {e}", quote=True)
+        await query.message.reply_text(f"Error: {e}")
 
     finally:
         if os.path.exists(temp_path):
-            os.remove(temp_path)
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
