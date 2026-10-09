@@ -43,7 +43,7 @@ def is_admin_check(user_id: int):
 async def start(client, message):
     sticker = None
     try:
-        stick_id = "CAACAgUAAxkBAAEQJmJpViid_0yscWKPfh3RMCY8pIkmXwACMAcAAqzbsFexyKU6FPQAAjgE"
+        stick_id = "CAACAgUAAxkBAAESBHtqyQ9qk0b4uXTil1SLaWbjc1agbwAC0R8AAoo0IFQ2bvwyD-i0bT0E"
         try:
             sticker = await message.reply_sticker(sticker=stick_id)
         except Exception as e:
