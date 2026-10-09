@@ -35,6 +35,10 @@ BATCH_FILES = {}
 REQUEST_INVITE_LINK_CACHE: dict[int, str] = {}
 
 
+def is_admin_check(user_id: int):
+    return user_id in ADMINS or str(user_id) in [str(x) for x in ADMINS]
+
+
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
     sticker = None
@@ -48,8 +52,10 @@ async def start(client, message):
             try:
                 await message.react(emoji=random.choice(REACTIONS), big=True)
             except Exception:
-                await message.react(emoji="⚡️")
-                pass
+                try:
+                    await message.react(emoji="⚡️")
+                except Exception:
+                    pass
         m = message
         if len(m.command) == 2 and m.command[1].startswith(('notcopy', 'sendall')):
             _, userid, verify_id, file_id = m.command[1].split("_", 3)
@@ -91,7 +97,8 @@ async def start(client, message):
                 reply_markup=reply_markup,
                 parse_mode=enums.ParseMode.HTML
             )
-            await sticker.delete()
+            if sticker:
+                await sticker.delete()
             await asyncio.sleep(300)
             await dlt.delete()
             return         
@@ -103,7 +110,8 @@ async def start(client, message):
                       ]]
             reply_markup = InlineKeyboardMarkup(buttons)
             await message.reply(script.GSTART_TXT.format(message.from_user.mention if message.from_user else message.chat.title, temp.U_NAME, temp.B_NAME), reply_markup=reply_markup, disable_web_page_preview=True)
-            await sticker.delete()
+            if sticker:
+                await sticker.delete()
             await asyncio.sleep(2) 
             if not await db.get_chat(message.chat.id):
                 total=await client.get_chat_members_count(message.chat.id)
@@ -313,7 +321,8 @@ async def start(client, message):
                         reply_markup=reply_markup,
                         parse_mode=enums.ParseMode.HTML
                     )
-                    await sticker.delete()
+                    if sticker:
+                        await sticker.delete()
                     await asyncio.sleep(300) 
                     await n.delete()
                     await m.delete()
@@ -360,7 +369,8 @@ async def start(client, message):
                     )
                     filesarr.append(msg)
                 k = await client.send_message(chat_id=message.from_user.id, text=script.DEL_MSG.format(get_time(DELETE_TIME)), parse_mode=enums.ParseMode.HTML)
-                await sticker.delete()
+                if sticker:
+                    await sticker.delete()
                 await asyncio.sleep(DELETE_TIME)
                 for x in filesarr:
                     await x.delete()
@@ -409,7 +419,8 @@ async def start(client, message):
                 k = await msg.reply(script.DEL_MSG.format(get_time(DELETE_TIME)),
                     quote=True, parse_mode=enums.ParseMode.HTML
                 )
-                await sticker.delete()
+                if sticker:
+                    await sticker.delete()
                 await asyncio.sleep(DELETE_TIME)
                 await msg.delete()
                 await k.edit_text("<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!</b>")
@@ -448,7 +459,8 @@ async def start(client, message):
         k = await msg.reply(script.DEL_MSG.format(get_time(DELETE_TIME)),
             quote=True, parse_mode=enums.ParseMode.HTML
         )
-        await sticker.delete()
+        if sticker:
+            await sticker.delete()
         await asyncio.sleep(DELETE_TIME)
         await msg.delete()
         await k.edit_text("<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!</b>")
@@ -466,10 +478,38 @@ async def start(client, message):
                 logger.exception(f"Error In Deleting Sticker - {e}")
                 pass
 
+# ==================== ID COMMAND ==================== #
+
+@Client.on_message(filters.command("id"))
+async def show_id_cmd(client: Client, message: Message):
+    target = message.reply_to_message.from_user if message.reply_to_message and message.reply_to_message.from_user else message.from_user
+
+    if not target:
+        return await message.reply_text("❌ User details not found.")
+
+    first_name = target.first_name or ""
+    last_name = target.last_name or ""
+    username = target.username or "None"
+    user_id = target.id
+    dc_id = target.dc_id if target.dc_id else "None"
+
+    text = (
+        f"➲ First Name: {first_name}\n"
+        f"➲ Last Name: {last_name}\n"
+        f"➲ Username: {username}\n"
+        f"➲ Telegram ID: {user_id}\n"
+        f"➲ Data Centre: {dc_id}"
+    )
+
+    await message.reply_text(text)
+
 # ==================== MANUAL ADMIN PREMIUM COMMANDS ==================== #
 
-@Client.on_message(filters.command("add_premium") & filters.user(ADMINS))
+@Client.on_message(filters.command("add_premium"))
 async def add_premium_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
     if len(message.command) < 3:
         return await message.reply_text(
             "<b>⚠️ ᴜꜱᴀɢᴇ / उपयोग:</b>\n"
@@ -502,13 +542,17 @@ async def add_premium_cmd(client: Client, message: Message):
 
     receipt = (
         f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
+        
         f"👤 <b>ᴜꜱᴇʀ :</b> {mention}\n"
         f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
         f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {days} Days\n"
+        
         f"📅 <b>ᴊᴏɪɴɪɴɢ ᴅᴀᴛᴇ :</b> <code>{j_date}</code>\n"
         f"⏰ <b>ᴊᴏɪɴɪɴɢ ᴛɪᴍᴇ :</b> <code>{j_time}</code>\n"
+        
         f"⏳ <b>ᴇxᴘɪʀʏ ᴅᴀᴛᴇ :</b> <code>{e_date}</code>\n"
         f"⏰ <b>ᴇxᴘɪʀʏ ᴛɪᴍᴇ :</b> <code>{e_time}</code>\n\n"
+        
         f"🚀 <i>Enjoy unlimited access without shorteners, force-subs, or ads!</i>"
     )
 
@@ -533,8 +577,11 @@ async def add_premium_cmd(client: Client, message: Message):
             pass
 
 
-@Client.on_message(filters.command("remove_premium") & filters.user(ADMINS))
+@Client.on_message(filters.command("remove_premium"))
 async def remove_premium_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
     if len(message.command) < 2:
         return await message.reply_text(
             "<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/remove_premium [User_ID]</code>"
@@ -567,8 +614,11 @@ async def remove_premium_cmd(client: Client, message: Message):
         pass
 
 
-@Client.on_message(filters.command("get_premium") & filters.user(ADMINS))
+@Client.on_message(filters.command("get_premium"))
 async def get_premium_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
     if len(message.command) < 2:
         return await message.reply_text("<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/get_premium [User_ID]</code>")
     
@@ -603,6 +653,15 @@ async def get_premium_cmd(client: Client, message: Message):
         f"⚡ <b>Status:</b> {status_icon}\n"
         f"⏳ <b>Expiry:</b> <code>{exp_str}</code>"
     )
+
+
+@Client.on_message(filters.command("premium_users"))
+async def premium_users_cmd(client: Client, message: Message):
+    if not message.from_user or not is_admin_check(message.from_user.id):
+        return
+
+    count = await db.all_premium_users()
+    await message.reply_text(f"👑 <b>ᴛᴏᴛᴀʟ ᴀᴄᴛɪᴠᴇ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ:</b> <code>{count}</code>")
 
 
 @Client.on_message(filters.command("myplan") & filters.private)
@@ -678,7 +737,6 @@ async def stream_buttons(user_id: int, file_id: str):
     
 @Client.on_message(filters.command('logs') & filters.user(ADMINS))
 async def log_file(bot, message):
-    """Send log file"""
     try:
         await message.reply_document('DreamXlogs.txt', caption="📑 **ʟᴏɢꜱ**")
     except Exception as e:
@@ -686,7 +744,6 @@ async def log_file(bot, message):
 
 @Client.on_message(filters.command('save') & filters.user(ADMINS))
 async def save_file_handler(bot, message):
-    """Save file to database"""
     reply = message.reply_to_message
     if reply and reply.media:
         msg = await message.reply("Pʀᴏᴄᴇssɪɴɢ...⏳", quote=True)
@@ -722,7 +779,6 @@ async def save_file_handler(bot, message):
 
 @Client.on_message(filters.command('delete') & filters.user(ADMINS))
 async def delete(bot, message):
-    """Delete file from database"""
     reply = message.reply_to_message
     if reply and reply.media:
         msg = await message.reply("Pʀᴏᴄᴇssɪɴɢ...⏳", quote=True)
@@ -1251,7 +1307,7 @@ async def set_tutorial(client, message: Message):
         f"ɢʀᴏᴜᴘ ɴᴀᴍᴇ : {title}\n"
         f"ɢʀᴏᴜᴘ ɪᴅ : {grp_id}\n"
         f"ɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n"
-        f"ᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.mention()}"
+        f"ᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.mention}"
     )
 
 async def handle_shortner_command(c, m, shortner_key, api_key, log_prefix, fallback_url, fallback_api):
@@ -1651,162 +1707,3 @@ async def clean_groups_handler(client, message):
         except Exception as e:
             logger.error("Error in clean_groups loop: %s", e)
     await msg.edit(f'**Clean Groups Complete**\n\nTotal Processed: {processed}\nDeleted: {deleted_count}')
-
-# ==================== MANUAL ADMIN PREMIUM COMMANDS ==================== #
-
-def is_admin_check(user_id: int):
-    return user_id in ADMINS or str(user_id) in [str(x) for x in ADMINS]
-
-@Client.on_message(filters.command("add_premium"))
-async def add_premium_cmd(client: Client, message: Message):
-    if not message.from_user or not is_admin_check(message.from_user.id):
-        return
-
-    if len(message.command) < 3:
-        return await message.reply_text(
-            "<b>⚠️ ᴜꜱᴀɢᴇ / उपयोग:</b>\n"
-            "<code>/add_premium [User_ID] [Days]</code>\n\n"
-            "<b>ᴇxᴀᴍᴘʟᴇ:</b> <code>/add_premium 8058925613 30</code>"
-        )
-    
-    try:
-        user_id = int(message.command[1])
-        days = int(message.command[2])
-    except ValueError:
-        return await message.reply_text("<b>❌ User ID aur Days numbers hone chahiye!</b>")
-
-    try:
-        user = await client.get_users(user_id)
-        mention = user.mention
-    except Exception:
-        mention = f"User <code>{user_id}</code>"
-
-    tz = pytz.timezone(TIMEZONE)
-    now = datetime.now(tz)
-    
-    expiry_dt = await db.add_premium_user(user_id, days)
-    exp = expiry_dt.astimezone(tz) if getattr(expiry_dt, 'tzinfo', None) else tz.localize(expiry_dt)
-
-    j_date = now.strftime("%d-%m-%Y")
-    j_time = now.strftime("%I:%M:%S %p")
-    e_date = exp.strftime("%d-%m-%Y")
-    e_time = exp.strftime("%I:%M:%S %p")
-
-    receipt = (
-        f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
-        f"👤 <b>ᴜꜱᴇʀ :</b> {mention}\n"
-        f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
-        f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {days} Days\n"
-        f"📅 <b>ᴊᴏɪɴɪɴɢ ᴅᴀᴛᴇ :</b> <code>{j_date}</code>\n"
-        f"⏰ <b>ᴊᴏɪɴɪɴɢ ᴛɪᴍᴇ :</b> <code>{j_time}</code>\n"
-        f"⏳ <b>ᴇxᴘɪʀʏ ᴅᴀᴛᴇ :</b> <code>{e_date}</code>\n"
-        f"⏰ <b>ᴇxᴘɪʀʏ ᴛɪᴍᴇ :</b> <code>{e_time}</code>\n\n"
-        f"🚀 <i>Enjoy unlimited access without shorteners, force-subs, or ads!</i>"
-    )
-
-    await message.reply_text(receipt)
-
-    try:
-        await client.send_message(user_id, receipt)
-    except Exception:
-        pass
-
-    if LOG_CHANNEL:
-        try:
-            await client.send_message(
-                LOG_CHANNEL,
-                f"👑 <b>Admin Manual Premium Added</b>\n\n"
-                f"Admin: {message.from_user.mention}\n"
-                f"User: {mention} (<code>{user_id}</code>)\n"
-                f"Days: {days}\n"
-                f"Expiry: <code>{e_date} {e_time}</code>"
-            )
-        except Exception:
-            pass
-
-
-@Client.on_message(filters.command("remove_premium"))
-async def remove_premium_cmd(client: Client, message: Message):
-    if not message.from_user or not is_admin_check(message.from_user.id):
-        return
-
-    if len(message.command) < 2:
-        return await message.reply_text(
-            "<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/remove_premium [User_ID]</code>"
-        )
-    
-    try:
-        user_id = int(message.command[1])
-    except ValueError:
-        return await message.reply_text("<b>❌ User ID ek number honi chahiye!</b>")
-
-    await db.remove_premium_user(user_id)
-
-    try:
-        user = await client.get_users(user_id)
-        mention = user.mention
-    except Exception:
-        mention = f"<code>{user_id}</code>"
-
-    await message.reply_text(
-        f"✅ <b>ᴘʀᴇᴍɪᴜᴍ ʀᴇᴍᴏᴠᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ!</b>\n\n"
-        f"User {mention} ka premium access remove kar diya gaya hai."
-    )
-
-    try:
-        await client.send_message(
-            user_id,
-            script.PREMIUM_END_TEXT.format(mention)
-        )
-    except Exception:
-        pass
-
-
-@Client.on_message(filters.command("get_premium"))
-async def get_premium_cmd(client: Client, message: Message):
-    if not message.from_user or not is_admin_check(message.from_user.id):
-        return
-
-    if len(message.command) < 2:
-        return await message.reply_text("<b>⚠️ ᴜꜱᴀɢᴇ:</b> <code>/get_premium [User_ID]</code>")
-    
-    try:
-        user_id = int(message.command[1])
-    except ValueError:
-        return await message.reply_text("<b>❌ User ID number honi chahiye!</b>")
-
-    user_data = await db.get_user(user_id)
-    if not user_data or not user_data.get("expiry_time"):
-        return await message.reply_text(f"❌ User <code>{user_id}</code> ke paas koi active Premium nahi hai.")
-
-    expiry = user_data.get("expiry_time")
-    tz = pytz.timezone(TIMEZONE)
-    if isinstance(expiry, str):
-        try:
-            expiry = datetime.strptime(expiry[:10], "%Y-%m-%d")
-        except Exception:
-            pass
-
-    if isinstance(expiry, datetime):
-        exp = expiry.astimezone(tz) if expiry.tzinfo else tz.localize(expiry)
-        exp_str = exp.strftime("%d-%m-%Y %I:%M:%S %p")
-    else:
-        exp_str = str(expiry)
-
-    is_active = await db.has_premium_access(user_id)
-    status_icon = "Active ✅" if is_active else "Expired ❌"
-
-    await message.reply_text(
-        f"👤 <b>User ID:</b> <code>{user_id}</code>\n"
-        f"⚡ <b>Status:</b> {status_icon}\n"
-        f"⏳ <b>Expiry:</b> <code>{exp_str}</code>"
-    )
-
-
-@Client.on_message(filters.command("premium_users"))
-async def premium_users_cmd(client: Client, message: Message):
-    if not message.from_user or not is_admin_check(message.from_user.id):
-        return
-
-    count = await db.all_premium_users()
-    await message.reply_text(f"👑 <b>ᴛᴏᴛᴀʟ ᴀᴄᴛɪᴠᴇ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ:</b> <code>{count}</code>")
