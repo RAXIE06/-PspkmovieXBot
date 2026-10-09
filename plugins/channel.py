@@ -6,13 +6,13 @@ from collections import defaultdict
 from plugins.Dreamxfutures.Imdbposter import get_movie_detailsx, fetch_image, get_movie_details
 from database.users_chats_db import db
 from pyrogram import Client, filters, enums
-from info import CHANNELS, MOVIE_UPDATE_CHANNEL, LINK_PREVIEW, ABOVE_PREVIEW, BAD_WORDS, LANDSCAPE_POSTER, TMDB_POSTER, AUTH_CHANNELS, AUTH_REQ_CHANNELS
+from info import CHANNELS, MOVIE_UPDATE_CHANNEL, LINK_PREVIEW, ABOVE_PREVIEW, BAD_WORDS, LANDSCAPE_POSTER, TMDB_POSTER
 from Script import script
 from database.ia_filterdb import save_file
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberUpdated
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from utils import temp
 from pymongo.errors import PyMongoError, DuplicateKeyError
-from pyrogram.errors import MessageIdInvalid, MessageNotModified, FloodWait, UserIsBlocked, PeerIdInvalid, InputUserDeactivated
+from pyrogram.errors import MessageIdInvalid, MessageNotModified, FloodWait
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -556,103 +556,3 @@ def generate_movie_message(movie_doc, base_name):
         rating=rating_text,
         search_link=temp.B_LINK
     )
-
-# ==================== AUTO LEAVE NOTIFICATION SYSTEM ==================== #
-AUTH_CHANNEL_INVITE_CACHE = {}
-
-@Client.on_chat_member_updated()
-async def channel_leave_alert_handler(client: Client, chat_member_updated: ChatMemberUpdated):
-    try:
-        chat = chat_member_updated.chat
-        old_member = chat_member_updated.old_chat_member
-        new_member = chat_member_updated.new_chat_member
-
-        if not chat or not old_member or not new_member:
-            return
-
-        # 1. Auth Channels parsing
-        raw_auth_list = (AUTH_CHANNELS or []) + (AUTH_REQ_CHANNELS or [])
-        auth_chat_ids = set()
-        for ch_id in raw_auth_list:
-            try:
-                if ch_id:
-                    auth_chat_ids.add(int(ch_id))
-            except (ValueError, TypeError):
-                continue
-
-        # Check if update belongs to configured Auth channels
-        if int(chat.id) not in auth_chat_ids:
-            return
-
-        print(f"[AUTH UPDATE RECEIVED] Chat: {chat.title} ({chat.id}) | Old Status: {old_member.status} | New Status: {new_member.status}")
-
-        # 2. Transition Filter: Must be an existing member leaving the channel
-        was_member = old_member.status in [
-            enums.ChatMemberStatus.MEMBER,
-            enums.ChatMemberStatus.ADMINISTRATOR,
-            enums.ChatMemberStatus.OWNER,
-            enums.ChatMemberStatus.RESTRICTED
-        ]
-        
-        is_departed = new_member.status in [
-            enums.ChatMemberStatus.LEFT,
-            enums.ChatMemberStatus.BANNED
-        ]
-
-        if not (was_member and is_departed):
-            return
-
-        # 3. Extract the target User
-        user = (
-            chat_member_updated.from_user 
-            or (new_member.user if new_member else None) 
-            or (old_member.user if old_member else None)
-        )
-
-        if not user or user.is_bot:
-            return
-
-        print(f"[AUTH LEAVE TRIGGERED] Sending rejoin message to User: {user.id} ({user.first_name})")
-
-        # 4. Resolve Invite Link
-        invite_url = AUTH_CHANNEL_INVITE_CACHE.get(chat.id)
-        if not invite_url:
-            try:
-                if chat.username:
-                    invite_url = f"https://t.me/{chat.username}"
-                else:
-                    invite = await client.create_chat_invite_link(chat.id)
-                    invite_url = invite.invite_link
-                AUTH_CHANNEL_INVITE_CACHE[chat.id] = invite_url
-            except Exception as e:
-                print(f"[LEAVE NOTIFY LINK ERROR] {e}")
-                invite_url = None
-
-        buttons = []
-        if invite_url:
-            buttons.append([InlineKeyboardButton("🔔 JOIN CHANNEL", url=invite_url)])
-
-        dm_text = (
-            f"👋 <b>Hey! It looks like you've left our Updates Channel.</b>\n\n"
-            f"Please join again to continue using our Movie Bot without interruptions. 🍿\n\n"
-            f"<i>Tap the button below to rejoin the channel.</i>"
-        )
-
-        # 5. Direct DM Dispatch
-        try:
-            await client.send_message(
-                chat_id=user.id,
-                text=dm_text,
-                reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
-                parse_mode=enums.ParseMode.HTML
-            )
-            print(f"[AUTH LEAVE SUCCESS] Rejoin DM successfully delivered to {user.id}")
-        except UserIsBlocked:
-            print(f"[AUTH LEAVE FAILED] User {user.id} has blocked the bot.")
-        except (PeerIdInvalid, InputUserDeactivated):
-            print(f"[AUTH LEAVE FAILED] User {user.id} never started the bot or account deleted.")
-        except Exception as e:
-            print(f"[AUTH LEAVE FAILED] Could not send DM to {user.id}: {e}")
-
-    except Exception as e:
-        print(f"[AUTH LEAVE HANDLER ERROR] {e}")
