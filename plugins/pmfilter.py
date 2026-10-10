@@ -535,7 +535,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         if query.from_user.id in ADMINS:
             reply_markup = InlineKeyboardMarkup(btn)
             await query.message.edit_reply_markup(reply_markup)
-            await query.answer("Hᴇʀᴇ ᴀʀᴇ ᴛʜᴇ ᴏᴘᴛɪᴏɴs !")
+            await query.answer("Hᴇʀᴇ ᴀʀᴇ ᴛʜᴇ ᴏptioɴs !")
         else:
             await query.answer("Yᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ sᴜғғɪᴄɪᴀɴᴛ ʀɪɢʜᴛs ᴛᴏ ᴅᴏ ᴛʜɪs !", show_alert=True)
 
@@ -727,7 +727,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif query.data == "donation":
         buttons = [[
-                InlineKeyboardButton('🌲 Sᴇɴᴅ Dᴏɴᴀᴛᴇ Sᴄʀᴇᴇɴsʜᴏᴛ Hᴇʀᴇ', url=OWNER_LNK)
+                InlineKeyboardButton('🌲 Sᴇɴᴅ Dᴏɴᴀᴛᴇ Sᴄʀᴇᴇnsʜᴏᴛ Hᴇʀᴇ', url=OWNER_LNK)
             ],[
                 InlineKeyboardButton('⇍ ʙᴀᴄᴋ ⇏', callback_data='about')
             ]]
@@ -1234,6 +1234,9 @@ async def auto_filter(client, msg, spoll=False):
             except (MessageNotModified, MessageIdInvalid):
                 pass
         await query.answer()
+    except Exception as e:
+        logger.exception(e)
+        return
 
 async def ai_spell_check(chat_id, wrong_name):
     async def search_movie(wrong_name):
@@ -1299,7 +1302,6 @@ async def advantage_spell_chok(client, message):
     buttons.append([InlineKeyboardButton(
         text="🚫 ᴄʟᴏsᴇ 🚫", callback_data='close_data', style=enums.ButtonStyle.DANGER)])
     
-    # FIXED: reply_to_message_id hata diya gaya hai
     d = await message.reply_text(
         text=script.CUDNT_FND.format(message.from_user.mention), 
         reply_markup=InlineKeyboardMarkup(buttons)
@@ -1684,7 +1686,7 @@ async def filter_seasons_cb_handler(client: Client, query: CallbackQuery):
         btn.append([InlineKeyboardButton("↭ ɴᴏ ᴍᴏʀᴇ ᴘᴀɢᴇꜱ ᴀᴠᴀɪʟᴀʙʟᴇ ↭", callback_data="pages")])
 
     if not settings.get("button"):
-        cur_time = datetime.now(pytz.timezone("Asia/Kolkata")).time()
+        curr_time = datetime.now(pytz.timezone("Asia/Kolkata")).time()
         time_difference = timedelta(
             hours=curr_time.hour,
             minutes=curr_time.minute,
