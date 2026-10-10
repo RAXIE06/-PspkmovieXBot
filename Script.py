@@ -323,7 +323,7 @@ PREMIUM_TEXT = """<b>✨ <u>AVAILABLE PREMIUM PLANS</u> ✨</b>
 <b>🎉 ENJOY YOUR PREMIUM EXPERIENCE!</b>"""
 
 
-HOW_TO_BUY_TXT = """📖 <b>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ?</b>
+HOW_TO_BUY_TXT = 📖 <b>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ?</b>
 ━━━━━━━━━━━━━━━━━━
 
 <b>1️⃣ Select Plan:</b>
@@ -342,7 +342,7 @@ If your Premium is not activated after payment, please wait a little and contact
 ✅ <b>Fast • Secure • Automatic</b>
 💎 Enjoy Your Premium Experience!
 
-━━━━━━━━━━━━━━━━━━"""
+━━━━━━━━━━━━━━━━━━
 
 📖 <b>ᴘʀᴇᴍɪᴜᴍ ᴋᴀɪsᴇ ᴋʜᴀʀɪᴅᴇɪɴ?</b>
 
