@@ -1156,28 +1156,19 @@ async def cb_handler(client: Client, query: CallbackQuery):
     elif query.data == "about":
         buttons = [[
             InlineKeyboardButton('‼️ ᴅɪꜱᴄʟᴀɪᴍᴇʀ ‼️', callback_data='disclaimer'),
-            InlineKeyboardButton('🪔 sᴏᴜʀᴄᴇ', callback_data='source'),
+            InlineKeyboardButton ('🪔 sᴏᴜʀᴄᴇ', callback_data='source'),
         ],[
             InlineKeyboardButton('ᴅᴏɴᴀᴛɪᴏɴ 💰', callback_data='donation'),
         ],[
             InlineKeyboardButton('⇋ ʙᴀᴄᴋ ᴛᴏ ʜᴏᴍᴇ ⇋', callback_data='start')
         ]]
         reply_markup = InlineKeyboardMarkup(buttons)
-        try:
-            bot_username = temp.U_NAME if hasattr(temp, 'U_NAME') else client.me.username
-            bot_name = temp.B_NAME if hasattr(temp, 'B_NAME') else client.me.first_name
-            await query.message.edit_text(
-                text=script.ABOUT_TXT.format(bot_username, bot_name, OWNER_LNK),
-                reply_markup=reply_markup,
-                disable_web_page_preview=True,
-                parse_mode=enums.ParseMode.HTML
-            )
-            await query.answer()
-        except (MessageNotModified, MessageIdInvalid):
-            await query.answer()
-        except Exception as e:
-            logger.exception("Error in about button: %s", e)
-            await query.answer("Something went wrong!", show_alert=True)
+        await query.message.edit_text(
+            text=script.ABOUT_TXT.format(temp.U_NAME, temp.B_NAME, OWNER_LNK),
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
 
     elif query.data == "give_trial":
         try:
