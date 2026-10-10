@@ -303,64 +303,38 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
     PREMIUM_TEXT = """<b>✨ <u>AVAILABLE PREMIUM PLANS</u> ✨</b>
 
 •─────•─────────•─────•
-🔹 <b>07 DAYS</b>  ➜ ₹10
-🔹 <b>15 DAYS</b>  ➜ ₹20
-🔹 <b>30 DAYS</b>  ➜ ₹40
-🔹 <b>45 DAYS</b>  ➜ ₹55
-🔹 <b>60 DAYS</b>  ➜ ₹75
-🔹 <b>180 DAYS</b> ➜ ₹200
-🔹 <b>240 DAYS</b> ➜ ₹270
-🔹 <b>365 DAYS</b> ➜ ₹399
+◉ <b>07 ᴅᴀʏꜱ</b> - 10 ₹
+◉ <b>15 ᴅᴀʏꜱ</b> - 20 ₹
+◉ <b>30 ᴅᴀʏꜱ</b> - 40 ₹
+◉ <b>45 ᴅᴀʏꜱ</b> - 55 ₹
+◉ <b>60 ᴅᴀʏꜱ</b> - 75 ₹
+◉ <b>180 ᴅᴀʏꜱ</b> - 200 ₹
+◉ <b>240 ᴅᴀʏꜱ</b> - 270 ₹
+◉ <b>365 ᴅᴀʏꜱ</b> - 399 ₹
 •─────•─────────•─────•
 
-<b>⚡ INSTANT PREMIUM ACTIVATION:</b>
+🏷️ <a href='https://t.me/Royal_X_RoxStar'>ꜱᴜʙꜱᴄʀɪᴘᴛɪᴏɴ ᴘʀᴏᴏꜰ</a>
 
-👇 Select your preferred plan using the buttons below.
-💳 Complete your payment and let our automatic verification system verify it.
-✅ Get your Premium access activated automatically after successful payment verification.
+<i>Niche diye gaye buttons se plan select karein aur automatic verification se instant premium activate karein!</i>"""
 
-<b>🎉 ENJOY YOUR PREMIUM EXPERIENCE!</b>"""
+    HOW_TO_BUY_TXT = """<b>📖 <u>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ? / प्रीमियम कैसे खरीदें?</u></b>
 
-    HOW_TO_BUY_TXT = """📖 <b>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ?</b>
-━━━━━━━━━━━━━━━━━━
+1️⃣ <b>Select Plan:</b>
+Choose your preferred plan from the buttons.
+<i>(Niche diye gaye buttons me se apna pasandida plan select karein.)</i>
 
-<b>1️⃣ Select Plan:</b>
-Choose your preferred plan from the buttons below.
+2️⃣ <b>Scan & Pay Exact:</b>
+Scan the QR code using any UPI app (GPay, PhonePe, Paytm) and pay the exact locked amount.
+<i>(Kisi bhi UPI app se QR scan karein aur lock kiya gaya exact amount pay karein.)</i>
 
-<b>2️⃣ 📲 Scan &amp; Pay:</b>
-Scan the QR code using any UPI app (GPay, PhonePe, or Paytm) and pay the exact amount shown.
+3️⃣ <b>Instant Auto-Activation:</b>
+Premium activates automatically in <b>10-20 seconds</b> after payment!
+<i>(Payment hote hi 10-20 seconds me automatically premium chalu ho jayega!)</i>
 
-<b>3️⃣ ⚡ Instant Auto-Activation:</b>
-Your Premium access will be activated automatically once your payment is successfully verified.
-
-<b>4️⃣ 🧾 Payment Verification Help:</b>
-If your Premium is not activated after payment, please wait a little and contact the admin with your Transaction ID (UTR) and payment screenshot. Admin: @Owner_helpbot
-
-━━━━━━━━━━━━━━━━━━
-✅ <b>Fast • Secure • Automatic</b>
-💎 Enjoy Your Premium Experience!
-
-━━━━━━━━━━━━━━━━━━
-
-📖 <b>ᴘʀᴇᴍɪᴜᴍ ᴋᴀɪsᴇ ᴋʜᴀʀɪᴅᴇɪɴ?</b>
-
-<blockquote>
-1️⃣ Plan Select Karein:
-ɴɪᴄʜᴇ ᴅɪʏᴇ ɢᴀʏᴇ ʙᴜᴛᴛᴏɴs ᴍᴇɪɴ sᴇ ᴀᴘɴᴀ ᴘᴀsᴀɴᴅɪᴅᴀ ᴘʟᴀɴ sᴇʟᴇᴄᴛ ᴋᴀʀᴇɪɴ.
-
-2️⃣ 📲 Scan Karein Aur Payment Karein:
-ᴋɪsɪ ʙʜɪ ᴜᴘɪ ᴀᴘᴘ (ɢᴘᴀʏ, ᴘʜᴏɴᴇᴘᴇ ʏᴀ ᴘᴀʏᴛᴍ) sᴇ Qʀ ᴄᴏᴅᴇ sᴄᴀɴ ᴋᴀʀᴇɪɴ ᴀᴜʀ ᴅɪᴋʜᴀʏᴀ ɢᴀʏᴀ ᴇxᴀᴄᴛ ᴀᴍᴏᴜɴᴛ ᴘᴀʏ ᴋᴀʀᴇɪɴ.
-
-3️⃣ ⚡ Automatic Premium Activation:
-ᴘᴀʏᴍᴇɴᴛ sᴜᴄᴄᴇssғᴜʟʟʏ ᴠᴇʀɪғʏ ʜᴏᴛᴇ ʜɪ ᴀᴀᴘᴋᴀ ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇss ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ᴀᴄᴛɪᴠᴀᴛᴇ ʜᴏ ᴊᴀʏᴇɢᴀ.
-
-4️⃣ 🧾 Payment Verify Nahi Hua?
-ᴀɢᴀʀ ᴘᴀʏᴍᴇɴᴛ ᴋᴇ ʙᴀᴀᴅ ʙʜɪ ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴛɪᴠᴀᴛᴇ ɴᴀʜɪ ʜᴏᴛᴀ, ᴛᴏʜ ᴛʜᴏᴅᴀ ᴡᴀɪᴛ ᴋᴀʀᴇɪɴ ᴀᴜʀ ᴍᴀᴅᴀᴅ ᴋᴇ ʟɪʏᴇ ᴀᴘɴᴀ ᴛʀᴀɴsᴀᴄᴛɪᴏɴ ɪᴅ (ᴜᴛʀ) ᴀᴜʀ ᴘᴀʏᴍᴇɴᴛ sᴄʀᴇᴇɴsʜᴏᴛ ᴀᴅᴍɪɴ ᴋᴏ ʙʜᴇᴊᴇɪɴ. Admin @Owner_helpbot
-</blockquote>
-
-━━━━━━━━━━━━━━━━━━
-✅ <b>Fast • Secure • Automatic</b>
-💎 Apne Premium Experience ka maza lein!"""
+⚠️ <b>Important Note / ध्यान दें:</b>
+• Amount change mat karein.
+• QR code <b>5 minute</b> me expire ho jata hai.
+• Agar kisi technical delay ki wajah se auto-active na ho, tabhi apna 12-digit <b>UTR / Transaction Ref No</b> chat me message karein."""
 
     PREMIUM_STAR_TEXT = """<b><blockquote>ᴘᴀʏᴍᴇɴᴛ ᴍᴇᴛʜᴏᴅ: ᴛᴇʟᴇɢʀᴀᴍ ꜱᴛᴀʀꜱ ⭐</blockquote>
 
@@ -412,14 +386,22 @@ Your Premium Subscription has ended today.
 •─────•─────────•─────•
 ◉ ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴀᴄᴛɪᴠᴇ ᴘʟᴀɴ : /myplan
 
+🏷️ <b>ᴘᴀʏᴍᴇɴᴛ ᴍᴇᴛʜᴏᴅꜱ</b>
+
+💸 ᴜᴘɪ ɪᴅ → <code>{}</code>  
+📷 ǫʀ ᴄᴏᴅᴇ → <a href='{}'>ᴄʟɪᴄᴋ ʜᴇʀᴇ ᴛᴏ ꜱᴄᴀɴ</a>  
+
 🧾 ᴘᴀʏ ᴀᴄᴄᴏʀᴅɪɴɢ ᴛᴏ ʏᴏᴜʀ ᴘʟᴀɴ ᴀɴᴅ ᴇɴᴊᴏʏ ᴘʀᴇᴍɪᴜᴍ!
+
+‼️ ᴍᴜꜱᴛ ꜱᴇɴᴅ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ᴀꜰᴛᴇʀ ᴘᴀʏᴍᴇɴᴛ.  
+‼️ ᴀꜰᴛᴇʀ ꜱᴇɴᴅɪɴɢ ᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ, ɢɪᴠᴇ ᴜꜱ ꜱᴏᴍᴇ ᴛɪᴍᴇ ᴛᴏ ᴀᴅᴅ ʏᴏᴜ ɪɴ ᴛʜᴇ ᴘʀᴇᴍɪᴜᴍ ʟɪꜱᴛ.
 
 💎 ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴘʟᴀɴ → /myplan"""
 
-    SOURCE_TXT = """<b>ɪɴꜰᴏʀᴍ ᴀʙᴏᴜᴛ : 👇 </b>
+    SOURCE_TXT = """<b>ՏOᑌᖇᑕᗴ ᑕOᗪᗴ : 👇 </b>
 
-This Is A Private Project. All Rights Reserved.\n
-ɪɴꜰᴏʀᴍ ᴀʙᴏᴜᴛ ◉› :<a href=https://t.me/You_Want_To_Know_Me>RoxStar</a>\n """
+This Is An Open-Source Project. You Can Use It Freely, But Selling The Source Code Is Strictly Prohibited.\n
+ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ʜᴇʀᴇ ◉› :<a href=https://t.me/You_Want_To_Know_Me>RoxStar</a>\n """
 
     VERIFICATION_TEXT = """<b><i>👋 ʜᴇʏ {},
 
@@ -433,11 +415,11 @@ This Is A Private Project. All Rights Reserved.\n
 
 ʏᴏᴜ ʜᴀᴠᴇ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ᴛʜᴇ 1ꜱᴛ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ ✓
 
-ɴᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ꜰᴏʀ ɴᴇxᴛ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ.</i></b>"""
+ɴᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇss ꜰᴏʀ ɴᴇxᴛ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ.</i></b>"""
 
     SECOND_VERIFICATION_TEXT = """<b><i>👋 ʜᴇʏ {},
 
-📌 ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪꜰɪᴇᴅ, ᴛᴀᴘ ᴏɴ ᴛʜᴇ ᴠᴇʀɪꜰʏ ʟɪɴᴋ ᴀɴᴅ ɢᴇᴛ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ꜰᴏʀ ᴛɪʟʟ ɴᴇxᴛ ᴠᴇʀɪғɪᴄᴀᴛɪᴏɴ.
+📌 ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪꜰɪᴇᴅ, ᴛᴀᴘ ᴏɴ ᴛʜᴇ ᴠᴇʀɪꜰʏ ʟɪɴᴋ ᴀɴᴅ ɢᴇᴛ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇss ꜰᴏʀ ᴛɪʟʟ ɴᴇxᴛ ᴠᴇʀɪғɪᴄᴀᴛɪᴏɴ.
 
 #ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ:- 2/3 ✓
 
@@ -447,11 +429,11 @@ This Is A Private Project. All Rights Reserved.\n
     
 ʏᴏᴜ ʜᴀᴠᴇ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ᴛʜᴇ 2ɴᴅ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ ✓
 
-ɴᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ꜰᴏʀ ɴᴇxᴛ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ.</i></b>"""
+ɴᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇss ꜰᴏʀ ɴᴇxᴛ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ.</i></b>"""
 
     THIRDT_VERIFICATION_TEXT = """<b><i>👋 ʜᴇʏ {},
     
-📌 ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪꜰɪᴇᴅ, ᴛᴀᴘ ᴏɴ ᴛʜᴇ ᴠᴇʀɪꜰʏ ʟɪɴᴋ & ɢᴇᴛ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ꜰᴏʀ ɴᴇxᴛ ꜰᴜʟʟ ᴅᴀʏ.</u>
+📌 ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪꜰɪᴇᴅ, ᴛᴀᴘ ᴏɴ ᴛʜᴇ ᴠᴇʀɪꜰʏ ʟɪɴᴋ & ɢᴇᴛ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇss ꜰᴏʀ ɴᴇxᴛ ꜰᴜʟʟ ᴅᴀʏ.</u>
 
 #ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ:- 3/3 ✓
 
@@ -461,7 +443,7 @@ This Is A Private Project. All Rights Reserved.\n
     
 ʏᴏᴜ ʜᴀᴠᴇ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ᴛʜᴇ 3ʀᴅ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ ✓
 
-ɴᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ꜰᴏʀ ɴᴇxᴛ ꜰᴜʟʟ ᴅᴀʏ.</i></b>"""
+ɴᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇss ꜰᴏʀ ɴᴇxᴛ ꜰᴜʟʟ ᴅᴀʏ.</i></b>"""
 
     VERIFIED_LOG_TEXT = """ᴜꜱᴇʀ ᴠᴇʀɪꜰɪᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✓
 
