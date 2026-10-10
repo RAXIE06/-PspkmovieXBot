@@ -303,19 +303,23 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
     PREMIUM_TEXT = """<b>✨ <u>AVAILABLE PREMIUM PLANS</u> ✨</b>
 
 •─────•─────────•─────•
-◉ <b>07 ᴅᴀʏꜱ</b> - 10 ₹
-◉ <b>15 ᴅᴀʏꜱ</b> - 20 ₹
-◉ <b>30 ᴅᴀʏꜱ</b> - 40 ₹
-◉ <b>45 ᴅᴀʏꜱ</b> - 55 ₹
-◉ <b>60 ᴅᴀʏꜱ</b> - 75 ₹
-◉ <b>180 ᴅᴀʏꜱ</b> - 200 ₹
-◉ <b>240 ᴅᴀʏꜱ</b> - 270 ₹
-◉ <b>365 ᴅᴀʏꜱ</b> - 399 ₹
+🔹 **07 DAYS**  ➜ ₹10
+🔹 **15 DAYS**  ➜ ₹20
+🔹 **30 DAYS**  ➜ ₹40
+🔹 **45 DAYS**  ➜ ₹55
+🔹 **60 DAYS**  ➜ ₹75
+🔹 **180 DAYS** ➜ ₹200
+🔹 **240 DAYS** ➜ ₹270
+🔹 **365 DAYS** ➜ ₹399
 •─────•─────────•─────•
 
-🏷️ <a href='https://t.me/Royal_X_RoxStar'>ꜱᴜʙꜱᴄʀɪᴘᴛɪᴏɴ ᴘʀᴏᴏꜰ</a>
+<b>⚡INSTANT PREMIUM ACTIVATIONn:</b>
 
-<i>Niche diye gaye buttons se plan select karein aur automatic verification se instant premium activate karein!</i>"""
+👇 Select your preferred plan using the buttons below.
+💳 Complete your payment and let our automatic verification system verify it.
+✅ Get your Premium access activated automatically after successful payment verification.
+
+<b>🎉 ENJOY YOUR PREMIUM EXPERIENCE!</b>
 
     HOW_TO_BUY_TXT = """<b>📖 <u>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ? / प्रीमियम कैसे खरीदें?</u></b>
 
