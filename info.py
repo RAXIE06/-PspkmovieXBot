@@ -181,7 +181,7 @@ PM_SEARCH = is_enabled(environ.get('PM_SEARCH', "True"), True)
 EMOJI_MODE = is_enabled(environ.get('EMOJI_MODE', "False"), False)
 BUTTON_MODE = is_enabled((environ.get('BUTTON_MODE', "False")), False)
 STREAM_MODE = is_enabled(environ.get('STREAM_MODE', "True"), True)
-PREMIUM_STREAM_MODE = is_enabled(environ.get('PREMIUM_STREAM_MODE', "False"), False)
+PREMIUM_STREAM_MODE = is_enabled(environ.get('PREMIUM_STREAM_MODE', "True"), True)
 MAINTENANCE = is_enabled(environ.get('MAINTENANCE', "False"), False)
 
 # ============================
