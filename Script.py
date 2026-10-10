@@ -386,22 +386,14 @@ Your Premium Subscription has ended today.
 •─────•─────────•─────•
 ◉ ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴀᴄᴛɪᴠᴇ ᴘʟᴀɴ : /myplan
 
-🏷️ <b>ᴘᴀʏᴍᴇɴᴛ ᴍᴇᴛʜᴏᴅꜱ</b>
-
-💸 ᴜᴘɪ ɪᴅ → <code>{}</code>  
-📷 ǫʀ ᴄᴏᴅᴇ → <a href='{}'>ᴄʟɪᴄᴋ ʜᴇʀᴇ ᴛᴏ ꜱᴄᴀɴ</a>  
-
 🧾 ᴘᴀʏ ᴀᴄᴄᴏʀᴅɪɴɢ ᴛᴏ ʏᴏᴜʀ ᴘʟᴀɴ ᴀɴᴅ ᴇɴᴊᴏʏ ᴘʀᴇᴍɪᴜᴍ!
-
-‼️ ᴍᴜꜱᴛ ꜱᴇɴᴅ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ᴀꜰᴛᴇʀ ᴘᴀʏᴍᴇɴᴛ.  
-‼️ ᴀꜰᴛᴇʀ ꜱᴇɴᴅɪɴɢ ᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ, ɢɪᴠᴇ ᴜꜱ ꜱᴏᴍᴇ ᴛɪᴍᴇ ᴛᴏ ᴀᴅᴅ ʏᴏᴜ ɪɴ ᴛʜᴇ ᴘʀᴇᴍɪᴜᴍ ʟɪꜱᴛ.
 
 💎 ᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴘʟᴀɴ → /myplan"""
 
-    SOURCE_TXT = """<b>ՏOᑌᖇᑕᗴ ᑕOᗪᗴ : 👇 </b>
+    SOURCE_TXT = """<b>ɪɴꜰᴏʀᴍ ᴀʙᴏᴜᴛ : 👇 </b>
 
-This Is An Open-Source Project. You Can Use It Freely, But Selling The Source Code Is Strictly Prohibited.\n
-ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ʜᴇʀᴇ ◉› :<a href=https://t.me/You_Want_To_Know_Me>RoxStar</a>\n """
+This Is A Private Project. All Rights Reserved.\n
+ɪɴꜰᴏʀᴍ ᴀʙᴏᴜᴛ ◉› :<a href=https://t.me/You_Want_To_Know_Me>RoxStar</a>\n """
 
     VERIFICATION_TEXT = """<b><i>👋 ʜᴇʏ {},
 
