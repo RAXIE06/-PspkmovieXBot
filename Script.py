@@ -338,7 +338,7 @@ Your Premium access will be activated automatically once your payment is success
 If your Premium is not activated after payment, please wait a little and contact the admin with your Transaction ID (UTR) and payment screenshot for assistance. Admin @Owner_helpbot
 
 ━━━━━━━━━━━━━━━━━━
-✅ <b>Fast • Secure • Automatic</b>
+✅ <b>Fast • Secure • Automatic</b>"""
 💎 Enjoy Your Premium Experience!
 
 ━━━━━━━━━━━━━━━━━━
