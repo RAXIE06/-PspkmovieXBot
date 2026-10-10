@@ -321,24 +321,48 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
 
 <b>🎉 ENJOY YOUR PREMIUM EXPERIENCE!</b>
 
-    HOW_TO_BUY_TXT = """<b>📖 <u>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ? / प्रीमियम कैसे खरीदें?</u></b>
 
-1️⃣ <b>Select Plan:</b>
-Choose your preferred plan from the buttons.
-<i>(Niche diye gaye buttons me se apna pasandida plan select karein.)</i>
+HOW_TO_BUY_TXT = """📖 <b>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ?</b>
+━━━━━━━━━━━━━━━━━━
 
-2️⃣ <b>Scan & Pay Exact:</b>
-Scan the QR code using any UPI app (GPay, PhonePe, Paytm) and pay the exact locked amount.
-<i>(Kisi bhi UPI app se QR scan karein aur lock kiya gaya exact amount pay karein.)</i>
+<b>1️⃣ Select Plan:</b>
+Choose your preferred plan from the buttons below.
 
-3️⃣ <b>Instant Auto-Activation:</b>
-Premium activates automatically in <b>10-20 seconds</b> after payment!
-<i>(Payment hote hi 10-20 seconds me automatically premium chalu ho jayega!)</i>
+<b>2️⃣ 📲 Scan &amp; Pay:</b>
+Scan the QR code using any UPI app (GPay, PhonePe, or Paytm) and pay the exact amount shown.
 
-⚠️ <b>Important Note / ध्यान दें:</b>
-• Amount change mat karein.
-• QR code <b>5 minute</b> me expire ho jata hai.
-• Agar kisi technical delay ki wajah se auto-active na ho, tabhi apna 12-digit <b>UTR / Transaction Ref No</b> chat me message karein."""
+<b>3️⃣ ⚡ Instant Auto-Activation:</b>
+Your Premium access will be activated automatically once your payment is successfully verified.
+
+<b>4️⃣ 🧾 Payment Verification Help:</b>
+If your Premium is not activated after payment, please wait a little and contact the admin with your Transaction ID (UTR) and payment screenshot for assistance. Admin @Owner_helpbot
+
+━━━━━━━━━━━━━━━━━━
+✅ <b>Fast • Secure • Automatic</b>
+💎 Enjoy Your Premium Experience!
+
+━━━━━━━━━━━━━━━━━━
+
+📖 <b>ᴘʀᴇᴍɪᴜᴍ ᴋᴀɪsᴇ ᴋʜᴀʀɪᴅᴇɪɴ?</b>
+
+<blockquote>
+1️⃣ Plan Select Karein:
+ɴɪᴄʜᴇ ᴅɪʏᴇ ɢᴀʏᴇ ʙᴜᴛᴛᴏɴs ᴍᴇɪɴ sᴇ ᴀᴘɴᴀ ᴘᴀsᴀɴᴅɪᴅᴀ ᴘʟᴀɴ sᴇʟᴇᴄᴛ ᴋᴀʀᴇɪɴ.
+
+2️⃣ 📲 Scan Karein Aur Payment Karein:
+ᴋɪsɪ ʙʜɪ ᴜᴘɪ ᴀᴘᴘ (ɢᴘᴀʏ, ᴘʜᴏɴᴇᴘᴇ ʏᴀ ᴘᴀʏᴛᴍ) sᴇ Qʀ ᴄᴏᴅᴇ sᴄᴀɴ ᴋᴀʀᴇɪɴ ᴀᴜʀ ᴅɪᴋʜᴀʏᴀ ɢᴀʏᴀ ᴇxᴀᴄᴛ ᴀᴍᴏᴜɴᴛ ᴘᴀʏ ᴋᴀʀᴇɪɴ.
+
+3️⃣ ⚡ Automatic Premium Activation:
+ᴘᴀʏᴍᴇɴᴛ sᴜᴄᴄᴇssғᴜʟʟʏ ᴠᴇʀɪғʏ ʜᴏᴛᴇ ʜɪ ᴀᴀᴘᴋᴀ ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇss ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ᴀᴄᴛɪᴠᴀᴛᴇ ʜᴏ ᴊᴀʏᴇɢᴀ.
+
+4️⃣ 🧾 Payment Verify Nahi Hua?
+ᴀɢᴀʀ ᴘᴀʏᴍᴇɴᴛ ᴋᴇ ʙᴀᴀᴅ ʙʜɪ ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴛɪᴠᴀᴛᴇ ɴᴀʜɪ ʜᴏᴛᴀ, ᴛᴏʜ ᴛʜᴏᴅᴀ ᴡᴀɪᴛ ᴋᴀʀᴇɪɴ ᴀᴜʀ ᴍᴀᴅᴀᴅ ᴋᴇ ʟɪʏᴇ ᴀᴘɴᴀ ᴛʀᴀɴsᴀᴄᴛɪᴏɴ ɪᴅ (ᴜᴛʀ) ᴀᴜʀ ᴘᴀʏᴍᴇɴᴛ sᴄʀᴇᴇɴsʜᴏᴛ ᴀᴅᴍɪɴ ᴋᴏ ʙʜᴇᴊᴇɪɴ. Admin @Owner_helpbot
+</blockquote>
+
+━━━━━━━━━━━━━━━━━━
+✅ <b>Fast • Secure • Automatic</b>
+💎 Apne Premium Experience ka maza lein!"""
+
 
     PREMIUM_STAR_TEXT = """<b><blockquote>ᴘᴀʏᴍᴇɴᴛ ᴍᴇᴛʜᴏᴅ: ᴛᴇʟᴇɢʀᴀᴍ ꜱᴛᴀʀꜱ ⭐</blockquote>
 
