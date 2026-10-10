@@ -300,26 +300,27 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
     𝙱𝙾𝚃 𝚆𝙾𝚁𝙺𝙸𝙽𝙶 𝙿𝚁𝙾𝙿𝙴𝚁𝙻𝚈....
     """
 
-    PREMIUM_TEXT = """<b>✨ <u>AVAILABLE PREMIUM PLANS</u> ✨</b>
+    
+PREMIUM_TEXT = """<b>✨ <u>AVAILABLE PREMIUM PLANS</u> ✨</b>
 
 •─────•─────────•─────•
-🔹 **07 DAYS**  ➜ ₹10
-🔹 **15 DAYS**  ➜ ₹20
-🔹 **30 DAYS**  ➜ ₹40
-🔹 **45 DAYS**  ➜ ₹55
-🔹 **60 DAYS**  ➜ ₹75
-🔹 **180 DAYS** ➜ ₹200
-🔹 **240 DAYS** ➜ ₹270
-🔹 **365 DAYS** ➜ ₹399
+🔹 <b>07 DAYS</b>  ➜ ₹10
+🔹 <b>15 DAYS</b>  ➜ ₹20
+🔹 <b>30 DAYS</b>  ➜ ₹40
+🔹 <b>45 DAYS</b>  ➜ ₹55
+🔹 <b>60 DAYS</b>  ➜ ₹75
+🔹 <b>180 DAYS</b> ➜ ₹200
+🔹 <b>240 DAYS</b> ➜ ₹270
+🔹 <b>365 DAYS</b> ➜ ₹399
 •─────•─────────•─────•
 
-<b>⚡INSTANT PREMIUM ACTIVATIONn:</b>
+<b>⚡ INSTANT PREMIUM ACTIVATION:</b>
 
 👇 Select your preferred plan using the buttons below.
 💳 Complete your payment and let our automatic verification system verify it.
 ✅ Get your Premium access activated automatically after successful payment verification.
 
-<b>🎉 ENJOY YOUR PREMIUM EXPERIENCE!</b>
+<b>🎉 ENJOY YOUR PREMIUM EXPERIENCE!</b>"""
 
 
 HOW_TO_BUY_TXT = """📖 <b>ʜᴏᴡ ᴛᴏ ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ?</b>
@@ -335,13 +336,13 @@ Scan the QR code using any UPI app (GPay, PhonePe, or Paytm) and pay the exact a
 Your Premium access will be activated automatically once your payment is successfully verified.
 
 <b>4️⃣ 🧾 Payment Verification Help:</b>
-If your Premium is not activated after payment, please wait a little and contact the admin with your Transaction ID (UTR) and payment screenshot for assistance. Admin @Owner_helpbot
+If your Premium is not activated after payment, please wait a little and contact the admin with your Transaction ID (UTR) and payment screenshot. Admin: @Owner_helpbot
 
 ━━━━━━━━━━━━━━━━━━
-✅ <b>Fast • Secure • Automatic</b>"""
+✅ <b>Fast • Secure • Automatic</b>
 💎 Enjoy Your Premium Experience!
 
-━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━"""
 
 📖 <b>ᴘʀᴇᴍɪᴜᴍ ᴋᴀɪsᴇ ᴋʜᴀʀɪᴅᴇɪɴ?</b>
 
