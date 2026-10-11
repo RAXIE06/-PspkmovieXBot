@@ -18,13 +18,13 @@ def get_plan_keyboard():
     # Plan ke amount ke hisaब se alag-alag premium emojis
     plan_emojis = {
         10: "🍃",
-        20: "🪔",
+        20: "🏖️",
         40: "⛲",
         55: "🦖",
         75: "🌺",
         200: "🎐",
         270: "🐚",
-        399: "👑"
+        399: "🏜️"
     }
     
     buttons = []
