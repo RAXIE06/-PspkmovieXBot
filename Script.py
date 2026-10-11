@@ -321,9 +321,8 @@ sʜᴏᴡɴ ɪɴ : {remaining_seconds} <i>sᴇᴄ</i>⚡️
 🔹 <b>365 DAYS</b> ➜ ₹399
 •─────•─────────•─────•
 
-<b>⚡ INSTANT PREMIUM ACTIVATION:</b>
-
-👇 𝗦𝗘𝗟𝗘𝗖𝗧 𝗬𝗢𝗨𝗥 𝗣𝗥𝗘𝗙𝗘𝗥𝗥𝗘𝗗 𝗣𝗟𝗔𝗡 using the buttons below.
+👇 𝗦𝗘𝗟𝗘𝗖𝗧 𝗬𝗢𝗨𝗥 𝗣𝗥𝗘𝗙𝗘𝗥𝗥𝗘𝗗 𝗣𝗟𝗔𝗡 
+Using the buttons below.
 
 💳 𝟭. 𝗠𝗔𝗞𝗘 𝗣𝗔𝗬𝗠𝗘𝗡𝗧
 Complete your payment and let our system verify it automatically.
