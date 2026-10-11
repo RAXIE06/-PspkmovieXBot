@@ -76,14 +76,14 @@ STAR_PREMIUM_PLANS = {
 }
 
 PREMIUM_PLANS = {
-    10: {"name": "BRONZE PLAN", "days": 7, "price": 10},
-    20: {"name": "SILVER PLAN", "days": 15, "price": 20},
-    40: {"name": "GOLD PLAN", "days": 30, "price": 40},
-    55: {"name": "PLATINUM PLAN", "days": 45, "price": 55},
-    75: {"name": "DIAMOND PLAN", "days": 60, "price": 75},
-    200: {"name": "LEGEND PLAN", "days": 180, "price": 200},
-    270: {"name": "ULTIMATE PLAN", "days": 240, "price": 270},
-    399: {"name": "YEARLY VIP PLAN", "days": 365, "price": 399}
+    10: {"name": "BRONZE", "days": 7, "price": 10},
+    20: {"name": "SILVER", "days": 15, "price": 20},
+    40: {"name": "GOLD", "days": 30, "price": 40},
+    55: {"name": "PLATINUM", "days": 45, "price": 55},
+    75: {"name": "DIAMOND", "days": 60, "price": 75},
+    200: {"name": "LEGEND", "days": 180, "price": 200},
+    270: {"name": "ULTIMATE", "days": 240, "price": 270},
+    399: {"name": "YEARLY VIP", "days": 365, "price": 399}
 }
 
 # ============================
