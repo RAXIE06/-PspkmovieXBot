@@ -15,23 +15,28 @@ USER_PLAN_SESSIONS = {}
 TIMEZONE = "Asia/Kolkata"
 
 def get_plan_keyboard():
+    # Plan ke amount ke hisaब se alag-alag premium emojis
+    plan_emojis = {
+        10: "⚡",
+        20: "🔹",
+        40: "🚀",
+        55: "🔥",
+        75: "🌟",
+        200: "💫",
+        270: "💎",
+        399: "👑"
+    }
+    
     buttons = []
     row = []
-    for amount, details in PREMIUM_PLANS.items():
-        name = details["name"]
-        days = details["days"]
-        price = details["price"]
-        
-        # Button text format (Aap apne hisaab se text customize kar sakte hain)
-        btn_text = f"{name} ({days}D - ₹{price})"
-        
-        row.append(InlineKeyboardButton(btn_text, callback_data=f"buyplan_{amount}"))
+    for amount, days in PREMIUM_PLANS.items():
+        emoji = plan_emojis.get(amount, "⚡")
+        row.append(InlineKeyboardButton(f"{emoji} {days} Days - ₹{amount}", callback_data=f"buyplan_{amount}"))
         if len(row) == 2:
             buttons.append(row)
             row = []
     if row:
         buttons.append(row)
-        
     buttons.append([InlineKeyboardButton("💎 𝖧𝗈𝗐 𝗍𝗈 𝖡𝗎𝗒 𝖯𝗋𝖾𝗆𝗂𝗎𝗆❓", callback_data="how_to_buy")])
     buttons.append([InlineKeyboardButton("❌ Close", callback_data="close_data")])
     return InlineKeyboardMarkup(buttons)
