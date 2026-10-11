@@ -76,14 +76,14 @@ STAR_PREMIUM_PLANS = {
 }
 
 PREMIUM_PLANS = {
-    10: {"name": "Mini Pass", "days": 7, "price": 10},
-    20: {"name": "Basic Pass", "days": 15, "price": 20},
-    40: {"name": "Pro Pass", "days": 30, "price": 40},
-    55: {"name": "Turbo Pass", "days": 45, "price": 55},
-    75: {"name": "Super VIP", "days": 60, "price": 75},
-    200: {"name": "Mega VIP", "days": 180, "price": 200},
-    270: {"name": "Ultra VIP", "days": 240, "price": 270},
-    399: {"name": "Yearly VIP", "days": 365, "price": 399}
+    10: 7,       # 07 Days - 10 Rs
+    20: 15,      # 15 Days - 20 Rs
+    40: 30,      # 30 Days - 40 Rs
+    55: 45,      # 45 Days - 55 Rs
+    75: 60,      # 60 Days - 75 Rs
+    200: 180,    # 180 Days - 200 Rs
+    270: 240,    # 240 Days - 270 Rs
+    399: 365     # 365 Days - 399 Rs
 }
 
 # ============================
