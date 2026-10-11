@@ -3,7 +3,7 @@ class script(object):
 
 ʜᴇʏ {}, {}
 
-<blockquote>🍿 <b>YOUR NEXT WATCH STARTS HERE.</b>
+<blockquote>🍿 <b>GOOD MOVIES. GREAT MOMENTS.</b>
 
 🎞️ ᴍᴏᴠɪᴇs & sᴇʀɪᴇs
 🔎 ғᴀsᴛ & ᴇᴀsʏ sᴇᴀʀᴄʜ
