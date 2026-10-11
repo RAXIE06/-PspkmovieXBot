@@ -1,5 +1,6 @@
+```python
 class script(object):
-    START_TXT = """<b>🎬 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ ᴄɪɴᴇᴍᴀᴛɪᴄ ᴜɴɪᴠᴇʀsᴇ</b>
+    START_TXT = """<b>🎬 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ <a href=https://t.me/{}>{}</a></b>
 
 ʜᴇʏ {}, {}
 
@@ -17,7 +18,7 @@ class script(object):
 
 👇 <b>ʏᴏᴜʀ ᴍᴏᴠɪᴇ ɴɪɢʜᴛ sᴛᴀʀᴛs ɴᴏᴡ.</b>"""
 
-    GSTART_TXT = """<b>🎥 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ʏᴏᴜʀ ᴍᴏᴠɪᴇ ᴅᴇsᴛɪɴᴀᴛɪᴏɴ</b>
+    GSTART_TXT = """<b>🎥 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ <a href=https://t.me/{}>{}</a></b>
 
 ʜᴇʏ {},
 
@@ -33,6 +34,7 @@ class script(object):
 ╰───────────────
 
 👇 <b>ʟᴇᴛ's ᴘɪᴄᴋ ʏᴏᴜʀ ɴᴇxᴛ ғɪʟᴍ.</b>"""
+```
 
     HELP_TXT = """<b>
 ✨ ʜᴏᴡ ᴛᴏ ʀᴇǫᴜᴇꜱᴛ ᴅʀᴀᴍᴀꜱ & ᴍᴏᴠɪᴇꜱ ✨  
