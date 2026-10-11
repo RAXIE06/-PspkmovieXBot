@@ -23,7 +23,7 @@ def get_plan_keyboard():
         price = details["price"]
         
         # Button text format (Aap apne hisaab se text customize kar sakte hain)
-        btn_text = f"⚡ {name} ({days}D - ₹{price})"
+        btn_text = f"{name} ({days}D - ₹{price})"
         
         row.append(InlineKeyboardButton(btn_text, callback_data=f"buyplan_{amount}"))
         if len(row) == 2:
