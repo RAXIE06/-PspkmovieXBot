@@ -1,4 +1,3 @@
-
 class script(object):
     START_TXT = """<b>🎬 ʏᴏᴜʀ ᴍᴏᴠɪᴇ ᴡᴏʀʟᴅ ʙᴇɢɪɴs ʜᴇʀᴇ.</b>
 
