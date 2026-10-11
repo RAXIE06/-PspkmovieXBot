@@ -24,7 +24,7 @@ def get_plan_keyboard():
             row = []
     if row:
         buttons.append(row)
-    buttons.append([InlineKeyboardButton("❓ How to Buy? / प्रीमियम कैसे खरीदें?", callback_data="how_to_buy")])
+    buttons.append([InlineKeyboardButton("💎 𝖧𝗈𝗐 𝗍𝗈 𝖡𝗎𝗒 𝖯𝗋𝖾𝗆𝗂𝗎𝗆❓", callback_data="how_to_buy")])
     buttons.append([InlineKeyboardButton("❌ Close", callback_data="close_data")])
     return InlineKeyboardMarkup(buttons)
 
@@ -65,13 +65,17 @@ def get_success_receipt(user_mention: str, user_id: int, days: int, exp_dt: date
     
     return (
         f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
+        
         f"👤 <b>ᴜꜱᴇʀ :</b> {user_mention}\n"
         f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
         f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {days} Days\n"
+        
         f"📅 <b>ᴊᴏɪɴɪɴɢ ᴅᴀᴛᴇ :</b> <code>{j_date}</code>\n"
         f"⏰ <b>ᴊᴏɪɴɪɴɢ ᴛɪᴍᴇ :</b> <code>{j_time}</code>\n"
+        
         f"⏳ <b>ᴇxᴘɪʀʏ ᴅᴀᴛᴇ :</b> <code>{e_date}</code>\n"
         f"⏰ <b>ᴇxᴘɪʀʏ ᴛɪᴍᴇ :</b> <code>{e_time}</code>\n\n"
+        
         f"🚀 <i>Enjoy unlimited direct downloads without shorteners, force-subs, or ads!</i>"
     )
 
@@ -123,10 +127,8 @@ async def auto_verify_loop(client: Client, user_id: int, chat_id: int, qr_msg: M
 
         await client.send_message(
             chat_id,
-            f"⏳ <b>QR Code Expired / क्यूआर कोड समाप्त हो गया!</b>\n\n"
-            f"• <b>English:</b> If you already paid <b>₹{exact_amount}</b>, send your 12-digit <b>UTR / Transaction Ref No</b> here in chat.\n"
-            f"• <b>Hinglish:</b> Agar aapne paise pay kar diye hain, toh apna 12-digit UTR number yahan chat me bhejein.\n\n"
-            f"👉 <i>Want to generate a new QR? Tap /plan</i>"
+            f"⌛ <b>ᴛɪᴍᴇ ᴜᴘ! ǫʀ ᴄᴏᴅᴇ ᴇxᴘɪʀᴇᴅ</b>\n\n"
+            f"💳 <i>ɢᴇɴᴇʀᴀᴛᴇ ᴀ ɴᴇᴡ ᴘᴀʏᴍᴇɴᴛ ǫʀ ᴄᴏᴅᴇ ᴠɪᴀ /plan ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ.</i>"
         )
 
 @Client.on_callback_query(filters.regex(r"^buyplan_(\d+)"))
@@ -160,12 +162,12 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
         f"💵 <b>Original Price:</b> <strike>₹{base_amount}</strike>\n"
         f"🎉 <b>Instant Discount Applied!</b>\n\n"
         f"💰 <b>Pay Exact: ₹{exact_amount}</b>\n\n"
-        f"📌 <b>Amount is locked in QR. Just scan and pay.</b>\n"
-        f"<i>(QR code scan karke exact amount pay karein.)</i>\n\n"
-        f"⏳ <b>QR valid for 5 Minutes only!</b>\n"
-        f"<i>(5 minute me payment na hone par QR delete ho jayega.)</i>\n\n"
-        f"⚡ <b>Premium activates automatically in 10-20 seconds after payment!</b>\n"
-        f"<i>(Payment ke turant baad auto-activate ho jayega.)</i>"
+        f"💳 <b>ᴇxᴀᴄᴛ ᴀᴍᴏᴜɴᴛ ɪs ᴘʀᴇsᴇᴛ ɪɴ ᴛʜᴇ ǫʀ</b>\n"
+        f"<i>📌 QR sᴄᴀɴ ᴋᴀʀᴋᴇ ᴅɪʏᴀ ɢᴀʏᴀ ᴇxᴀᴄᴛ ᴀᴍᴏᴜɴᴛ ʜɪ ᴘᴀʏ ᴋᴀʀᴇɪɴ.</i>\n\n"
+        f"⏳ <b>ǫʀ ᴄᴏᴅᴇ ᴠᴀʟɪᴅɪᴛʏ: 5 ᴍɪɴᴜᴛᴇs</b>\n"
+        f"<i>⌛ 5 ᴍɪɴᴜᴛᴇ ʙᴀᴀᴅ ǫʀ ᴄᴏᴅᴇ ᴇxᴘɪʀᴇ ʜᴏ ᴊᴀʏᴇɢᴀ.</i>\n\n"
+        f"⚡ <b>ᴀᴜᴛᴏᴍᴀᴛɪᴄ ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴛɪᴠᴀᴛɪᴏɴ</b>\n"
+        f"<i>✅ sᴜᴄᴄᴇssғᴜʟ ᴘᴀʏᴍᴇɴᴛ ᴠᴇʀɪғɪᴄᴀᴛɪᴏɴ ᴋᴇ ʙᴀᴀᴅ 10–20 sᴇᴄᴏɴᴅs ᴍᴇɪɴ ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴛɪᴠᴀᴛᴇ ʜᴏ ᴊᴀʏᴇɢᴀ.</i>"
     )
 
     btn = InlineKeyboardMarkup([
