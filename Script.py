@@ -1,4 +1,3 @@
-```python
 class script(object):
     START_TXT = """<b>🎬 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ <a href=https://t.me/{}>{}</a></b>
 
@@ -34,7 +33,6 @@ class script(object):
 ╰───────────────
 
 👇 <b>ʟᴇᴛ's ᴘɪᴄᴋ ʏᴏᴜʀ ɴᴇxᴛ ғɪʟᴍ.</b>"""
-```
 
     HELP_TXT = """<b>
 ✨ ʜᴏᴡ ᴛᴏ ʀᴇǫᴜᴇꜱᴛ ᴅʀᴀᴍᴀꜱ & ᴍᴏᴠɪᴇꜱ ✨  
