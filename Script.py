@@ -1,5 +1,7 @@
 class script(object):
-    START_TXT = """<b>🎬 ʜᴇʏ {}, ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ ᴍᴏᴠɪᴇ ᴡᴏʀʟᴅ!</b>
+    START_TXT = """<b>🍿 ʜᴇʏ ᴛʜᴇʀᴇ, ᴍᴏᴠɪᴇ ʟᴏᴠᴇʀ!</b>
+
+ʜᴇʏ {}, {}
 
 <blockquote>🍿 <b>YOUR NEXT WATCH STARTS HERE.</b>
 
