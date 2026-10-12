@@ -958,15 +958,15 @@ async def cb_handler(client: Client, query: CallbackQuery):
         ident, key = query.data.split("#")
         settings = await get_settings(query.message.chat.id)
         try:
-            await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start=allfiles_{query.message.chat.id}_{key}")
+            await query.answer(url=f"https://t.me/{temp.U_NAME}?start=allfiles_{query.message.chat.id}_{key}")
             return
         except UserIsBlocked:
             await query.answer('Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴍᴀʜɴ !', show_alert=True)
         except PeerIdInvalid:
-            await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start=sendfiles3_{key}")
+            await query.answer(url=f"https://t.me/{temp.U_NAME}?start=sendfiles3_{key}")
         except Exception as e:
             logger.exception(e)
-            await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start=sendfiles4_{key}")
+            await query.answer(url=f"https://t.me/{temp.U_NAME}?start=sendfiles4_{key}")
 
     elif query.data.startswith("autofilter_delete"):
         await Media.collection.drop()
