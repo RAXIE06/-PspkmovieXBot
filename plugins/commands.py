@@ -716,19 +716,36 @@ async def upgrade_callback_sync(client: Client, query: CallbackQuery):
     )
     await query.answer()
 
+# ==================== REFER CALLBACK WITH BUTTONS ==================== #
+
 @Client.on_callback_query(filters.regex("^refer$"))
 async def refer_callback(client, query):
     user_id = query.from_user.id
     refer_link = f"https://t.me/{temp.U_NAME}?start=reff_{user_id}"
     refer_points = referdb.get_refer_points(user_id)
+    remaining = 100 - refer_points
     text = (
         f"🎁 <b><u>Rᴇғᴇʀʀᴀʟ Sʏsᴛᴇᴍ</u></b>\n\n"
-        f"• Invite your friends and get 1 month of premium free when you reach 100 points (10 users = 100 points).\n\n"
-        f"🔗 <b>Your Refer Link:</b> <code>{refer_link}</code>\n"
-        f"⭐ <b>Your Points:</b> <code>{refer_points}/100</code>"
+        f"<blockquote>💎 Iɴᴠɪᴛᴇ ʏᴏᴜʀ ғʀɪᴇɴᴅs ᴀɴᴅ ɢᴇᴛ <b>1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ ғʀᴇᴇ</b> ᴡʜᴇɴ ʏᴏᴜ ʀᴇᴀᴄʜ <b>100 ᴘᴏɪɴᴛs</b>\n"
+        f"(10 ᴜsᴇʀs = 100 ᴘᴏɪɴᴛs)</blockquote>\n\n"
+        f"⭐ <b>Yᴏᴜʀ Pᴏɪɴᴛs :</b> <code>{refer_points}/100</code>\n"
+        f"📊 <b>Rᴇᴍᴀɪɴɪɴɢ :</b> <code>{remaining} ᴘᴏɪɴᴛs</code>"
     )
-    await query.message.reply_text(text)
+    btn = [
+        [InlineKeyboardButton("🔗 Sʜᴀʀᴇ Rᴇғᴇʀ Lɪɴᴋ", url=f"https://telegram.me/share/url?url={refer_link}&text=Hey!+Check+out+this+awesome+movie+bot+🎬")],
+        [InlineKeyboardButton("📋 Cᴏᴘʏ Lɪɴᴋ", callback_data=f"copy_refer_{user_id}")],
+        [InlineKeyboardButton("❌ Cʟᴏsᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
+    ]
+    await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(btn))
     await query.answer("Referral System Opened ✅")
+
+
+@Client.on_callback_query(filters.regex(r"^copy_refer_"))
+async def copy_refer_callback(client, query):
+    user_id = query.from_user.id
+    refer_link = f"https://t.me/{temp.U_NAME}?start=reff_{user_id}"
+    await query.answer(f"🔗 {refer_link}", show_alert=True)
+
 
 async def stream_buttons(user_id: int, file_id: str):
     if STREAM_MODE and not PREMIUM_STREAM_MODE:
@@ -1264,7 +1281,7 @@ async def confirmation_handler(client, callback_query):
     action = callback_query.data.split("_")[-1]
     if action == "yes":
         await db.delete_all_msg()
-        await callback_query.message.edit_text('🧹 ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ ʟɪsᴛ ʜᴀs ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ ✅')
+        await callback_query.message.edit_text('🧹 ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ ʟɪsᴛ ʜᴀꜱ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ ✅')
     elif action == "no":
         await callback_query.message.delete()
     await callback_query.answer()
