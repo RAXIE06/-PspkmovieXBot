@@ -789,80 +789,53 @@ async def close_refer_callback(client, query):
 
 @Client.on_callback_query(filters.regex("^shortlink_info$"))
 async def shortlink_info_callback(client, query):
-    try:
-        btn = [[InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info2")]]
-        await client.send_message(
-            chat_id=query.message.chat.id,
-            text=script.SHORTLINK_INFO,
-            reply_markup=InlineKeyboardMarkup(btn),
-            disable_web_page_preview=True
-        )
-        await query.answer("Earn Money Guide 📖")
-    except Exception as e:
-        try:
-            await query.answer(f"ERR1: {type(e).__name__}: {e}", show_alert=True)
-        except Exception:
-            pass
+    btn = [[InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info2")]]
+    await client.send_message(
+        chat_id=query.message.chat.id,
+        text=script.SHORTLINK_INFO,
+        reply_markup=InlineKeyboardMarkup(btn),
+        disable_web_page_preview=True
+    )
+    await query.answer("Earn Money Guide 📖")
     raise StopPropagation
 
 
 @Client.on_callback_query(filters.regex("^shortlink_info2$"))
 async def shortlink_info2_callback(client, query):
-    try:
-        btn = [[
-            InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="shortlink_info_back"),
-            InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info3")
-        ]]
-        await query.message.edit_text(
-            text=script.SHORTLINK_INFO2,
-            reply_markup=InlineKeyboardMarkup(btn),
-            disable_web_page_preview=True
-        )
-        await query.answer()
-    except Exception as e:
-        try:
-            await query.answer(f"ERR2: {type(e).__name__}: {e}", show_alert=True)
-        except Exception:
-            pass
+    btn = [[
+        InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="shortlink_info_back"),
+        InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info3")
+    ]]
+    await query.message.edit_text(
+        text=script.SHORTLINK_INFO2,
+        reply_markup=InlineKeyboardMarkup(btn)
+    )
+    await query.answer()
     raise StopPropagation
 
 
 @Client.on_callback_query(filters.regex("^shortlink_info3$"))
 async def shortlink_info3_callback(client, query):
-    try:
-        btn = [
-            [InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="shortlink_info2")],
-            [InlineKeyboardButton("❌ Cʟᴏsᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
-        ]
-        await query.message.edit_text(
-            text=script.SHORTLINK_INFO3,
-            reply_markup=InlineKeyboardMarkup(btn),
-            disable_web_page_preview=True
-        )
-        await query.answer()
-    except Exception as e:
-        try:
-            await query.answer(f"ERR3: {type(e).__name__}: {e}", show_alert=True)
-        except Exception:
-            pass
+    btn = [
+        [InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="shortlink_info2")],
+        [InlineKeyboardButton("❌ Cʟᴏsᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
+    ]
+    await query.message.edit_text(
+        text=script.SHORTLINK_INFO3,
+        reply_markup=InlineKeyboardMarkup(btn)
+    )
+    await query.answer()
     raise StopPropagation
 
 
 @Client.on_callback_query(filters.regex("^shortlink_info_back$"))
 async def shortlink_info_back_callback(client, query):
-    try:
-        btn = [[InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info2")]]
-        await query.message.edit_text(
-            text=script.SHORTLINK_INFO,
-            reply_markup=InlineKeyboardMarkup(btn),
-            disable_web_page_preview=True
-        )
-        await query.answer()
-    except Exception as e:
-        try:
-            await query.answer(f"ERR4: {type(e).__name__}: {e}", show_alert=True)
-        except Exception:
-            pass
+    btn = [[InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info2")]]
+    await query.message.edit_text(
+        text=script.SHORTLINK_INFO,
+        reply_markup=InlineKeyboardMarkup(btn)
+    )
+    await query.answer()
     raise StopPropagation
 
 
