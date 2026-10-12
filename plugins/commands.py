@@ -118,6 +118,53 @@ async def start(client, message):
                 await client.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown"))       
                 await db.add_chat(message.chat.id, message.chat.title)
             return 
+
+        # ✅ ============ REFERRAL CHECK (BEFORE ADDING USER TO DB) ============ #
+        if len(message.command) == 2 and message.command[1].startswith("reff_"):
+            try:
+                user_id = int(message.command[1].split("_")[1])
+            except ValueError:
+                await message.reply_text("<b>‼️ ɪɴᴠᴀʟɪᴅ ʀᴇꜰᴇʀ!</b>")
+                return
+            if user_id == message.from_user.id:
+                await message.reply_text(script.REFER_SELF_ALRT)
+                return
+            if referdb.is_user_in_list(message.from_user.id):
+                await message.reply_text(script.REFER_ALREADY_ALRT)
+                return
+            if await db.is_user_exist(message.from_user.id): 
+                await message.reply_text(script.REFER_ALREADY_JOINED_ALRT)
+                return 
+            try:
+                uss = await client.get_users(user_id)
+            except Exception:
+                return      
+            referdb.add_user(message.from_user.id)
+            fromuse = referdb.get_refer_points(user_id) + 10
+            if fromuse == 100:
+                referdb.add_refer_points(user_id, 0) 
+                await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))         
+                await client.send_message(chat_id=user_id, text=script.REFER_CONGRATS_ALRT.format(message.from_user.mention))    
+                await db.add_premium_user(user_id, 30)
+                await client.send_message(
+                    chat_id=user_id,
+                    text=f"<b>Hᴇʏ {uss.mention}\n\nYᴏᴜ ɢᴏᴛ 1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 10 ᴜsᴇʀs ❗</b>",
+                    disable_web_page_preview=True             
+                )
+                for admin in ADMINS:
+                    await client.send_message(chat_id=admin, text=f"Sᴜᴄᴄᴇss ғᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ ᴛʜɪs ᴜsᴇʀ:\n\nuser Nᴀᴍᴇ: {uss.mention}\n\nUsᴇʀ ɪᴅ: {uss.id}!")    
+            else:
+                referdb.add_refer_points(user_id, fromuse)
+                await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))
+                await client.send_message(user_id, script.REFER_CONGRATS_ALRT.format(message.from_user.mention))
+            
+            # Ab user ko DB me add karo
+            if not await db.is_user_exist(message.from_user.id):
+                await db.add_user(message.from_user.id, message.from_user.first_name)
+                await client.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention))
+            return
+        # ✅ ============ END REFERRAL CHECK ============ #
+
         if not await db.is_user_exist(message.from_user.id):
             await db.add_user(message.from_user.id, message.from_user.first_name)
             await client.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention))
@@ -193,44 +240,6 @@ async def start(client, message):
                 reply_markup=reply_markup,
                 parse_mode=enums.ParseMode.HTML
             )
-            return
-        if message.command[1].startswith("reff_"):
-            try:
-                user_id = int(message.command[1].split("_")[1])
-            except ValueError:
-                await message.reply_text("<b>‼️ ɪɴᴠᴀʟɪᴅ ʀᴇꜰᴇʀ!</b>")
-                return
-            if user_id == message.from_user.id:
-                await message.reply_text(script.REFER_SELF_ALRT)
-                return
-            if referdb.is_user_in_list(message.from_user.id):
-                await message.reply_text(script.REFER_ALREADY_ALRT)
-                return
-            if await db.is_user_exist(message.from_user.id): 
-                await message.reply_text(script.REFER_ALREADY_JOINED_ALRT)
-                return 
-            try:
-                uss = await client.get_users(user_id)
-            except Exception:
-                return      
-            referdb.add_user(message.from_user.id)
-            fromuse = referdb.get_refer_points(user_id) + 10
-            if fromuse == 100:
-                referdb.add_refer_points(user_id, 0) 
-                await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))         
-                await client.send_message(chat_id=user_id, text=script.REFER_CONGRATS_ALRT.format(message.from_user.mention))    
-                await db.add_premium_user(user_id, 30)
-                await client.send_message(
-                    chat_id=user_id,
-                    text=f"<b>Hᴇʏ {uss.mention}\n\nYᴏᴜ ɢᴏᴛ 1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 10 ᴜsᴇʀs ❗</b>",
-                    disable_web_page_preview=True             
-                )
-                for admin in ADMINS:
-                    await client.send_message(chat_id=admin, text=f"Sᴜᴄᴄᴇss ғᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ ᴛʜɪs ᴜsᴇʀ:\n\nuser Nᴀᴍᴇ: {uss.mention}\n\nUsᴇʀ ɪᴅ: {uss.id}!")    
-            else:
-                referdb.add_refer_points(user_id, fromuse)
-                await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))
-                await client.send_message(user_id, script.REFER_CONGRATS_ALRT.format(message.from_user.mention))
             return
 
         if len(message.command) == 2 and message.command[1] in ["premium"]:
