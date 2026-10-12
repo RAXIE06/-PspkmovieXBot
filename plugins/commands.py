@@ -734,9 +734,15 @@ async def refer_callback(client, query):
     btn = [
         [InlineKeyboardButton("🔗 Sʜᴀʀᴇ Rᴇғᴇʀ Lɪɴᴋ", url=f"https://telegram.me/share/url?url={refer_link}&text=Hey!+Check+out+this+awesome+movie+bot+🎬")],
         [InlineKeyboardButton("📋 Cᴏᴘʏ Lɪɴᴋ", callback_data=f"copy_refer_{user_id}")],
-        [InlineKeyboardButton("❌ Cʟᴏsᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
+        [InlineKeyboardButton("❌ Cʟᴏsᴇ", callback_data=f"close_refer_{user_id}")]
     ]
-    await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(btn))
+    # ✅ IMPORTANT: send_message use kiya, reply_text nahi
+    await client.send_message(
+        chat_id=query.message.chat.id,
+        text=text,
+        reply_markup=InlineKeyboardMarkup(btn),
+        disable_web_page_preview=True
+    )
     await query.answer("Referral System Opened ✅")
 
 
@@ -744,7 +750,39 @@ async def refer_callback(client, query):
 async def copy_refer_callback(client, query):
     user_id = query.from_user.id
     refer_link = f"https://t.me/{temp.U_NAME}?start=reff_{user_id}"
-    await query.answer(f"🔗 {refer_link}", show_alert=True)
+    try:
+        msg = await client.send_message(
+            chat_id=query.message.chat.id,
+            text=(
+                f"📋 <b>Yᴏᴜʀ Rᴇғᴇʀ Lɪɴᴋ :</b>\n\n"
+                f"<code>{refer_link}</code>\n\n"
+                f"<i>👆 Tᴀᴘ ᴛʜᴇ ʟɪɴᴋ ᴀʙᴏᴠᴇ ᴛᴏ ᴄᴏᴘʏ ɪᴛ.</i>"
+            ),
+            parse_mode=enums.ParseMode.HTML
+        )
+        await query.answer("Link sent! Tap the link to copy ✅")
+        await asyncio.sleep(30)
+        try:
+            await msg.delete()
+        except Exception:
+            pass
+    except Exception:
+        await query.answer(f"🔗 {refer_link}", show_alert=True)
+
+
+@Client.on_callback_query(filters.regex(r"^close_refer_"))
+async def close_refer_callback(client, query):
+    try:
+        user_id = int(query.data.split("_")[2])
+    except Exception:
+        user_id = query.from_user.id
+    if query.from_user.id != user_id and user_id != 0:
+        return await query.answer("⚠️ Not your message", show_alert=True)
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
+    await query.answer("Closed ✅")
 
 
 async def stream_buttons(user_id: int, file_id: str):
