@@ -941,15 +941,24 @@ async def cb_handler(client: Client, query: CallbackQuery):
         pass
     if query.data == "close_data":
         try:
-            user = query.message.reply_to_message.from_user.id
+            reply_user = query.message.reply_to_message.from_user
+            if reply_user and not reply_user.is_bot:
+                user = reply_user.id
+            else:
+                user = query.from_user.id
         except Exception:
             user = query.from_user.id
         if int(user) != 0 and query.from_user.id != int(user):
             return await query.answer(script.NT_ALRT_TXT, show_alert=True)
         await query.answer("ᴛʜᴀɴᴋs ꜰᴏʀ ᴄʟᴏsᴇ 🙈")
-        await query.message.delete()
         try:
-            await query.message.reply_to_message.delete()
+            await query.message.delete()
+        except Exception:
+            pass
+        try:
+            reply_msg = query.message.reply_to_message
+            if reply_msg and not (reply_msg.from_user and reply_msg.from_user.is_bot):
+                await reply_msg.delete()
         except Exception:
             pass
 
