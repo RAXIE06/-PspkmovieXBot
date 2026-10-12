@@ -727,8 +727,8 @@ async def refer_callback(client, query):
         f"🔗 <b>Your Refer Link:</b> <code>{refer_link}</code>\n"
         f"⭐ <b>Your Points:</b> <code>{refer_points}/100</code>"
     )
-    await query.message.reply_text(text, disable_web_page_preview=True)
-    await query.answer()
+    await query.message.reply_text(text)
+    await query.answer("Referral System Opened ✅")
 
 async def stream_buttons(user_id: int, file_id: str):
     if STREAM_MODE and not PREMIUM_STREAM_MODE:
