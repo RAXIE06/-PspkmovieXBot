@@ -790,7 +790,7 @@ async def save_file_handler(bot, message):
         elif status == 2:
             await msg.edit('Eʀʀᴏʀ: Fɪʟᴇ vᴀʟɪᴅᴀᴛɪᴏɴ fᴀɪʟᴇᴅ ❌')
         else:
-            await msg.edit('Eʀʀᴏʀ: Fᴀɪʟᴇᴅ tᴏ sᴀᴠᴇ fɪʟᴇ ❌')
+            await msg.edit('Eʀʀᴏʀ: Fɪʟᴇɪᴅ failed to save ❌')
     except Exception as e:
         logger.exception(e)
         await msg.edit(f'Aɴ uɴᴇxᴘᴇᴄᴛᴇᴅ eʀʀᴏʀ oᴄᴄᴜʀʀᴇᴅ: {e} ❌')
@@ -907,7 +907,7 @@ async def settings(client, message):
     elif chat_type == enums.ChatType.PRIVATE:
         connected_groups = await db.get_connected_grps(user_id)
         if not connected_groups:
-            return await message.reply_text("Nᴏ Cᴏɴɴᴇᴄᴛᴇᴅ Gʀᴏᴜᴘs Fᴏᴜɴᴅ .")
+            return await message.reply_text("Nᴏ Cᴏɴɴᴇᴄᴛᴇᴅ Gʀᴏᴜps Fᴏᴜɴᴅ .")
         group_list = []
         for group in connected_groups:
             try:
@@ -1029,7 +1029,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ', url=invite_link),
                     InlineKeyboardButton('ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ', url=reported_post.link)
                 ]]
-                await message.reply_text("<b>ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ! ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.\n\nᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ꜰɪʀꜱᴛ & ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ.</b>", reply_markup=InlineKeyboardMarkup(btn))
+                await message.reply_text("<b>ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ! ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛִᴍᴇ.\n\nᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ꜰɪʀꜱᴛ & ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ.</b>", reply_markup=InlineKeyboardMarkup(btn))
             else:
                 await message.reply_text("<b>ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ! ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>")
         except Exception:
