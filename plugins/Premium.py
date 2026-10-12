@@ -15,7 +15,7 @@ USER_PLAN_SESSIONS = {}
 TIMEZONE = "Asia/Kolkata"
 
 def get_plan_keyboard():
-    # Plan ke amount ke hisaब se alag-alag premium emojis
+    # Plan ke amount ke hisab se alag-alag premium emojis
     plan_emojis = {
         10: "🍃",
         20: "🏖️",
@@ -26,7 +26,7 @@ def get_plan_keyboard():
         270: "🐚",
         399: "🏜️"
     }
-    
+
     buttons = []
     row = []
     for amount, days in PREMIUM_PLANS.items():
@@ -78,28 +78,27 @@ def get_success_receipt(user_mention: str, user_id: int, days: int, exp_dt: date
     
     return (
         f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
-        
         f"👤 <b>ᴜꜱᴇʀ :</b> {user_mention}\n"
         f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
         f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {days} Days\n\n"
-        
         f"📅 <b>ᴊᴏɪɴɪɴɢ ᴅᴀᴛᴇ :</b> <code>{j_date}</code>\n"
         f"⏰ <b>ᴊᴏɪɴɪɴɢ ᴛɪᴍᴇ :</b> <code>{j_time}</code>\n\n"
-        
         f"⏳ <b>ᴇxᴘɪʀʏ ᴅᴀᴛᴇ :</b> <code>{e_date}</code>\n"
         f"⏰ <b>ᴇxᴘɪʀʏ ᴛɪᴍᴇ :</b> <code>{e_time}</code>\n\n"
-        
         f"🚀 <i>Enjoy unlimited direct downloads without shorteners, force-subs, or ads!</i>"
     )
 
 async def auto_verify_loop(client: Client, user_id: int, chat_id: int, qr_msg: Message, exact_amount: float, days: int, mention: str):
+    session = USER_PLAN_SESSIONS.get(user_id)
+    created_at = session.get("created_at") if session else datetime.datetime.now(pytz.timezone(TIMEZONE))
+
     # 5 minutes auto check (25 checks x 12 seconds)
     for _ in range(25):
         await asyncio.sleep(12)
         if user_id not in USER_PLAN_SESSIONS:
             return
 
-        is_valid, msg = await verify_payment_from_email(expected_amount=exact_amount)
+        is_valid, msg = await verify_payment_from_email(expected_amount=exact_amount, min_time=created_at)
         if is_valid:
             auto_utr = f"AUTO_{exact_amount}_{int(datetime.datetime.now().timestamp())}"
             await record_payment(user_id, auto_utr, exact_amount, days)
@@ -191,6 +190,8 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
     qr_msg = await query.message.reply_photo(photo=qr_img, caption=caption, reply_markup=btn)
     await query.answer()
 
+    created_time = datetime.datetime.now(pytz.timezone(TIMEZONE))
+
     task = asyncio.create_task(
         auto_verify_loop(client, user_id, query.message.chat.id, qr_msg, exact_amount, days, mention)
     )
@@ -200,7 +201,8 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
         "days": days,
         "step": "AUTO_CHECKING",
         "qr_msg": qr_msg,
-        "task": task
+        "task": task,
+        "created_at": created_time
     }
 
 @Client.on_message(filters.text & filters.private, group=-1)
@@ -223,10 +225,11 @@ async def auto_verify_utr_handler(client: Client, message: Message):
 
     amount = session["amount"]
     days = session["days"]
+    created_at = session.get("created_at")
 
     wait_msg = await message.reply_text("🔄 <b>Verifying payment... Please wait 10-15 seconds.</b>\n<i>(Payment verify ho raha hai...)</i>")
 
-    is_valid, msg = await verify_payment_from_email(target_utr=utr)
+    is_valid, msg = await verify_payment_from_email(target_utr=utr, min_time=created_at)
 
     if is_valid:
         await record_payment(user_id, utr, amount, days)
