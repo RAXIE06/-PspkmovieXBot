@@ -129,6 +129,8 @@ async def start(client, message):
                         InlineKeyboardButton(' ᴀʙᴏᴜᴛ 📖', callback_data='about')
                     ],[
                         InlineKeyboardButton('ʀᴇꜰᴇʀ 🎁', callback_data="refer"),
+                        InlineKeyboardButton('Eᴀʀɴ ᴍᴏɴᴇʏ..💲', callback_data="shortlink_info"),
+                    ],[
                         InlineKeyboardButton('ᴜᴘɢʀᴀᴅᴇ 🎟', callback_data="premium_info"),
                     ]]
             reply_markup = InlineKeyboardMarkup(buttons)
@@ -162,6 +164,8 @@ async def start(client, message):
                         InlineKeyboardButton(' ᴀʙᴏᴜᴛ 📖', callback_data='about')
                     ],[
                         InlineKeyboardButton('ʀᴇꜰᴇʀ 🎁', callback_data="refer"),
+                        InlineKeyboardButton('Eᴀʀɴ ᴍᴏɴᴇʏ..💲', callback_data="shortlink_info"),
+                    ],[
                         InlineKeyboardButton('ᴜᴘɢʀᴀᴅᴇ 🎟', callback_data="premium_info"),
                     ]]
             reply_markup = InlineKeyboardMarkup(buttons)
@@ -736,7 +740,6 @@ async def refer_callback(client, query):
         [InlineKeyboardButton("📋 Cᴏᴘʏ Lɪɴᴋ", callback_data=f"copy_refer_{user_id}")],
         [InlineKeyboardButton("❌ Cʟᴏsᴇ", callback_data=f"close_refer_{user_id}")]
     ]
-    # ✅ IMPORTANT: send_message use kiya, reply_text nahi
     await client.send_message(
         chat_id=query.message.chat.id,
         text=text,
@@ -783,6 +786,63 @@ async def close_refer_callback(client, query):
     except Exception:
         pass
     await query.answer("Closed ✅")
+
+
+# ==================== SHORTLINK INFO (EARN MONEY) HANDLERS ==================== #
+
+@Client.on_callback_query(filters.regex("^shortlink_info$"))
+async def shortlink_info_callback(client, query):
+    btn = [
+        [InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info2")]
+    ]
+    await client.send_message(
+        chat_id=query.message.chat.id,
+        text=script.SHORTLINK_INFO,
+        reply_markup=InlineKeyboardMarkup(btn),
+        disable_web_page_preview=True
+    )
+    await query.answer("Earn Money Guide 📖")
+
+
+@Client.on_callback_query(filters.regex("^shortlink_info2$"))
+async def shortlink_info2_callback(client, query):
+    btn = [
+        [InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="shortlink_info_back"),
+         InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info3")]
+    ]
+    await query.message.edit_text(
+        text=script.SHORTLINK_INFO2,
+        reply_markup=InlineKeyboardMarkup(btn),
+        disable_web_page_preview=True
+    )
+    await query.answer()
+
+
+@Client.on_callback_query(filters.regex("^shortlink_info3$"))
+async def shortlink_info3_callback(client, query):
+    btn = [
+        [InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="shortlink_info2")],
+        [InlineKeyboardButton("❌ Cʟᴏsᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
+    ]
+    await query.message.edit_text(
+        text=script.SHORTLINK_INFO3,
+        reply_markup=InlineKeyboardMarkup(btn),
+        disable_web_page_preview=True
+    )
+    await query.answer()
+
+
+@Client.on_callback_query(filters.regex("^shortlink_info_back$"))
+async def shortlink_info_back_callback(client, query):
+    btn = [
+        [InlineKeyboardButton("ɴᴇxᴛ ➡️", callback_data="shortlink_info2")]
+    ]
+    await query.message.edit_text(
+        text=script.SHORTLINK_INFO,
+        reply_markup=InlineKeyboardMarkup(btn),
+        disable_web_page_preview=True
+    )
+    await query.answer()
 
 
 async def stream_buttons(user_id: int, file_id: str):
