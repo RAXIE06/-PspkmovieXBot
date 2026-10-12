@@ -1274,15 +1274,15 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif query.data == "start":
         buttons = [[
-                    InlineKeyboardButton('🔰 ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ 🔰', url=f'http://telegram.me/{temp.U_NAME}?startgroup=true')
+                    InlineKeyboardButton('🌻 ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ 🌻', url=f'http://telegram.me/{temp.U_NAME}?startgroup=true')
                 ],[
-                    InlineKeyboardButton(' ʜᴇʟᴘ 📢', callback_data='help'),
-                    InlineKeyboardButton(' ᴀʙᴏᴜᴛ 📖', callback_data='about')
+                    InlineKeyboardButton(' ʜᴇʟᴘ 💢', callback_data='help'),
+                    InlineKeyboardButton(' ᴀʙᴏᴜᴛ 🛡️', callback_data='about')
                 ],[
-                    InlineKeyboardButton('ʀᴇꜰᴇʀ 🎁', callback_data="refer"),
+                    InlineKeyboardButton('ʀᴇꜰᴇʀ & ɢᴇᴛ ᴘʀᴇᴍɪᴜᴍ 🥇', callback_data="refer"),
                     InlineKeyboardButton('Eᴀʀɴ ᴍᴏɴᴇʏ..💲', callback_data="shortlink_info"),
                 ],[
-                    InlineKeyboardButton('ᴜᴘɢʀᴀᴅᴇ 🎟', callback_data="premium_info"),
+                    InlineKeyboardButton('💎ᴘʀᴇᴍɪᴜᴍ | ɴᴏ ᴀᴅꜱ💎', callback_data="premium_info"),
                 ],[
                     InlineKeyboardButton('📖 ʜᴏᴡ ᴛᴏ ᴜꜱᴇ ʙᴏᴛ 📖', url='https://t.me/Vega_Backup/9'),
                 ]]
