@@ -711,10 +711,19 @@ async def myplan_cmd(client: Client, message: Message):
 
 @Client.on_callback_query(filters.regex(r"^(premium_info|upgrade|buy_premium)$"))
 async def upgrade_callback_sync(client: Client, query: CallbackQuery):
-    await query.message.reply_text(
-        text=script.PREMIUM_TEXT,
-        reply_markup=get_plan_keyboard()
-    )
+    combined_text = f"{script.BPREMIUM_TXT}\n\n{script.PREMIUM_TEXT}"
+    try:
+        await query.message.edit_text(
+            text=combined_text,
+            reply_markup=get_plan_keyboard(),
+            parse_mode=enums.ParseMode.HTML
+        )
+    except Exception:
+        await query.message.reply_text(
+            text=combined_text,
+            reply_markup=get_plan_keyboard(),
+            parse_mode=enums.ParseMode.HTML
+        )
     await query.answer()
 
 # ==================== REFER CALLBACK WITH BUTTONS ==================== #
