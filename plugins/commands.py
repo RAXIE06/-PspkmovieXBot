@@ -802,6 +802,7 @@ async def shortlink_info_callback(client, query):
         disable_web_page_preview=True
     )
     await query.answer("Earn Money Guide 📖")
+    raise StopPropagation
 
 
 @Client.on_callback_query(filters.regex("^shortlink_info2$"))
@@ -816,6 +817,7 @@ async def shortlink_info2_callback(client, query):
         disable_web_page_preview=True
     )
     await query.answer()
+    raise StopPropagation
 
 
 @Client.on_callback_query(filters.regex("^shortlink_info3$"))
@@ -830,6 +832,7 @@ async def shortlink_info3_callback(client, query):
         disable_web_page_preview=True
     )
     await query.answer()
+    raise StopPropagation
 
 
 @Client.on_callback_query(filters.regex("^shortlink_info_back$"))
@@ -843,6 +846,7 @@ async def shortlink_info_back_callback(client, query):
         disable_web_page_preview=True
     )
     await query.answer()
+    raise StopPropagation
 
 
 async def stream_buttons(user_id: int, file_id: str):
