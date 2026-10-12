@@ -7,6 +7,9 @@ import string
 import asyncio
 import imaplib
 import email
+import email.utils
+from datetime import datetime
+import pytz
 from typing import Union, List
 
 from pyrogram.types import Message, InlineKeyboardButton
@@ -51,7 +54,7 @@ SMART_CLOSE = '”'
 START_CHAR = ('\'', '"', SMART_OPEN)
 
 
-class temp(object):   
+class temp(object):    
     BANNED_USERS = []
     BANNED_CHATS = []
     ME = None
@@ -198,7 +201,7 @@ async def junk_group(chat_id, message):
         await asyncio.sleep(e.value)
         return await junk_group(chat_id, message)
     except Exception as e:
-        await db.delete_chat(int(chat_id))       
+        await db.delete_chat(int(chat_id))        
         logging.info(f"{chat_id} - PeerIdInvalid")
         return False, "deleted", f'{e}\n\n'
     
@@ -217,6 +220,7 @@ async def clear_junk(user_id, message):
         return False, "Deleted"
     except UserIsBlocked:
         logging.info(f"{user_id} -Blocked the bot.")
+        await db.delete_user(user_id)
         return False, "Blocked"
     except PeerIdInvalid:
         await db.delete_user(int(user_id))
@@ -290,7 +294,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         if bulk:
             return filtered_kind[:MAX_LIST_ELM]
         if not filtered_kind:
-            return None   
+            return None    
         movie_brief = filtered_kind[0]
         movieid_str = movie_brief.imdb_id 
     else:
@@ -1100,7 +1104,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
 
 # ==================== SLICE GMAIL PAYMENT VERIFIER ==================== #
 
-def check_slice_email(expected_amount: float = None, target_utr: str = None):
+def check_slice_email(expected_amount: float = None, target_utr: str = None, min_time: datetime = None):
     if not GMAIL_USER or not GMAIL_PASS:
         return False, "Gmail credentials missing (GMAIL_USER / GMAIL_PASS)."
 
@@ -1124,6 +1128,20 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None):
                 continue
 
             msg = email.message_from_bytes(data[0][1])
+            
+            # Email timestamp validation to prevent reuse attacks
+            msg_date_str = msg.get("Date")
+            if msg_date_str and min_time:
+                try:
+                    parsed_tuple = email.utils.parsedate_tz(msg_date_str)
+                    if parsed_tuple:
+                        timestamp = email.utils.mktime_tz(parsed_tuple)
+                        msg_dt = datetime.fromtimestamp(timestamp, pytz.timezone("Asia/Kolkata"))
+                        if msg_dt < min_time:
+                            continue
+                except Exception:
+                    pass
+
             body = ""
             if msg.is_multipart():
                 for part in msg.walk():
@@ -1157,5 +1175,5 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None):
         logger.error(f"Gmail IMAP Exception: {e}")
         return False, f"Email Read Error: {e}"
 
-async def verify_payment_from_email(expected_amount: float = None, target_utr: str = None):
-    return await asyncio.to_thread(check_slice_email, expected_amount, target_utr)
+async def verify_payment_from_email(expected_amount: float = None, target_utr: str = None, min_time: datetime = None):
+    return await asyncio.to_thread(check_slice_email, expected_amount, target_utr, min_time)
