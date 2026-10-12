@@ -128,7 +128,7 @@ async def start(client, message):
                         InlineKeyboardButton(' ʜᴇʟᴘ 💢', callback_data='help'),
                         InlineKeyboardButton(' ᴀʙᴏᴜᴛ 🛡️', callback_data='about')
                     ],[
-                        InlineKeyboardButton('ʀᴇꜰᴇʀ & ɢᴇᴛ ᴘʀᴇᴍɪᴜᴍ 🥇', callback_data="refer"),
+                        InlineKeyboardButton('ʀᴇꜰᴇʀ 🦋', callback_data="refer"),
                         InlineKeyboardButton('Eᴀʀɴ ᴍᴏɴᴇʏ..💲', callback_data="shortlink_info"),
                     ],[
                         InlineKeyboardButton('💎ᴘʀᴇᴍɪᴜᴍ | ɴᴏ ᴀᴅꜱ💎', callback_data="premium_info"),
@@ -165,7 +165,7 @@ async def start(client, message):
                         InlineKeyboardButton(' ʜᴇʟᴘ 💢', callback_data='help'),
                         InlineKeyboardButton(' ᴀʙᴏᴜᴛ 🛡️', callback_data='about')
                     ],[
-                        InlineKeyboardButton('ʀᴇꜰᴇʀ & ɢᴇᴛ ᴘʀᴇᴍɪᴜᴍ 🥇', callback_data="refer"),
+                        InlineKeyboardButton('ʀᴇꜰᴇʀ 🦋', callback_data="refer"),
                         InlineKeyboardButton('Eᴀʀɴ ᴍᴏɴᴇʏ..💲', callback_data="shortlink_info"),
                     ],[
                         InlineKeyboardButton('💎ᴘʀᴇᴍɪᴜᴍ | ɴᴏ ᴀᴅꜱ💎', callback_data="premium_info"),
