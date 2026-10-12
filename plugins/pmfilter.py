@@ -1283,6 +1283,8 @@ async def cb_handler(client: Client, query: CallbackQuery):
                     InlineKeyboardButton('Eᴀʀɴ ᴍᴏɴᴇʏ..💲', callback_data="shortlink_info"),
                 ],[
                     InlineKeyboardButton('ᴜᴘɢʀᴀᴅᴇ 🎟', callback_data="premium_info"),
+                ],[
+                    InlineKeyboardButton('📖 ʜᴏᴡ ᴛᴏ ᴜꜱᴇ ʙᴏᴛ 📖', url='https://t.me/Vega_Backup/9'),
                 ]]
         reply_markup = InlineKeyboardMarkup(buttons)
         current_time = datetime.now(pytz.timezone(TIMEZONE))
