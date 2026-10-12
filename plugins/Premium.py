@@ -3,7 +3,7 @@ import random
 import asyncio
 import datetime
 import pytz
-from pyrogram import Client, filters
+from pyrogram import Client, filters, enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from pyrogram.errors import MessageDeleteForbidden
 from Script import script
@@ -51,12 +51,58 @@ async def plans_cmd(client: Client, message: Message):
 @Client.on_callback_query(filters.regex(r"^how_to_buy$"))
 async def how_to_buy_cb(client: Client, query: CallbackQuery):
     btn = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Plans", callback_data="back_to_plans")]])
-    await query.message.edit_text(script.HOW_TO_BUY_TXT, reply_markup=btn)
+    try:
+        await query.message.edit_caption(
+            caption=script.HOW_TO_BUY_TXT,
+            reply_markup=btn,
+            parse_mode=enums.ParseMode.HTML
+        )
+    except Exception:
+        try:
+            await query.message.edit_text(
+                text=script.HOW_TO_BUY_TXT,
+                reply_markup=btn,
+                parse_mode=enums.ParseMode.HTML
+            )
+        except Exception:
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
+            await client.send_message(
+                chat_id=query.message.chat.id,
+                text=script.HOW_TO_BUY_TXT,
+                reply_markup=btn,
+                parse_mode=enums.ParseMode.HTML
+            )
     await query.answer()
 
 @Client.on_callback_query(filters.regex(r"^back_to_plans$"))
 async def back_to_plans_cb(client: Client, query: CallbackQuery):
-    await query.message.edit_text(script.PREMIUM_TEXT, reply_markup=get_plan_keyboard())
+    try:
+        await query.message.edit_caption(
+            caption=script.PREMIUM_TEXT,
+            reply_markup=get_plan_keyboard(),
+            parse_mode=enums.ParseMode.HTML
+        )
+    except Exception:
+        try:
+            await query.message.edit_text(
+                text=script.PREMIUM_TEXT,
+                reply_markup=get_plan_keyboard(),
+                parse_mode=enums.ParseMode.HTML
+            )
+        except Exception:
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
+            await client.send_message(
+                chat_id=query.message.chat.id,
+                text=script.PREMIUM_TEXT,
+                reply_markup=get_plan_keyboard(),
+                parse_mode=enums.ParseMode.HTML
+            )
     await query.answer()
 
 def get_success_receipt(user_mention: str, user_id: int, days: int, exp_dt: datetime.datetime):
