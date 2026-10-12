@@ -923,7 +923,16 @@ async def filter_seasons_cb_handler(client: Client, query: CallbackQuery):
     await query.answer()
 
 
-@Client.on_callback_query(group=10)
+@Client.on_callback_query(
+    filters.regex(
+        r"^(close_data|pages|file|sendfiles|autofilter_delete|checksub|killfilesdq|"
+        r"opnsetgrp|opnsetpm|show_option|unavailable|Not_Released|Type_Correct_Spelling|"
+        r"Not_Available_In_The_Hindi|uploaded|already_available|alalert|upalert|unalert|"
+        r"hnalert|nralert|wsalert|generate_stream_link|prestream|start|donation|help|about|"
+        r"give_trial|source|ref_point|disclaimer|buy_info|upi_info|star_info|grp_pm|removegrp|setgs)"
+    ),
+    group=10
+)
 async def cb_handler(client: Client, query: CallbackQuery):
     DreamxData = query.data
     try:
@@ -1403,26 +1412,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 parse_mode=enums.ParseMode.HTML
             )
 
-    elif query.data == "premium_info":
-        try:
-            btn = [[
-                InlineKeyboardButton('• ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ •', callback_data='buy_info'),
-            ],[
-                InlineKeyboardButton('• ʀᴇꜰᴇʀ ꜰʀɪᴇɴᴅꜱ', callback_data='reffff'),
-                InlineKeyboardButton('ꜰʀᴇᴇ ᴛʀɪᴀʟ •', callback_data='give_trial')
-            ],[
-                InlineKeyboardButton('⇋ ʙᴀᴄᴋ ᴛᴏ ʜᴏᴍᴇ ⇋', callback_data='start')
-            ]]
-            reply_markup = InlineKeyboardMarkup(btn)
-            await client.edit_message_media(
-                chat_id=query.message.chat.id,
-                message_id=query.message.id,
-                media=InputMediaPhoto(media=SUBSCRIPTION, caption=script.BPREMIUM_TXT, parse_mode=enums.ParseMode.HTML),
-                reply_markup=reply_markup
-            )
-        except Exception:
-            logging.exception("Exception in 'premium_info' callback")
-
     elif query.data == "buy_info":
         try:
             btn = [[
@@ -1532,7 +1521,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
             btn = await group_setting_buttons(int(grp_id))
             reply_markup = InlineKeyboardMarkup(btn)
             await query.message.edit_reply_markup(reply_markup)
-    await query.answer(MSG_ALRT)
 
 
 async def auto_filter(client, msg, spoll=False):
