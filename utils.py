@@ -1104,7 +1104,35 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
 
 # ==================== SLICE GMAIL PAYMENT VERIFIER ==================== #
 
+# UTR / Transaction ID dhundhne ke patterns
+UTR_PATTERNS = [
+    r'(?:UTR|Utr|utr)\s*(?:No\.?|Number|ID|:)?\s*[:\-]?\s*([A-Za-z0-9]{8,22})',
+    r'(?:Transaction\s*ID|Txn\s*ID|Reference\s*(?:No\.?|Number|ID)?)\s*[:\-]?\s*([A-Za-z0-9]{8,22})',
+    r'\b(\d{12})\b',  # Generic 12-digit UTR (India)
+]
+
+def extract_utr_from_body(body: str):
+    """Email body se UTR / Transaction ID nikalta hai."""
+    if not body:
+        return None
+    try:
+        soup = BeautifulSoup(body, "html.parser")
+        text = soup.get_text(" ", strip=True)
+    except Exception:
+        text = body
+    for pattern in UTR_PATTERNS:
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1).strip()
+    return None
+
+
 def check_slice_email(expected_amount: float = None, target_utr: str = None, min_time: datetime = None):
+    """
+    Returns:
+        (True, utr_string)  -> payment mila, ye UTR unique hai (caller check kare)
+        (False, reason)     -> nahi mila
+    """
     if not GMAIL_USER or not GMAIL_PASS:
         return False, "Gmail credentials missing (GMAIL_USER / GMAIL_PASS)."
 
@@ -1119,8 +1147,10 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
             return False, "No emails found in inbox."
 
         mail_ids = messages[0].split()
-        recent_ids = mail_ids[-20:]
+        recent_ids = mail_ids[-30:]
         recent_ids.reverse()
+
+        found_utr = None
 
         for mid in recent_ids:
             res, data = mail.fetch(mid, "(RFC822)")
@@ -1128,8 +1158,8 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
                 continue
 
             msg = email.message_from_bytes(data[0][1])
-            
-            # Email timestamp validation to prevent reuse attacks
+
+            # Time filter - sirf naye emails
             msg_date_str = msg.get("Date")
             if msg_date_str and min_time:
                 try:
@@ -1156,24 +1186,36 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
                 except Exception:
                     pass
 
-            # 1. Fallback / Manual UTR Check
-            if target_utr and str(target_utr).strip() in body:
-                mail.logout()
-                return True, "Payment Verified by UTR!"
+            utr = extract_utr_from_body(body)
 
-            # 2. Automated Unique Amount (Paise) Check
-            if expected_amount:
-                amt_str = f"{expected_amount:.2f}"
-                if amt_str in body:
+            # Manual verify (target_utr diya gaya ho)
+            if target_utr:
+                if str(target_utr).strip() in body:
                     mail.logout()
-                    return True, "Payment Verified by Exact Amount!"
+                    return True, str(target_utr).strip()
+                continue
+
+            # Auto verify - amount match + UTR mile
+            if expected_amount is not None:
+                amt_str = f"{expected_amount:.2f}"
+                if amt_str not in body:
+                    continue
+                if not utr:
+                    continue
+                found_utr = utr
+                break
 
         mail.logout()
+
+        if found_utr:
+            return True, found_utr
+
         return False, "Transaction email me nahi mila."
 
     except Exception as e:
         logger.error(f"Gmail IMAP Exception: {e}")
         return False, f"Email Read Error: {e}"
+
 
 async def verify_payment_from_email(expected_amount: float = None, target_utr: str = None, min_time: datetime = None):
     return await asyncio.to_thread(check_slice_email, expected_amount, target_utr, min_time)
