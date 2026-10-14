@@ -8,7 +8,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQ
 from pyrogram.errors import MessageDeleteForbidden
 from Script import script
 from info import UPI_ID, UPI_NAME, PREMIUM_PLANS, LOG_CHANNEL
-from database.users_chats_db import is_utr_used, record_payment, db
+from database.users_chats_db import is_utr_used, record_payment, claim_utr, db
 from utils import verify_payment_from_email
 
 USER_PLAN_SESSIONS = {}
@@ -148,11 +148,12 @@ async def auto_verify_loop(client: Client, user_id: int, chat_id: int, qr_msg: M
         if not is_valid:
             continue
 
-        # ✅ Ab result asli UTR hai (utils.py se)
+        # ✅ result asli UTR hai (utils.py se)
         real_utr = str(result).strip()
 
-        # 🔒 Duplicate UTR check — sabse important
-        if await is_utr_used(real_utr):
+        # 🔒 Atomic claim — race condition proof
+        claimed = await claim_utr(user_id, real_utr, exact_amount, days)
+        if not claimed:
             await client.send_message(
                 chat_id,
                 f"⚠️ <b>Ye payment already use ho chuka hai!</b>\n"
@@ -162,8 +163,7 @@ async def auto_verify_loop(client: Client, user_id: int, chat_id: int, qr_msg: M
             USER_PLAN_SESSIONS.pop(user_id, None)
             return
 
-        # ✅ Real UTR ke saath record karo
-        await record_payment(user_id, real_utr, exact_amount, days)
+        # UTR claim ho gaya — ab premium do
         expiry_dt = await db.add_premium_user(user_id, days)
         USER_PLAN_SESSIONS.pop(user_id, None)
 
@@ -282,8 +282,6 @@ async def auto_verify_utr_handler(client: Client, message: Message):
         return
 
     utr = text
-    if await is_utr_used(utr):
-        return await message.reply_text("⚠️ <b>This UTR has already been used / Yeh UTR pehle use ho chuka hai.</b>")
 
     amount = session["amount"]
     days = session["days"]
@@ -294,14 +292,15 @@ async def auto_verify_utr_handler(client: Client, message: Message):
     is_valid, msg = await verify_payment_from_email(target_utr=utr, min_time=created_at)
 
     if is_valid:
-        # ✅ Double check duplicate (race condition se bachne ke liye)
-        if await is_utr_used(utr):
+        # 🔒 Atomic claim — ek hi UTR se ek hi user ko premium milega
+        claimed = await claim_utr(user_id, utr, amount, days)
+        if not claimed:
             USER_PLAN_SESSIONS.pop(user_id, None)
-            return await wait_msg.edit_text("⚠️ <b>Ye UTR abhi-abhi kisi aur ne use kar liya. Naya QR banao.</b>")
+            return await wait_msg.edit_text(
+                "⚠️ <b>Ye UTR already use ho chuka hai.</b>\n👉 Naya QR banao /plan se."
+            )
 
-        await record_payment(user_id, utr, amount, days)
         expiry_dt = await db.add_premium_user(user_id, days)
-
         USER_PLAN_SESSIONS.pop(user_id, None)
 
         receipt_text = get_success_receipt(message.from_user.mention, user_id, days, expiry_dt)
