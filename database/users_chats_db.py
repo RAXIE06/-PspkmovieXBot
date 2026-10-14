@@ -536,11 +536,41 @@ async def check_premium_status(user_id: int):
     has_access = await db.has_premium_access(user_id)
     return has_access, user.get("expiry_time")
 
+
+# 🔒 UTR ko atomic tareeke se "claim" karo (race-condition-proof)
+async def claim_utr(user_id: int, utr: str, amount: float, days: int) -> bool:
+    """
+    UTR ko atomically reserve karta hai.
+    Returns:
+        True  -> ye pehla user hai, UTR mil gaya (premium do)
+        False -> UTR already kisi aur ne le liya
+    """
+    try:
+        # unique index ki wajah se duplicate insert fail hoga
+        await db.payments.insert_one({
+            "utr": str(utr).strip(),
+            "user_id": int(user_id),
+            "amount": float(amount),
+            "days": int(days),
+            "verified_at": datetime.datetime.now()
+        })
+        return True
+    except Exception as e:
+        # DuplicateKeyError aayega agar UTR already used
+        if "duplicate" in str(e).lower() or "E11000" in str(e):
+            return False
+        logger.error(f"claim_utr error: {e}")
+        return False
+
+
 async def is_utr_used(utr: str) -> bool:
     found = await db.payments.find_one({"utr": str(utr).strip()})
     return bool(found)
 
+
 async def record_payment(user_id: int, utr: str, amount: float, days: int):
+    # Deprecated — ab claim_utr use karo
+    # Sirf backup ke liye rakha hai
     await db.payments.insert_one({
         "user_id": int(user_id),
         "utr": str(utr).strip(),
@@ -548,3 +578,13 @@ async def record_payment(user_id: int, utr: str, amount: float, days: int):
         "days": int(days),
         "verified_at": datetime.datetime.now()
     })
+
+
+# 🚀 Startup pe ek baar chalao — unique index banane ke liye
+async def ensure_payment_indexes():
+    """UTR field pe unique index banata hai taaki duplicate insert fail ho."""
+    try:
+        await db.payments.create_index("utr", unique=True)
+        logger.info("✅ Unique index on payments.utr created/verified")
+    except Exception as e:
+        logger.warning(f"Index create warning (maybe already exists): {e}")
