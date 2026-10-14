@@ -1127,6 +1127,19 @@ def extract_utr_from_body(body: str):
     return None
 
 
+def _amount_matches(body: str, amount: float) -> bool:
+    """
+    Strict amount match — substring bug se bachne ke liye.
+    9.90 ko '9.9' se match nahi karega, aur '19.90' se bhi nahi.
+    """
+    if amount is None:
+        return True
+    amt_str = f"{amount:.2f}"
+    # Boundary check: aage-peeche digit na ho
+    pattern = rf'(?<![\d.]){re.escape(amt_str)}(?![\d])'
+    return re.search(pattern, body) is not None
+
+
 def check_slice_email(expected_amount: float = None, target_utr: str = None, min_time: datetime = None):
     """
     Returns:
@@ -1186,19 +1199,23 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
                 except Exception:
                     pass
 
-            utr = extract_utr_from_body(body)
-
-            # Manual verify (target_utr diya gaya ho)
+            # ============ MANUAL UTR MODE (primary) ============ #
             if target_utr:
-                if str(target_utr).strip() in body:
-                    mail.logout()
-                    return True, str(target_utr).strip()
-                continue
+                # UTR email mein hona chahiye
+                if str(target_utr).strip() not in body:
+                    continue
 
-            # Auto verify - amount match + UTR mile
+                # Amount bhi match karo — strict boundary check
+                if not _amount_matches(body, expected_amount):
+                    continue
+
+                mail.logout()
+                return True, str(target_utr).strip()
+
+            # ============ AUTO MODE (backup) ============ #
+            utr = extract_utr_from_body(body)
             if expected_amount is not None:
-                amt_str = f"{expected_amount:.2f}"
-                if amt_str not in body:
+                if not _amount_matches(body, expected_amount):
                     continue
                 if not utr:
                     continue
