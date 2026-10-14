@@ -11,7 +11,7 @@ from pathlib import Path
 import pytz
 from aiohttp import web
 from database.ia_filterdb import Media, Media2
-from database.users_chats_db import db
+from database.users_chats_db import db, ensure_payment_indexes
 from info import MULTIPLE_DB, ON_HEROKU, LOG_STR, LOG_CHANNEL, PORT
 from utils import temp
 from Script import script
@@ -70,6 +70,9 @@ async def dreamxbotz_start():
         logging.info("Multiple Database Mode On. Now Files Will Be Save In Second DB If First DB Is Full")
     else:
         logging.info("Single DB Mode On ! Files Will Be Save In First Database")
+
+    # 🚀 Payment UTR unique index — ek baar automatically bana dega
+    await ensure_payment_indexes()
     
     me = bot_info
     temp.ME = me.id
