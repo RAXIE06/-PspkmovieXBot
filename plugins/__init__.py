@@ -2,7 +2,7 @@ from aiohttp import web
 from .route import routes
 from asyncio import sleep 
 from datetime import datetime
-from database.users_chats_db import db
+from database.users_chats_db import db, ensure_payment_indexes
 from info import URL, PREMIUM_LOGS
 from Script import script
 import aiohttp
@@ -45,5 +45,4 @@ async def keep_alive():
                     if resp.status != 200:
                         logging.warning(f"⚠️ Ping Error! Status: {resp.status}")
             except Exception as e:
-                logging.error(f"❌ Ping Failed: {e}")           
-
+                logging.error(f"❌ Ping Failed: {e}")
