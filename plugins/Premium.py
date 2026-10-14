@@ -144,35 +144,51 @@ async def auto_verify_loop(client: Client, user_id: int, chat_id: int, qr_msg: M
         if user_id not in USER_PLAN_SESSIONS:
             return
 
-        is_valid, msg = await verify_payment_from_email(expected_amount=exact_amount, min_time=created_at)
-        if is_valid:
-            auto_utr = f"AUTO_{exact_amount}_{int(datetime.datetime.now().timestamp())}"
-            await record_payment(user_id, auto_utr, exact_amount, days)
+        is_valid, result = await verify_payment_from_email(expected_amount=exact_amount, min_time=created_at)
+        if not is_valid:
+            continue
 
-            expiry_dt = await db.add_premium_user(user_id, days)
+        # ✅ Ab result asli UTR hai (utils.py se)
+        real_utr = str(result).strip()
+
+        # 🔒 Duplicate UTR check — sabse important
+        if await is_utr_used(real_utr):
+            await client.send_message(
+                chat_id,
+                f"⚠️ <b>Ye payment already use ho chuka hai!</b>\n"
+                f"<i>UTR <code>{real_utr}</code> pehle kisi aur user ne use kiya hai.</i>\n\n"
+                f"👉 Naya QR banao /plan se."
+            )
             USER_PLAN_SESSIONS.pop(user_id, None)
+            return
 
-            # Auto-delete QR photo immediately on successful payment
+        # ✅ Real UTR ke saath record karo
+        await record_payment(user_id, real_utr, exact_amount, days)
+        expiry_dt = await db.add_premium_user(user_id, days)
+        USER_PLAN_SESSIONS.pop(user_id, None)
+
+        # Auto-delete QR photo immediately on successful payment
+        try:
+            await qr_msg.delete()
+        except Exception:
+            pass
+
+        receipt_text = get_success_receipt(mention, user_id, days, expiry_dt)
+        await client.send_message(chat_id, receipt_text)
+
+        if LOG_CHANNEL:
             try:
-                await qr_msg.delete()
+                await client.send_message(
+                    LOG_CHANNEL,
+                    f"💎 <b>Auto-Premium Success (Slice Email)</b>\n\n"
+                    f"User: {mention} (<code>{user_id}</code>)\n"
+                    f"Amount: ₹{exact_amount}\n"
+                    f"Days: {days}\n"
+                    f"UTR: <code>{real_utr}</code>"
+                )
             except Exception:
                 pass
-
-            receipt_text = get_success_receipt(mention, user_id, days, expiry_dt)
-            await client.send_message(chat_id, receipt_text)
-
-            if LOG_CHANNEL:
-                try:
-                    await client.send_message(
-                        LOG_CHANNEL,
-                        f"💎 <b>Auto-Premium Success (Slice Email)</b>\n\n"
-                        f"User: {mention} (<code>{user_id}</code>)\n"
-                        f"Amount: ₹{exact_amount}\n"
-                        f"Days: {days}"
-                    )
-                except Exception:
-                    pass
-            return
+        return
 
     # 5 Minutes Timeout: Delete QR and fallback to UTR
     if user_id in USER_PLAN_SESSIONS:
@@ -278,6 +294,11 @@ async def auto_verify_utr_handler(client: Client, message: Message):
     is_valid, msg = await verify_payment_from_email(target_utr=utr, min_time=created_at)
 
     if is_valid:
+        # ✅ Double check duplicate (race condition se bachne ke liye)
+        if await is_utr_used(utr):
+            USER_PLAN_SESSIONS.pop(user_id, None)
+            return await wait_msg.edit_text("⚠️ <b>Ye UTR abhi-abhi kisi aur ne use kar liya. Naya QR banao.</b>")
+
         await record_payment(user_id, utr, amount, days)
         expiry_dt = await db.add_premium_user(user_id, days)
 
