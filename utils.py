@@ -39,13 +39,45 @@ from plugins.Dreamxfutures.Imdbposter import get_movie_detailsx
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def get_random_mix_id():
-    chars = string.ascii_letters + string.digits
-    return ''.join(random.choices(chars, k=6))
+
+# ==================== FAST: PRE-COMPILED REGEXES ==================== #
+
+_CLEAN_FILENAME_PREFIXES = ('[', '@', 'www.')
+_UNWANTED_BAD_WORDS = {word.lower() for word in BAD_WORDS}
+_PHRASES_SPLIT_REGEX = re.compile(r'\s{2,}')
+_LANG_REGEX = re.compile(
+    r'\b(hin(di)?|eng(lish)?|mal(ayalam)?|tam(il)?|tel(ugu)?|kan(nada)?|ben(gali)?|mar(athi)?|urdu|guj(arat)?|punj(abi)?)\b',
+    re.IGNORECASE
+)
+_SEASON_REGEX = re.compile(r's(eason)?\s*0*\d+', re.IGNORECASE)
+_QUALITY_REGEX = re.compile(r'\b(360p|480p|720p|1080p|1440p|2160p|4k)\b', re.IGNORECASE)
+_MULTI_SPACE_REGEX = re.compile(r'\s+')
+_REQUEST_UNDERLINE_REGEX = re.compile(r"<u>(.*?)</u>")
+_REQUEST_PREFIX_REGEX = re.compile(r"📝 ʀᴇǫᴜᴇꜱᴛ ?: ?(.*?)(?:\n|$)")
 
 BTN_URL_REGEX = re.compile(
     r"(\[([^\[]+?)\]\((buttonurl|buttonalert):(?:/{0,2})(.+?)(:same)?\))"
 )
+
+
+# ==================== FAST: BOUNDED CACHE ==================== #
+
+class LimitedDict(dict):
+    """Dict with max size — evicts oldest entry when limit reached."""
+    def __init__(self, maxsize=200):
+        super().__init__()
+        self.maxsize = maxsize
+
+    def __setitem__(self, key, value):
+        if len(self) >= self.maxsize:
+            self.pop(next(iter(self)), None)
+        super().__setitem__(key, value)
+
+
+def get_random_mix_id():
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choices(chars, k=6))
+
 
 imdb = IMDBKit()
 BANNED = {}
@@ -54,25 +86,25 @@ SMART_CLOSE = '”'
 START_CHAR = ('\'', '"', SMART_OPEN)
 
 
-class temp(object):    
-    BANNED_USERS = []
-    BANNED_CHATS = []
+class temp(object):
+    BANNED_USERS = set()
+    BANNED_CHATS = set()
     ME = None
     CURRENT = int(os.environ.get("SKIP", 2))
     CANCEL = False
     B_USERS_CANCEL = False
-    B_GROUPS_CANCEL = False 
+    B_GROUPS_CANCEL = False
     MELCOW = {}
     U_NAME = None
     B_NAME = None
     B_LINK = None
-    SETTINGS = {}
-    GETALL = {}
-    SHORT = {}
-    IMDB_CAP = {}
-    VERIFICATIONS = {}
-    TEMP_INVITE_LINKS = {}
-    REQ_LINKS = {}
+    SETTINGS = LimitedDict(maxsize=300)
+    GETALL = LimitedDict(maxsize=200)
+    SHORT = LimitedDict(maxsize=200)
+    IMDB_CAP = LimitedDict(maxsize=100)
+    VERIFICATIONS = LimitedDict(maxsize=300)
+    TEMP_INVITE_LINKS = LimitedDict(maxsize=200)
+    REQ_LINKS = LimitedDict(maxsize=200)
 
 
 async def is_req_subscribed(bot, user_id, rqfsub_channels):
@@ -119,9 +151,10 @@ async def is_req_subscribed(bot, user_id, rqfsub_channels):
 
     return btn
 
+
 async def is_subscribed(bot, user_id, fsub_channels):
     btn = []
-    
+
     async def check_channel(channel_id):
         try:
             await bot.get_chat_member(channel_id, user_id)
@@ -142,8 +175,9 @@ async def is_subscribed(bot, user_id, fsub_channels):
     for button in results:
         if button:
             btn.append([button])
-            
+
     return btn
+
 
 async def is_check_admin(bot, chat_id, user_id):
     try:
@@ -151,7 +185,8 @@ async def is_check_admin(bot, chat_id, user_id):
         return member.status in [enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER]
     except Exception:
         return False
-    
+
+
 async def users_broadcast(user_id, message, is_pin):
     try:
         m = await message.copy(chat_id=user_id)
@@ -159,22 +194,23 @@ async def users_broadcast(user_id, message, is_pin):
             await m.pin(both_sides=True)
         return True, "Success"
     except FloodWait as e:
-        await asyncio.sleep(e.x)
+        await asyncio.sleep(e.value)
         return await users_broadcast(user_id, message, is_pin)
     except InputUserDeactivated:
         await db.delete_user(int(user_id))
-        logging.info(f"{user_id}-Removed from Database, since deleted account.")
+        logger.info(f"{user_id}-Removed from Database, since deleted account.")
         return False, "Deleted"
     except UserIsBlocked:
-        logging.info(f"{user_id} -Blocked the bot.")
+        logger.info(f"{user_id} -Blocked the bot.")
         await db.delete_user(user_id)
         return False, "Blocked"
     except PeerIdInvalid:
         await db.delete_user(int(user_id))
-        logging.info(f"{user_id} - PeerIdInvalid")
+        logger.info(f"{user_id} - PeerIdInvalid")
         return False, "Error"
     except Exception:
         return False, "Error"
+
 
 async def groups_broadcast(chat_id, message, is_pin):
     try:
@@ -186,11 +222,12 @@ async def groups_broadcast(chat_id, message, is_pin):
                 pass
         return "Success"
     except FloodWait as e:
-        await asyncio.sleep(e.x)
+        await asyncio.sleep(e.value)
         return await groups_broadcast(chat_id, message, is_pin)
     except Exception:
         await db.delete_chat(chat_id)
         return "Error"
+
 
 async def junk_group(chat_id, message):
     try:
@@ -201,10 +238,10 @@ async def junk_group(chat_id, message):
         await asyncio.sleep(e.value)
         return await junk_group(chat_id, message)
     except Exception as e:
-        await db.delete_chat(int(chat_id))        
-        logging.info(f"{chat_id} - PeerIdInvalid")
+        await db.delete_chat(int(chat_id))
+        logger.info(f"{chat_id} - PeerIdInvalid")
         return False, "deleted", f'{e}\n\n'
-    
+
 
 async def clear_junk(user_id, message):
     try:
@@ -216,53 +253,56 @@ async def clear_junk(user_id, message):
         return await clear_junk(user_id, message)
     except InputUserDeactivated:
         await db.delete_user(int(user_id))
-        logging.info(f"{user_id}-Removed from Database, since deleted account.")
+        logger.info(f"{user_id}-Removed from Database, since deleted account.")
         return False, "Deleted"
     except UserIsBlocked:
-        logging.info(f"{user_id} -Blocked the bot.")
+        logger.info(f"{user_id} -Blocked the bot.")
         await db.delete_user(user_id)
         return False, "Blocked"
     except PeerIdInvalid:
         await db.delete_user(int(user_id))
-        logging.info(f"{user_id} - PeerIdInvalid")
+        logger.info(f"{user_id} - PeerIdInvalid")
         return False, "Error"
     except Exception:
         return False, "Error"
-     
+
+
 async def get_status(bot_id):
     try:
-        return await db.movie_update_status(bot_id) or False  
+        return await db.movie_update_status(bot_id) or False
     except Exception as e:
-        logging.error(f"Error in get_movie_update_status: {e}")
-        return False  
+        logger.error(f"Error in get_movie_update_status: {e}")
+        return False
+
 
 async def add_name_to_db(filename):
-    return await db.add_name(filename) 
+    return await db.add_name(filename)
 
 
 def listx_to_str(k):
     if k is None or k == "":
         return "N/A"
-    
+
     if not hasattr(k, '__iter__') or isinstance(k, (str, int, float)):
         return str(k)
-    
+
     result = []
     for elem in k:
         if elem and str(elem).strip():
             result.append(str(elem).strip())
-    
+
     if MAX_LIST_ELM and len(result) > MAX_LIST_ELM:
         result = result[:int(MAX_LIST_ELM)]
-    
+
     return ', '.join(result) if result else "N/A"
-    
+
+
 async def get_poster(query, bulk=False, id=False, file=None):
     if not id:
         query = (query.strip()).lower()
         title = query
         year_val = None
-        
+
         year_list = re.findall(r'[1-2]\d{3}$', query, re.IGNORECASE)
         if year_list:
             year_val = year_list[0]
@@ -271,32 +311,32 @@ async def get_poster(query, bulk=False, id=False, file=None):
             year_list = re.findall(r'[1-2]\d{3}', file, re.IGNORECASE)
             if year_list:
                 year_val = year_list[0]
-        
+
         search_result = await asyncio.to_thread(imdb.search_movie, title.lower())
         if not search_result or not search_result.titles:
             return None
-        
+
         movie_list = search_result.titles[:MAX_LIST_ELM]
-        
+
         if year_val:
             filtered = [m for m in movie_list if m.year and str(m.year) == str(year_val)]
             if not filtered:
                 filtered = movie_list
         else:
             filtered = movie_list
-            
+
         kind_filter = ['movie', 'tv series', 'tvSeries', 'tvMiniSeries', 'tvMovie']
         filtered_kind = [m for m in filtered if m.kind and m.kind in kind_filter]
-        
+
         if not filtered_kind:
             filtered_kind = filtered
-        
+
         if bulk:
             return filtered_kind[:MAX_LIST_ELM]
         if not filtered_kind:
-            return None    
+            return None
         movie_brief = filtered_kind[0]
-        movieid_str = movie_brief.imdb_id 
+        movieid_str = movie_brief.imdb_id
     else:
         movieid_str = query
 
@@ -310,7 +350,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         date = str(movie.year)
     else:
         date = "N/A"
-        
+
     plot = movie.plot[0] if isinstance(movie.plot, list) else movie.plot or ""
     if len(plot) > 800:
         plot = plot[:800] + "..."
@@ -342,7 +382,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         "composer": listx_to_str([p.name for p in movie.composers]),
         "cinematographer": listx_to_str([p.name for p in movie.cinematographers]),
         "music_team": listx_to_str([p.name for p in movie.music_team]),
-        "distributors": listx_to_str([c.name for c in movie.distributors]),        
+        "distributors": listx_to_str([c.name for c in movie.distributors]),
         'release_date': date,
         'year': movie.year,
         'genres': listx_to_str(movie.genres),
@@ -351,6 +391,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'rating': str(movie.rating),
         "url": movie.url or f"https://www.imdb.com/title/{imdb_id}"
     }
+
 
 async def old_get_poster(query, bulk=False, id=False, file=None):
     if not id:
@@ -363,7 +404,7 @@ async def old_get_poster(query, bulk=False, id=False, file=None):
         elif file is not None:
             year = re.findall(r'[1-2]\d{3}', file, re.IGNORECASE)
             if year:
-                year = list_to_str(year[:1]) 
+                year = list_to_str(year[:1])
         else:
             year = None
         movieid = imdb.search_movie(title.lower(), results=10)
@@ -411,7 +452,7 @@ async def old_get_poster(query, bulk=False, id=False, file=None):
         genres = ", ".join(g for g in genre_list if g in STANDARD_GENRES) or "N/A"
     else:
         genres = ", ".join(g for g in raw_genres if g in STANDARD_GENRES) or "N/A"
-        
+
     return {
         'title': movie.get('title'),
         'votes': movie.get('votes'),
@@ -441,7 +482,8 @@ async def old_get_poster(query, bulk=False, id=False, file=None):
         'rating': str(movie.get("rating")),
         'url': f'https://www.imdb.com/title/tt{movieid}'
     }
-    
+
+
 async def get_posterx(query, bulk=False, id=False, file=None):
     if not id:
         details = await get_movie_detailsx(query, file=file)
@@ -450,7 +492,7 @@ async def get_posterx(query, bulk=False, id=False, file=None):
 
     if not details or details.get("error"):
         return None
-    
+
     plot = ""
     if not LONG_IMDB_DESCRIPTION:
         plot = details.get('plot')
@@ -496,7 +538,8 @@ async def get_posterx(query, bulk=False, id=False, file=None):
         'rating': str(details.get("rating", "N/A")),
         'url': details.get('tmdb_url')
     }
-    
+
+
 async def search_gagala(text):
     usr_agent = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -514,9 +557,10 @@ async def search_gagala(text):
     titles = soup.find_all('h3')
     return [title.get_text() for title in titles if title.get_text().strip()]
 
+
 async def get_shortlink(link, grp_id, is_second_shortener=False, is_third_shortener=False):
     settings = await get_settings(grp_id)
-    if is_third_shortener:             
+    if is_third_shortener:
         api, site = settings['api_three'], settings['shortner_three']
     else:
         if is_second_shortener:
@@ -530,6 +574,7 @@ async def get_shortlink(link, grp_id, is_second_shortener=False, is_third_shorte
         link = await shortzy.get_quick_link(link)
     return link
 
+
 async def get_settings(group_id):
     group_id = int(group_id)
     settings = temp.SETTINGS.get(group_id)
@@ -537,7 +582,8 @@ async def get_settings(group_id):
         settings = await db.get_settings(group_id)
         temp.SETTINGS[group_id] = settings.copy()
     return settings
-    
+
+
 async def save_group_settings(group_id, key, value):
     group_id = int(group_id)
     current = await get_settings(group_id)
@@ -545,6 +591,7 @@ async def save_group_settings(group_id, key, value):
     current.update({key: value})
     temp.SETTINGS[group_id] = current
     await db.update_settings(group_id, current)
+
 
 async def delete_group_setting(group_id, key):
     group_id = int(group_id)
@@ -555,15 +602,13 @@ async def delete_group_setting(group_id, key):
         temp.SETTINGS[group_id] = current
         await db.update_settings(group_id, current)
 
+
 def clean_filename(file_name):
-    prefixes = ('[', '@', 'www.')
-    unwanted = {word.lower() for word in BAD_WORDS}
-    
-    file_name = ' '.join(
+    return ' '.join(
         word for word in file_name.split()
-        if not (word.startswith(prefixes) or word.lower() in unwanted)
+        if not (word.startswith(_CLEAN_FILENAME_PREFIXES) or word.lower() in _UNWANTED_BAD_WORDS)
     )
-    return file_name
+
 
 def get_size(size):
     units = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB"]
@@ -574,18 +619,21 @@ def get_size(size):
         size /= 1024.0
     return "%.2f %s" % (size, units[i])
 
+
 def split_list(lst, n):
     for i in range(0, len(lst), n):
-        yield lst[i:i + n]  
+        yield lst[i:i + n]
+
 
 def extract_request_content(message_text):
-    match = re.search(r"<u>(.*?)</u>", message_text)
+    match = _REQUEST_UNDERLINE_REGEX.search(message_text)
     if match:
         return match.group(1).strip()
-    match = re.search(r"📝 ʀᴇǫᴜᴇꜱᴛ ?: ?(.*?)(?:\n|$)", message_text)
+    match = _REQUEST_PREFIX_REGEX.search(message_text)
     if match:
         return match.group(1).strip()
     return message_text.strip()
+
 
 def generate_settings_text(settings, title, reset_done=False):
     note = "\n<b>📌 ɴᴏᴛᴇ :- ʀᴇꜱᴇᴛ ꜱᴜᴄᴄᴇꜱꜱғᴜʟʟʏ ✅</b>" if reset_done else ""
@@ -619,6 +667,7 @@ def generate_settings_text(settings, title, reset_done=False):
 {note}
 """
 
+
 async def get_settings_text(grp_id, title):
     settings = await get_settings(grp_id)
     verify_status = settings.get('is_verify', IS_VERIFY)
@@ -640,6 +689,7 @@ async def get_settings_text(grp_id, title):
         f"🚫 ꜰꜱᴜʙ ᴄʜᴀɴɴᴇʟ : {fsub_text}</b>"
     )
     return text
+
 
 async def group_setting_buttons(grp_id):
     settings = await get_settings(grp_id)
@@ -682,6 +732,7 @@ async def group_setting_buttons(grp_id):
     ]]
     return buttons
 
+
 def get_file_id(msg: Message):
     if msg.media:
         for message_type in (
@@ -692,6 +743,7 @@ def get_file_id(msg: Message):
             if obj:
                 setattr(obj, "message_type", message_type)
                 return obj
+
 
 def extract_user(message: Message) -> Union[int, str]:
     user_id = None
@@ -720,6 +772,7 @@ def extract_user(message: Message) -> Union[int, str]:
         user_first_name = message.from_user.first_name
     return (user_id, user_first_name)
 
+
 def list_to_str(k):
     if not k:
         return "N/A"
@@ -730,6 +783,7 @@ def list_to_str(k):
         return ' '.join(f'{elem}, ' for elem in k)
     else:
         return ' '.join(f'{elem}, ' for elem in k)
+
 
 def last_online(from_user):
     time = ""
@@ -749,6 +803,7 @@ def last_online(from_user):
         time += from_user.last_online_date.strftime("%a, %d %b %Y, %H:%M:%S")
     return time
 
+
 def split_quotes(text: str) -> List:
     if not any(text.startswith(char) for char in START_CHAR):
         return text.split(None, 1)
@@ -766,6 +821,7 @@ def split_quotes(text: str) -> List:
     if not key:
         key = text[0] + text[0]
     return list(filter(None, [key, rest]))
+
 
 def gfilterparser(text, keyword):
     if "buttonalert" in text:
@@ -818,6 +874,7 @@ def gfilterparser(text, keyword):
     except Exception:
         return note_data, buttons, None
 
+
 def parser(text, keyword):
     if "buttonalert" in text:
         text = (text.replace("\n", "\\n").replace("\t", "\\t"))
@@ -869,6 +926,7 @@ def parser(text, keyword):
     except Exception:
         return note_data, buttons, None
 
+
 def remove_escapes(text: str) -> str:
     res = ""
     is_escaped = False
@@ -882,14 +940,16 @@ def remove_escapes(text: str) -> str:
             res += text[counter]
     return res
 
+
 async def log_error(client, error_message):
     try:
         await client.send_message(
-            chat_id=LOG_CHANNEL, 
+            chat_id=LOG_CHANNEL,
             text=f"<b>⚠️ Error Log:</b>\n<code>{error_message}</code>"
         )
     except Exception as e:
         logger.error("Failed to log error: %s", e)
+
 
 def get_time(seconds):
     periods = [(' ᴅᴀʏs', 86400), (' ʜᴏᴜʀ', 3600), (' ᴍɪɴᴜᴛᴇ', 60), (' sᴇᴄᴏɴᴅ', 1)]
@@ -899,7 +959,8 @@ def get_time(seconds):
             period_value, seconds = divmod(seconds, period_seconds)
             result += f'{int(period_value)}{period_name}'
     return result
-    
+
+
 def humanbytes(size):
     if not size:
         return ""
@@ -911,6 +972,7 @@ def humanbytes(size):
         n += 1
     return str(round(size, 2)) + " " + Dic_powerN[n] + 'B'
 
+
 def get_readable_time(seconds):
     periods = [('d', 86400), ('h', 3600), ('m', 60), ('s', 1)]
     result = []
@@ -918,7 +980,8 @@ def get_readable_time(seconds):
         if seconds >= period_seconds:
             period_value, seconds = divmod(seconds, period_seconds)
             result.append(f'{int(period_value)}{period_name}')
-    return ' '.join(result)  
+    return ' '.join(result)
+
 
 def generate_season_variations(search_raw: str, season_number: int):
     return [
@@ -926,6 +989,7 @@ def generate_season_variations(search_raw: str, season_number: int):
         f"{search_raw} season {season_number}",
         f"{search_raw} season {season_number:02}",
     ]
+
 
 async def get_seconds(time_string):
     def extract_value_and_unit(ts):
@@ -955,18 +1019,16 @@ async def get_seconds(time_string):
     else:
         return 0
 
+
 def clean_search_text(search_raw: str) -> str:
     search_lower = search_raw.lower()
-    phrases = re.split(r'\s{2,}', search_lower.strip())
-    lang_pattern = r'\b(hin(di)?|eng(lish)?|mal(ayalam)?|tam(il)?|tel(ugu)?|kan(nada)?|ben(gali)?|mar(athi)?|urdu|guj(arat)?|punj(abi)?)\b'
-    season_pattern = r's(eason)?\s*0*\d+'
-    quality_pattern = r'\b(360p|480p|720p|1080p|1440p|2160p|4k)\b'  
+    phrases = _PHRASES_SPLIT_REGEX.split(search_lower.strip())
     cleaned_phrases = []
     for phrase in phrases:
-        phrase = re.sub(season_pattern, '', phrase, flags=re.IGNORECASE)
-        phrase = re.sub(lang_pattern, '', phrase, flags=re.IGNORECASE)
-        phrase = re.sub(quality_pattern, '', phrase, flags=re.IGNORECASE)
-        phrase = re.sub(r'\s+', ' ', phrase).strip()
+        phrase = _SEASON_REGEX.sub('', phrase)
+        phrase = _LANG_REGEX.sub('', phrase)
+        phrase = _QUALITY_REGEX.sub('', phrase)
+        phrase = _MULTI_SPACE_REGEX.sub(' ', phrase).strip()
         if phrase:
             cleaned_phrases.append(phrase)
     unique_phrases = []
@@ -979,6 +1041,7 @@ def clean_search_text(search_raw: str) -> str:
         return unique_phrases[0].title()
     else:
         return ""
+
 
 async def get_cap(settings, remaining_seconds, files, query, total_results, search, offset=0):
     try:
@@ -1004,7 +1067,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                 if imdb_data:
                     TEMPLATE = script.IMDB_TEMPLATE_TXT
                     cap = TEMPLATE.format(
-                        query=search, 
+                        query=search,
                         title=imdb_data['title'],
                         votes=imdb_data['votes'],
                         aka=imdb_data["aka"],
@@ -1034,7 +1097,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                         url=imdb_data['url'],
                         **locals()
                     )
-                    
+
                     for idx, file in enumerate(files, start=offset + 1):
                         cap += (
                             f"<b>{idx}. "
@@ -1099,17 +1162,18 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                 )
         return cap
     except Exception as e:
-        logging.error(f"Error in get_cap: {e}")
+        logger.error(f"Error in get_cap: {e}")
         return ""
 
-# ==================== SLICE GMAIL PAYMENT VERIFIER ==================== #
 
-# UTR / Transaction ID dhundhne ke patterns
+# ==================== SLICE GMAIL PAYMENT VERIFIER (UNCHANGED) ==================== #
+
 UTR_PATTERNS = [
     r'(?:UTR|Utr|utr)\s*(?:No\.?|Number|ID|:)?\s*[:\-]?\s*([A-Za-z0-9]{8,22})',
     r'(?:Transaction\s*ID|Txn\s*ID|Reference\s*(?:No\.?|Number|ID)?)\s*[:\-]?\s*([A-Za-z0-9]{8,22})',
-    r'\b(\d{12})\b',  # Generic 12-digit UTR (India)
+    r'\b(\d{12})\b',
 ]
+
 
 def extract_utr_from_body(body: str):
     """Email body se UTR / Transaction ID nikalta hai."""
@@ -1135,7 +1199,6 @@ def _amount_matches(body: str, amount: float) -> bool:
     if amount is None:
         return True
     amt_str = f"{amount:.2f}"
-    # Boundary check: aage-peeche digit na ho
     pattern = rf'(?<![\d.]){re.escape(amt_str)}(?![\d])'
     return re.search(pattern, body) is not None
 
@@ -1172,7 +1235,6 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
 
             msg = email.message_from_bytes(data[0][1])
 
-            # Time filter - sirf naye emails
             msg_date_str = msg.get("Date")
             if msg_date_str and min_time:
                 try:
@@ -1201,11 +1263,9 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
 
             # ============ MANUAL UTR MODE (primary) ============ #
             if target_utr:
-                # UTR email mein hona chahiye
                 if str(target_utr).strip() not in body:
                     continue
 
-                # Amount bhi match karo — strict boundary check
                 if not _amount_matches(body, expected_amount):
                     continue
 
