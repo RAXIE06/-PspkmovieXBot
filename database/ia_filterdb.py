@@ -241,8 +241,11 @@ async def get_search_results(chat_id, query, file_type=None, max_results=None, o
             files = find_results[1] + find_results[0]
             files = files[offset:offset + max_results]
         else:
-            total_results = await Media.count_documents(filter_mongo)
-            files = await Media.find(filter_mongo).sort("$natural", -1).skip(offset).limit(max_results).to_list(length=max_results)
+            # ✅ FIX: asyncio.gather wapas add kiya — parallel count + find
+            total_results, files = await asyncio.gather(
+                Media.count_documents(filter_mongo),
+                Media.find(filter_mongo).sort("$natural", -1).skip(offset).limit(max_results).to_list(length=max_results)
+            )
         next_offset = offset + len(files)
         if next_offset >= total_results:
             next_offset = ""
