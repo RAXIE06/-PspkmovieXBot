@@ -1,4 +1,4 @@
-from utils import get_random_mix_id, get_size, is_subscribed, is_req_subscribed, group_setting_buttons, get_poster, get_posterx, temp, get_settings, save_group_settings, get_cap, imdb, is_check_admin, extract_request_content, log_error, clean_filename, generate_season_variations, clean_search_text, get_settings_text
+from utils import get_random_mix_id, get_size, is_subscribed, is_req_subscribed, group_setting_buttons, get_poster, get_posterx, temp, get_settings, save_group_settings, get_cap, imdb, is_check_admin, extract_request_content, log_error, clean_filename, generate_season_variations, clean_search_text, get_settings_text, LimitedDict
 from rapidfuzz import process
 from dreamxbotz.util.file_properties import get_name, get_hash
 from urllib.parse import quote_plus
@@ -31,26 +31,36 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
 TIMEZONE = "Asia/Kolkata"
+
+# ⚡ FAST: Bounded caches (memory leak proof)
 BUTTON = {}
-BUTTONS = {}
-FRESH = {}
+BUTTONS = LimitedDict(maxsize=200)
+FRESH = LimitedDict(maxsize=200)
 BUTTONS0 = {}
 BUTTONS1 = {}
 BUTTONS2 = {}
 SPELL_CHECK = {}
+
+# ⚡ FAST: Pre-compiled regexes + set (module level — ek baar compile, baar-baar use)
+REMOVES_WORDS = {"in", "upload", "series", "full", "horror", "thriller", "mystery", "print", "file"}
+SEARCH_CLEAN_REGEX = re.compile(
+    r"\b(pl(i|e)*?(s|z+|ease|se|ese|(e+)s(e)?)|((send|snd|giv(e)?|gib)(\sme)?)|movie(s)?|new|latest|bro|bruh|broh|helo|that|find|dubbed|link|venum|iruka|pannunga|pannungga|anuppunga|anupunga|anuppungga|anupungga|film|undo|kitti|kitty|tharu|kittumo|kittum|movie|any(one)|with\ssubtitle(s)?)\b",
+    re.IGNORECASE
+)
+PREFIX_COMMAND_REGEX = re.compile(r"((^\/|^,|^!|^\.|^[\U0001F600-\U000E007F]).*)")
 
 
 @Client.on_message(filters.group & filters.text & filters.incoming & ~filters.regex(r"^/") )
 async def give_filter(client, message):
     if EMOJI_MODE:
         try:
-            await message.react(emoji=random.choice(REACTIONS), big=True)
+            asyncio.create_task(message.react(emoji=random.choice(REACTIONS), big=True))
         except Exception:
             try:
-                await message.react(emoji="⚡️")
+                asyncio.create_task(message.react(emoji="⚡️"))
             except Exception:
                 pass
-    await mdb.update_top_messages(message.from_user.id, message.text)
+    asyncio.create_task(mdb.update_top_messages(message.from_user.id, message.text))
     if message.chat.id != SUPPORT_CHAT_ID:
         settings = await get_settings(message.chat.id)
         try:
@@ -88,16 +98,16 @@ async def pm_text(bot, message):
     user_id = message.from_user.id
     if EMOJI_MODE:
         try:
-            await message.react(emoji=random.choice(REACTIONS), big=True)
+            asyncio.create_task(message.react(emoji=random.choice(REACTIONS), big=True))
         except Exception:
             try:
-                await message.react(emoji="⚡️")
+                asyncio.create_task(message.react(emoji="⚡️"))
             except Exception:
                 pass
     if content.startswith(("#")):
         return
     try:
-        await mdb.update_top_messages(user_id, content)
+        asyncio.create_task(mdb.update_top_messages(user_id, content))
         pm_search = await db.pm_search_status(bot_id)
         if pm_search:
             await auto_filter(bot, message)
@@ -130,7 +140,7 @@ async def refercall(bot, query):
             query.message.id,
             InputMediaPhoto("https://graph.org/file/1a2e64aee3d4d10edd930.jpg")
         )
-    except Exception:    
+    except Exception:
         pass
     await query.message.edit_text(
         text=script.REFER_TXT.format(bot.me.username, query.from_user.id),
@@ -138,6 +148,7 @@ async def refercall(bot, query):
         parse_mode=enums.ParseMode.HTML
     )
     await query.answer()
+
 
 @Client.on_callback_query(filters.regex(r"^next"))
 async def next_page(bot, query):
@@ -380,6 +391,7 @@ async def advantage_spoll_choker(bot, query):
         await asyncio.sleep(10)
         await k.delete()
 
+
 # Qualities
 @Client.on_callback_query(filters.regex(r"^qualities#"))
 async def qualities_cb_handler(client: Client, query: CallbackQuery):
@@ -533,9 +545,8 @@ async def filter_qualities_cb_handler(client: Client, query: CallbackQuery):
             pass
     await query.answer()
 
+
 # languages
-
-
 @Client.on_callback_query(filters.regex(r"^languages#"))
 async def languages_cb_handler(client: Client, query: CallbackQuery):
     _, req, key = query.data.split("#")
@@ -1559,22 +1570,16 @@ async def auto_filter(client, msg, spoll=False):
             message = msg
             if message.text.startswith("/"):
                 return
-            if re.findall(r"((^\/|^,|^!|^\.|^[\U0001F600-\U000E007F]).*)", message.text):
+            if PREFIX_COMMAND_REGEX.match(message.text):
                 return
             if len(message.text) < 100:
                 message_text = message.text or ""
                 search = message_text.lower()
                 m = await message.reply_text(script.SEARCHING_TXT.format(search))
-                find = search.split(" ")
-                search = ""
-                removes = ["in", "upload", "series", "full",
-                           "horror", "thriller", "mystery", "print", "file"]
-                for x in find:
-                    if x in removes:
-                        continue
-                    else:
-                        search = search + x + " "
-                search = re.sub(r"\b(pl(i|e)*?(s|z+|ease|se|ese|(e+)s(e)?)|((send|snd|giv(e)?|gib)(\sme)?)|movie(s)?|new|latest|bro|bruh|broh|helo|that|find|dubbed|link|venum|iruka|pannunga|pannungga|anuppunga|anupunga|anuppungga|anupungga|film|undo|kitti|kitty|tharu|kittumo|kittum|movie|any(one)|with\ssubtitle(s)?)\b", "", search, flags=re.IGNORECASE)
+                # ⚡ FAST: set-based filter (O(1) lookup)
+                search = " ".join([x for x in search.split() if x not in REMOVES_WORDS])
+                # ⚡ FAST: pre-compiled regex
+                search = SEARCH_CLEAN_REGEX.sub("", search)
                 search = search.replace("-", " ")
                 search = re.sub(r"[:']", "", search)
                 search = re.sub(r"\s+", " ", search).strip()
@@ -1614,7 +1619,7 @@ async def auto_filter(client, msg, spoll=False):
         req = message.from_user.id if message.from_user else 0
         temp.SHORT[message.from_user.id] = message.chat.id
         try:
-            await client.send_reaction(chat_id=message.chat.id, message_id=message.id, emoji="🍿")
+            asyncio.create_task(client.send_reaction(chat_id=message.chat.id, message_id=message.id, emoji="🍿"))
         except Exception:
             pass
         if settings.get('button'):
@@ -1807,6 +1812,7 @@ async def auto_filter(client, msg, spoll=False):
         logger.exception(e)
         return
 
+
 async def ai_spell_check(chat_id, wrong_name):
     async def search_movie(wrong_name):
         search_results = imdb.search_movie(wrong_name)
@@ -1826,6 +1832,7 @@ async def ai_spell_check(chat_id, wrong_name):
         if files:
             return movie
         movie_list.remove(movie)
+
 
 async def advantage_spell_chok(client, message):
     search = message.text
@@ -1871,7 +1878,6 @@ async def advantage_spell_chok(client, message):
     buttons.append([InlineKeyboardButton(
         text="🚫 ᴄʟᴏsᴇ 🚫", callback_data='close_data', style=enums.ButtonStyle.DANGER)])
     
-    # FIXED: reply_to_message_id hata diya gaya hai
     d = await message.reply_text(
         text=script.CUDNT_FND.format(message.from_user.mention), 
         reply_markup=InlineKeyboardMarkup(buttons)
