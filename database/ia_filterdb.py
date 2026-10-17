@@ -8,7 +8,7 @@ from collections import defaultdict
 from pymongo.errors import DuplicateKeyError
 from umongo import Instance, Document, fields
 from motor.motor_asyncio import AsyncIOMotorClient
-from utils import get_settings, save_group_settings
+from utils import get_settings, save_group_settings, LimitedDict
 from info import (
     COLLECTION_NAME, COVERX, DATABASE_NAME, DATABASE_URI, DATABASE_URI2,
     INDEX_CAPTION, MAX_B_TN, MULTIPLE_DB, ULTRA_FAST_MODE, USE_CAPTION_FILTER,
@@ -25,9 +25,11 @@ logger.setLevel(logging.INFO)
 # Global cache for DB size
 _db_stats_cache = {"timestamp": None, "primary_size": 0.0}
 
+
 @lru_cache(maxsize=4096)
 def compile_regex(pattern):
     return re.compile(pattern, re.IGNORECASE)
+
 
 # Primary DB
 client = AsyncIOMotorClient(DATABASE_URI)
@@ -73,7 +75,6 @@ class Media2(Document):
     mime_type = fields.StrField(allow_none=True)
     caption = fields.StrField(allow_none=True)
     cover = fields.StrField(allow_none=True)
-
 
     class Meta:
         indexes = ("$file_name",)
@@ -169,8 +170,8 @@ async def save_file(media):
             f"[ERROR] Failed commit of '{file_name}' to {target_db} DB.", exc_info=e
         )
         return False, 3
-    #logger.info(f"[SUCCESS] '{file_name}' saved to {target_db} DB.")
     return True, 1
+
 
 async def get_search_results(chat_id, query, file_type=None, max_results=None, offset=0, filter=False):
     if chat_id is not None and max_results is None:
@@ -185,7 +186,7 @@ async def get_search_results(chat_id, query, file_type=None, max_results=None, o
             return [], None, 0
         regex = compile_regex(raw_pattern)
         if USE_CAPTION_FILTER:
-            filter_mongo = {"$or": [{"file_name": regex},{"caption": regex},]}
+            filter_mongo = {"$or": [{"file_name": regex}, {"caption": regex}, ]}
         else:
             filter_mongo = {"file_name": regex}
     else:
@@ -196,13 +197,13 @@ async def get_search_results(chat_id, query, file_type=None, max_results=None, o
             words = [re.escape(w) for w in query.split() if w]
             raw_pattern = (r".*[\s\.\+\-_]".join(words) if words else r".")
         else:
-            raw_pattern = (r"(\b|[\.\+\-_])" + re.escape(query) + r"(\b|[\.\+\-_])" )
+            raw_pattern = (r"(\b|[\.\+\-_])" + re.escape(query) + r"(\b|[\.\+\-_])")
         try:
             regex = compile_regex(raw_pattern)
         except re.error:
             return [], None, 0
         if USE_CAPTION_FILTER:
-            filter_mongo = { "$or": [{"file_name": regex}, {"caption": regex},]}
+            filter_mongo = {"$or": [{"file_name": regex}, {"caption": regex}, ]}
         else:
             filter_mongo = {"file_name": regex}
 
@@ -246,6 +247,7 @@ async def get_search_results(chat_id, query, file_type=None, max_results=None, o
         if next_offset >= total_results:
             next_offset = ""
     return files, next_offset, total_results
+
 
 async def get_bad_files(query, file_type=None):
     query = query.strip()
@@ -292,16 +294,27 @@ async def get_bad_files(query, file_type=None):
     files = files[:300]
     return files, len(files)
 
+
+# ⚡ FAST: file details cache — same file click pe DB hit nahi hoga
+_FILE_DETAILS_CACHE = LimitedDict(maxsize=300)
+
+
 async def get_file_details(query):
+    if not query:
+        return []
+    if query in _FILE_DETAILS_CACHE:
+        return _FILE_DETAILS_CACHE[query]
     filter = {"file_id": query}
     tasks = [Media.find(filter).to_list(length=1)]
     if MULTIPLE_DB:
-        tasks.append(Media2.find(filter).to_list(length=1))  
+        tasks.append(Media2.find(filter).to_list(length=1))
     results = await asyncio.gather(*tasks)
     for filedetails in results:
         if filedetails:
-            return filedetails       
+            _FILE_DETAILS_CACHE[query] = filedetails
+            return filedetails
     return []
+
 
 def encode_file_id(s: bytes) -> str:
     r = b""
