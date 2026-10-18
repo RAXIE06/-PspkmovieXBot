@@ -48,10 +48,6 @@ def get_plugins_names(plugins_dir="plugins"):
 
 async def dreamxbotz_start():
     logging.info('\n\nInitializing The Flash Bot (PspkmovieXBot)')
-    
-    # 🟢 FIX: Background tasks ko store karne ke liye list banayi
-    bg_tasks = []
-    
     await dreamxbotz.start()
     bot_info = await dreamxbotz.get_me()
     dreamxbotz.username = bot_info.username
@@ -64,9 +60,7 @@ async def dreamxbotz_start():
         logging.warning("No plugins found.")
 
     if ON_HEROKU:
-        # 🟢 FIX: Task ko list me append kiya
-        bg_tasks.append(asyncio.create_task(ping_server()))
-        
+        asyncio.create_task(ping_server())
     b_users, b_chats = await db.get_banned()
     temp.BANNED_USERS = b_users
     temp.BANNED_CHATS = b_chats
@@ -86,9 +80,7 @@ async def dreamxbotz_start():
     temp.B_NAME = me.first_name
     temp.B_LINK = me.mention
     dreamxbotz.username = '@' + me.username
-    
-    # 🟢 FIX: Task ko list me append kiya
-    bg_tasks.append(asyncio.create_task(check_expired_premium(dreamxbotz)))
+    asyncio.create_task(check_expired_premium(dreamxbotz))
     
     logging.info(f"{me.first_name} with Pyrogram v{__version__} (Layer {layer}) started on {me.username}.")
     logging.info(LOG_STR)
@@ -106,18 +98,11 @@ async def dreamxbotz_start():
     await app.setup()
     bind_address = "0.0.0.0"
     await web.TCPSite(app, bind_address, PORT).start()
-    
-    # 🟢 FIX: Task ko list me append kiya
-    bg_tasks.append(asyncio.create_task(keep_alive()))
+    asyncio.create_task(keep_alive())
 
     try:
         await idle()
     finally:
-        # 🟢 FIX: Jab bot band ho, to saare background tasks cancel karo
-        logging.info("Stopping bot and cancelling background tasks...")
-        for task in bg_tasks:
-            task.cancel()
-            
         await app.cleanup()
         await dreamxbotz.stop()
 
