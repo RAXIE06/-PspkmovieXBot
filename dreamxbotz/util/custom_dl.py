@@ -1,4 +1,4 @@
-#Thanks @dreamxbotz for helping in this journey 
+# Thanks @dreamxbotz for helping in this journey 
 import asyncio
 import logging
 from info import BIN_CHANNEL
@@ -14,18 +14,30 @@ from pyrogram.file_id import FileId, FileType, ThumbnailSource
 
 class ByteStreamer:
     def __init__(self, client: Client):
+        """A custom class that holds the cache of a specific client and class functions.
+        attributes:
+            client: the client that the cache is for.
+            cached_file_ids: a dict of cached file IDs.
+            cached_file_properties: a dict of cached file properties.
+        """
         self.clean_timer = 30 * 60
         self.client: Client = client
         self.cached_file_ids: Dict[int, FileId] = {}
         asyncio.create_task(self.clean_cache())
 
     async def get_file_properties(self, id: int) -> FileId:
+        """
+        Returns the properties of a media of a specific message in a FileId class.
+        """
         if id not in self.cached_file_ids:
             await self.generate_file_properties(id)
             logging.debug(f"Cached file properties for message with ID {id}")
         return self.cached_file_ids[id]
     
     async def generate_file_properties(self, id: int) -> FileId:
+        """
+        Generates the properties of a media file on a specific message.
+        """
         file_id = await get_file_ids(self.client, BIN_CHANNEL, id)
         logging.debug(f"Generated file ID and Unique ID for message with ID {id}")
         if not file_id:
@@ -34,6 +46,102 @@ class ByteStreamer:
         self.cached_file_ids[id] = file_id
         logging.debug(f"Cached media message with ID {id}")
         return self.cached_file_ids[id]
+
+    async def generate_media_session(self, client: Client, file_id: FileId) -> Session:
+        """
+        Generates the media session for the DC that contains the media file.
+        """
+        media_session = client.media_sessions.get(file_id.dc_id, None)
+        if media_session is None:
+            if file_id.dc_id != await client.storage.dc_id():
+                media_session = Session(
+                    client,
+                    file_id.dc_id,
+                    await Auth(
+                        client, file_id.dc_id, await client.storage.test_mode()
+                    ).create(),
+                    await client.storage.test_mode(),
+                    is_media=True,
+                )
+                await media_session.start()
+
+                for _ in range(6):
+                    exported_auth = await client.invoke(
+                        raw.functions.auth.ExportAuthorization(dc_id=file_id.dc_id)
+                    )
+
+                    try:
+                        await media_session.send(
+                            raw.functions.auth.ImportAuthorization(
+                                id=exported_auth.id, bytes=exported_auth.bytes
+                            )
+                        )
+                        break
+                    except AuthBytesInvalid:
+                        logging.debug(
+                            f"Invalid authorization bytes for DC {file_id.dc_id}"
+                        )
+                        continue
+                else:
+                    await media_session.stop()
+                    raise AuthBytesInvalid
+            else:
+                media_session = Session(
+                    client,
+                    file_id.dc_id,
+                    await client.storage.auth_key(),
+                    await client.storage.test_mode(),
+                    is_media=True,
+                )
+                await media_session.start()
+            logging.debug(f"Created media session for DC {file_id.dc_id}")
+            client.media_sessions[file_id.dc_id] = media_session
+        else:
+            logging.debug(f"Using cached media session for DC {file_id.dc_id}")
+        return media_session
+
+    @staticmethod
+    async def get_location(file_id: FileId) -> Union[
+        raw.types.InputPhotoFileLocation,
+        raw.types.InputDocumentFileLocation,
+        raw.types.InputPeerPhotoFileLocation,
+    ]:
+        file_type = file_id.file_type
+
+        if file_type == FileType.CHAT_PHOTO:
+            if file_id.chat_id > 0:
+                peer = raw.types.InputPeerUser(
+                    user_id=file_id.chat_id, access_hash=file_id.chat_access_hash
+                )
+            else:
+                if file_id.chat_access_hash == 0:
+                    peer = raw.types.InputPeerChat(chat_id=-file_id.chat_id)
+                else:
+                    peer = raw.types.InputPeerChannel(
+                        channel_id=utils.get_channel_id(file_id.chat_id),
+                        access_hash=file_id.chat_access_hash,
+                    )
+
+            location = raw.types.InputPeerPhotoFileLocation(
+                peer=peer,
+                photo_id=file_id.media_id,
+                big=file_id.thumbnail_source == ThumbnailSource.CHAT_PHOTO_BIG,
+            )
+        elif file_type == FileType.PHOTO:
+            location = raw.types.InputPhotoFileLocation(
+                id=file_id.media_id,
+                access_hash=file_id.access_hash,
+                file_reference=file_id.file_reference,
+                thumb_size=file_id.thumbnail_size,
+            )
+        else:
+            location = raw.types.InputDocumentFileLocation(
+                id=file_id.media_id,
+                access_hash=file_id.access_hash,
+                file_reference=file_id.file_reference,
+                thumb_size=file_id.thumbnail_size,
+            )
+        return location
 
     async def yield_file(
         self,
@@ -44,17 +152,24 @@ class ByteStreamer:
         last_part_cut: int,
         part_count: int,
         chunk_size: int,
-    ) -> Union[str, None]:
+    ):
         client = self.client
-        work_loads[index] += 1
+        work_loads[index] = work_loads.get(index, 0) + 1
         logging.debug(f"Starting to yield file with client {index}.")
         
-        chunk_offset = offset // chunk_size
+        # Pyrogram stream_media standard 1MB aligned offset
+        chunk_offset = offset // (1024 * 1024)
+        current_part = 1
 
         try:
-            current_part = 1
-            # 🟢 FIX: client.stream_media use kiya jo auto DC handle karta hai
-            async for chunk in client.stream_media(file_id.file_id, limit=part_count, offset=chunk_offset):
+            async for chunk in client.stream_media(
+                file_id.file_id, 
+                limit=part_count, 
+                offset=chunk_offset
+            ):
+                if not chunk:
+                    continue
+
                 if part_count == 1:
                     yield chunk[first_part_cut:last_part_cut]
                 elif current_part == 1:
@@ -67,15 +182,19 @@ class ByteStreamer:
                 current_part += 1
                 if current_part > part_count:
                     break
-        except (TimeoutError, AttributeError):
+
+        except (GeneratorExit, asyncio.CancelledError):
             pass
         except Exception as e:
-            logging.error(f"Streaming error: {e}")
+            logging.warning(f"Client {index} media streaming warning: {e}")
         finally:
             logging.debug(f"Finished yielding file with {current_part} parts.")
-            work_loads[index] -= 1
+            work_loads[index] = max(0, work_loads.get(index, 1) - 1)
 
     async def clean_cache(self) -> None:
+        """
+        Function to clean the cache to reduce memory usage
+        """
         while True:
             await asyncio.sleep(self.clean_timer)
             self.cached_file_ids.clear()
