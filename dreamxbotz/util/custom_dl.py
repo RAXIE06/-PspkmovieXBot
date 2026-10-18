@@ -1,4 +1,4 @@
-#Thanks @dreamxbotz for helping in this journey 
+# Thanks @dreamxbotz for helping in this journey 
 import asyncio
 import logging
 from info import BIN_CHANNEL
@@ -18,13 +18,6 @@ class ByteStreamer:
         attributes:
             client: the client that the cache is for.
             cached_file_ids: a dict of cached file IDs.
-            cached_file_properties: a dict of cached file properties.
-        
-        functions:
-            generate_file_properties: returns the properties for a media of a specific message contained in Tuple.
-            generate_media_session: returns the media session for the DC that contains the media file.
-            yield_file: yield a file from telegram servers for streaming.
-            
         """
         self.clean_timer = 30 * 60
         self.client: Client = client
@@ -33,9 +26,7 @@ class ByteStreamer:
 
     async def get_file_properties(self, id: int) -> FileId:
         """
-        Returns the properties of a media of a specific message in a FIleId class.
-        if the properties are cached, then it'll return the cached results.
-        or it'll generate the properties from the Message ID and cache them.
+        Returns the properties of a media of a specific message in a FileId class.
         """
         if id not in self.cached_file_ids:
             await self.generate_file_properties(id)
@@ -45,7 +36,6 @@ class ByteStreamer:
     async def generate_file_properties(self, id: int) -> FileId:
         """
         Generates the properties of a media file on a specific message.
-        returns ths properties in a FIleId class.
         """
         file_id = await get_file_ids(self.client, BIN_CHANNEL, id)
         logging.debug(f"Generated file ID and Unique ID for message with ID {id}")
@@ -59,7 +49,6 @@ class ByteStreamer:
     async def generate_media_session(self, client: Client, file_id: FileId) -> Session:
         """
         Generates the media session for the DC that contains the media file.
-        This is required for getting the bytes from Telegram servers.
         """
         media_session = client.media_sessions.get(file_id.dc_id, None)
         if media_session is None:
@@ -110,14 +99,12 @@ class ByteStreamer:
             logging.debug(f"Using cached media session for DC {file_id.dc_id}")
         return media_session
 
-
     @staticmethod
-    async def get_location(file_id: FileId) -> Union[raw.types.InputPhotoFileLocation,
-                                                     raw.types.InputDocumentFileLocation,
-                                                     raw.types.InputPeerPhotoFileLocation,]:
-        """
-        Returns the file location for the media file.
-        """
+    async def get_location(file_id: FileId) -> Union[
+        raw.types.InputPhotoFileLocation,
+        raw.types.InputDocumentFileLocation,
+        raw.types.InputPeerPhotoFileLocation,
+    ]:
         file_type = file_id.file_type
 
         if file_type == FileType.CHAT_PHOTO:
@@ -166,14 +153,22 @@ class ByteStreamer:
         chunk_size: int,
     ):
         client = self.client
-        work_loads[index] += 1
+        work_loads[index] = work_loads.get(index, 0) + 1
         logging.debug(f"Starting to yield file with client {index}.")
         
-        chunk_offset = offset // chunk_size
+        # 1MB standard offset align for Telegram stream_media API
+        chunk_offset = offset // (1024 * 1024)
 
         try:
             current_part = 1
-            async for chunk in client.stream_media(file_id.file_id, limit=part_count, offset=chunk_offset):
+            async for chunk in client.stream_media(
+                file_id.file_id, 
+                limit=part_count, 
+                offset=chunk_offset
+            ):
+                if not chunk:
+                    continue
+
                 if part_count == 1:
                     yield chunk[first_part_cut:last_part_cut]
                 elif current_part == 1:
@@ -186,16 +181,19 @@ class ByteStreamer:
                 current_part += 1
                 if current_part > part_count:
                     break
-        except (TimeoutError, AttributeError):
-            pass
-        finally:
-            logging.debug(f"Finished yielding file with {current_part} parts.")
-            work_loads[index] -= 1
 
-    
+        except (GeneratorExit, asyncio.CancelledError):
+            # Raised normally when client stops playback, rewinds, or closes browser
+            pass
+        except (TimeoutError, AttributeError, Exception) as e:
+            logging.warning(f"Client {index} streaming stream error: {e}")
+        finally:
+            logging.debug(f"Finished yielding file on client {index}.")
+            work_loads[index] = max(0, work_loads.get(index, 1) - 1)
+
     async def clean_cache(self) -> None:
         """
-        function to clean the cache to reduce memory usage
+        Function to clean the cache to reduce memory usage
         """
         while True:
             await asyncio.sleep(self.clean_timer)
