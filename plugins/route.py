@@ -114,7 +114,7 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
             headers={"Content-Range": f"bytes */{file_size}"},
         )
 
-    # 512KB chunk size for fast initial byte delivery
+    # 512KB chunk size
     chunk_size = 512 * 1024
     until_bytes = min(until_bytes, file_size - 1)
 
@@ -129,25 +129,14 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
         file_id, index, offset, first_part_cut, last_part_cut, part_count, chunk_size
     )
 
-    mime_type = file_id.mime_type
-    file_name = file_id.file_name
-
-    # Safe MIME type resolution
-    if not mime_type:
-        if file_name:
-            guessed = mimetypes.guess_type(file_name)[0]
-            mime_type = guessed or "application/octet-stream"
-        else:
-            mime_type = "application/octet-stream"
-            file_name = f"{secrets.token_hex(2)}.unknown"
-
-    if not file_name:
-        file_name = f"{secrets.token_hex(2)}.mkv"
+    file_name = file_id.file_name or f"{secrets.token_hex(2)}.mkv"
 
     resp_headers = {
-        "Content-Type": f"{mime_type}",
+        # Forced download MIME type
+        "Content-Type": "application/octet-stream",
         "Content-Length": str(req_length),
-        "Content-Disposition": f'inline; filename="{file_name}"',
+        # Forced direct file download
+        "Content-Disposition": f'attachment; filename="{file_name}"',
         "Accept-Ranges": "bytes",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
@@ -155,7 +144,6 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
         "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
     }
     
-    # Content-Range must only be sent when status is 206
     if range_header:
         resp_headers["Content-Range"] = f"bytes {from_bytes}-{until_bytes}/{file_size}"
 
@@ -172,7 +160,7 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     except (ConnectionResetError, BadStatusLine):
         pass
     except Exception as e:
-        logging.warning(f"Stream interrupted on client {index}: {e}")
+        logging.warning(f"Download stream interrupted on client {index}: {e}")
     finally:
         try:
             await response.write_eof()
