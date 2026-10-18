@@ -11,7 +11,6 @@ from dreamxbotz.util.custom_dl import ByteStreamer
 from dreamxbotz.util.render_template import render_page
 import info
 
-
 routes = web.RouteTableDef()
 
 @routes.get("/favicon.ico")
@@ -53,10 +52,8 @@ async def stream_handler(request: web.Request):
             secure_hash = match.group(1)
             id = int(match.group(2))
         else:
-            # Try to extract ID from path
             id_match = re.search(r"(\d+)(?:\/\S+)?", path)
             if not id_match:
-                # Path doesn't contain any numeric ID - return 404
                 raise web.HTTPNotFound(text="Not found")
             id = int(id_match.group(1))
             secure_hash = request.rel_url.query.get("hash")
@@ -67,7 +64,7 @@ async def stream_handler(request: web.Request):
     except FIleNotFound as e:
         raise web.HTTPNotFound(text=e.message)
     except web.HTTPNotFound:
-        raise  # Re-raise HTTPNotFound without logging
+        raise
     except (AttributeError, BadStatusLine, ConnectionResetError):
         pass
     except Exception as e:
@@ -92,6 +89,7 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
         logging.debug(f"Creating new ByteStreamer object for client {index}")
         tg_connect = ByteStreamer(faster_client)
         class_cache[faster_client] = tg_connect
+
     file_id = await tg_connect.get_file_properties(id)
     
     if file_id.unique_id[:6] != secure_hash:
@@ -100,22 +98,24 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     
     file_size = file_id.file_size
 
+    # Range calculations
     if range_header:
         from_bytes, until_bytes = range_header.replace("bytes=", "").split("-")
         from_bytes = int(from_bytes)
         until_bytes = int(until_bytes) if until_bytes else file_size - 1
     else:
-        from_bytes = request.http_range.start or 0
-        until_bytes = (request.http_range.stop or file_size) - 1
+        from_bytes = 0
+        until_bytes = file_size - 1
 
-    if (until_bytes > file_size) or (from_bytes < 0) or (until_bytes < from_bytes):
+    if (until_bytes >= file_size) or (from_bytes < 0) or (until_bytes < from_bytes):
         return web.Response(
             status=416,
             body="416: Range not satisfiable",
             headers={"Content-Range": f"bytes */{file_size}"},
         )
 
-    chunk_size = 1024 * 1024
+    # 512KB chunks bypass Heroku 30-sec H12 timeout
+    chunk_size = 512 * 1024
     until_bytes = min(until_bytes, file_size - 1)
 
     offset = from_bytes - (from_bytes % chunk_size)
@@ -132,24 +132,20 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     mime_type = file_id.mime_type
     file_name = file_id.file_name
 
-    if mime_type:
-        if not file_name:
-            try:
-                file_name = f"{secrets.token_hex(2)}.{mime_type.split('/')[1]}"
-            except (IndexError, AttributeError):
-                file_name = f"{secrets.token_hex(2)}.unknown"
-    else:
+    if not mime_type:
         if file_name:
-            # 🟢 FIX: Added [0] and fallback to application/octet-stream
-            mime_type = mimetypes.guess_type(file_id.file_name)[0] or "application/octet-stream"
+            mime_type = mimetypes.guess_type(file_name)[0] or "application/octet-stream"
         else:
             mime_type = "application/octet-stream"
             file_name = f"{secrets.token_hex(2)}.unknown"
-    
+
+    if not file_name:
+        file_name = f"{secrets.token_hex(2)}.mkv"
+
     resp_headers = {
         "Content-Type": f"{mime_type}",
         "Content-Length": str(req_length),
-        "Content-Disposition": f'inline; filename="{file_name}"', 
+        "Content-Disposition": f'inline; filename="{file_name}"',
         "Accept-Ranges": "bytes",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
@@ -157,12 +153,28 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
         "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
     }
     
-    # 🟢 FIX: Content-Range sirf tab bhejo jab partial request (206) ho
     if range_header:
         resp_headers["Content-Range"] = f"bytes {from_bytes}-{until_bytes}/{file_size}"
 
-    return web.Response(
+    # Use StreamResponse to continuously pipe data without memory buffering
+    response = web.StreamResponse(
         status=206 if range_header else 200,
-        body=body,
-        headers=resp_headers,
+        headers=resp_headers
     )
+    
+    await response.prepare(request)
+    
+    try:
+        async for chunk in body:
+            await response.write(chunk)
+    except (ConnectionResetError, BadStatusLine):
+        pass
+    except Exception as e:
+        logging.warning(f"Streaming error on client {index}: {e}")
+    finally:
+        try:
+            await response.write_eof()
+        except Exception:
+            pass
+        
+    return response
