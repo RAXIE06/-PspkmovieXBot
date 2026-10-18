@@ -12,7 +12,6 @@ from pyrogram.errors import AuthBytesInvalid
 from dreamxbotz.server.exceptions import FIleNotFound
 from pyrogram.file_id import FileId, FileType, ThumbnailSource
 
-
 class ByteStreamer:
     def __init__(self, client: Client):
         self.clean_timer = 30 * 60
@@ -23,17 +22,13 @@ class ByteStreamer:
     async def get_file_properties(self, id: int) -> FileId:
         if id not in self.cached_file_ids:
             await self.generate_file_properties(id)
-            logging.debug(f"Cached file properties for message with ID {id}")
         return self.cached_file_ids[id]
     
     async def generate_file_properties(self, id: int) -> FileId:
         file_id = await get_file_ids(self.client, BIN_CHANNEL, id)
-        logging.debug(f"Generated file ID and Unique ID for message with ID {id}")
         if not file_id:
-            logging.debug(f"Message with ID {id} not found")
             raise FIleNotFound
         self.cached_file_ids[id] = file_id
-        logging.debug(f"Cached media message with ID {id}")
         return self.cached_file_ids[id]
 
     async def generate_media_session(self, client: Client, file_id: FileId) -> Session:
@@ -43,9 +38,7 @@ class ByteStreamer:
                 media_session = Session(
                     client,
                     file_id.dc_id,
-                    await Auth(
-                        client, file_id.dc_id, await client.storage.test_mode()
-                    ).create(),
+                    await Auth(client, file_id.dc_id, await client.storage.test_mode()).create(),
                     await client.storage.test_mode(),
                     is_media=True,
                 )
@@ -55,7 +48,6 @@ class ByteStreamer:
                     exported_auth = await client.invoke(
                         raw.functions.auth.ExportAuthorization(dc_id=file_id.dc_id)
                     )
-
                     try:
                         await media_session.send(
                             raw.functions.auth.ImportAuthorization(
@@ -64,9 +56,6 @@ class ByteStreamer:
                         )
                         break
                     except AuthBytesInvalid:
-                        logging.debug(
-                            f"Invalid authorization bytes for DC {file_id.dc_id}"
-                        )
                         continue
                 else:
                     await media_session.stop()
@@ -80,24 +69,17 @@ class ByteStreamer:
                     is_media=True,
                 )
                 await media_session.start()
-            logging.debug(f"Created media session for DC {file_id.dc_id}")
             client.media_sessions[file_id.dc_id] = media_session
-        else:
-            logging.debug(f"Using cached media session for DC {file_id.dc_id}")
         return media_session
-
 
     @staticmethod
     async def get_location(file_id: FileId) -> Union[raw.types.InputPhotoFileLocation,
                                                      raw.types.InputDocumentFileLocation,
                                                      raw.types.InputPeerPhotoFileLocation,]:
         file_type = file_id.file_type
-
         if file_type == FileType.CHAT_PHOTO:
             if file_id.chat_id > 0:
-                peer = raw.types.InputPeerUser(
-                    user_id=file_id.chat_id, access_hash=file_id.chat_access_hash
-                )
+                peer = raw.types.InputPeerUser(user_id=file_id.chat_id, access_hash=file_id.chat_access_hash)
             else:
                 if file_id.chat_access_hash == 0:
                     peer = raw.types.InputPeerChat(chat_id=-file_id.chat_id)
@@ -106,11 +88,9 @@ class ByteStreamer:
                         channel_id=utils.get_channel_id(file_id.chat_id),
                         access_hash=file_id.chat_access_hash,
                     )
-
             location = raw.types.InputPeerPhotoFileLocation(
                 peer=peer,
-                volume_id=file_id.volume_id,
-                local_id=file_id.local_id,
+                photo_id=file_id.media_id,
                 big=file_id.thumbnail_source == ThumbnailSource.CHAT_PHOTO_BIG,
             )
         elif file_type == FileType.PHOTO:
@@ -141,17 +121,13 @@ class ByteStreamer:
     ) -> Union[str, None]:
         client = self.client
         work_loads[index] += 1
-        logging.debug(f"Starting to yielding file with client {index}.")
         media_session = await self.generate_media_session(client, file_id)
-
         current_part = 1
         location = await self.get_location(file_id)
 
         try:
             r = await media_session.send(
-                raw.functions.upload.GetFile(
-                    location=location, offset=offset, limit=chunk_size
-                ),
+                raw.functions.upload.GetFile(location=location, offset=offset, limit=chunk_size),
             )
             if isinstance(r, raw.types.upload.File):
                 while True:
@@ -174,18 +150,14 @@ class ByteStreamer:
                         break
 
                     r = await media_session.send(
-                        raw.functions.upload.GetFile(
-                            location=location, offset=offset, limit=chunk_size
-                        ),
+                        raw.functions.upload.GetFile(location=location, offset=offset, limit=chunk_size),
                     )
-        except (TimeoutError, AttributeError):
-            pass
+        except Exception as e:
+            logging.warning(f"Streaming error on client {index}: {e}")
         finally:
-            logging.debug(f"Finished yielding file with {current_part} parts.")
             work_loads[index] -= 1
 
     async def clean_cache(self) -> None:
         while True:
             await asyncio.sleep(self.clean_timer)
             self.cached_file_ids.clear()
-            logging.debug("Cleaned the cache")
