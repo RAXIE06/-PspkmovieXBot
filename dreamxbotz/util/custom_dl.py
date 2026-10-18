@@ -1,7 +1,8 @@
-# Thanks @dreamxbotz for helping in this journey 
+#Thanks @dreamxbotz for helping in this journey
+import math
 import asyncio
 import logging
-from info import BIN_CHANNEL
+from info import *
 from typing import Dict, Union
 from dreamxbotz.Bot import work_loads
 from pyrogram import Client, utils, raw
@@ -14,29 +15,18 @@ from pyrogram.file_id import FileId, FileType, ThumbnailSource
 
 class ByteStreamer:
     def __init__(self, client: Client):
-        """A custom class that holds the cache of a specific client and class functions.
-        attributes:
-            client: the client that the cache is for.
-            cached_file_ids: a dict of cached file IDs.
-        """
         self.clean_timer = 30 * 60
         self.client: Client = client
         self.cached_file_ids: Dict[int, FileId] = {}
         asyncio.create_task(self.clean_cache())
 
     async def get_file_properties(self, id: int) -> FileId:
-        """
-        Returns the properties of a media of a specific message in a FileId class.
-        """
         if id not in self.cached_file_ids:
             await self.generate_file_properties(id)
             logging.debug(f"Cached file properties for message with ID {id}")
         return self.cached_file_ids[id]
     
     async def generate_file_properties(self, id: int) -> FileId:
-        """
-        Generates the properties of a media file on a specific message.
-        """
         file_id = await get_file_ids(self.client, BIN_CHANNEL, id)
         logging.debug(f"Generated file ID and Unique ID for message with ID {id}")
         if not file_id:
@@ -47,9 +37,6 @@ class ByteStreamer:
         return self.cached_file_ids[id]
 
     async def generate_media_session(self, client: Client, file_id: FileId) -> Session:
-        """
-        Generates the media session for the DC that contains the media file.
-        """
         media_session = client.media_sessions.get(file_id.dc_id, None)
         if media_session is None:
             if file_id.dc_id != await client.storage.dc_id():
@@ -99,12 +86,11 @@ class ByteStreamer:
             logging.debug(f"Using cached media session for DC {file_id.dc_id}")
         return media_session
 
+
     @staticmethod
-    async def get_location(file_id: FileId) -> Union[
-        raw.types.InputPhotoFileLocation,
-        raw.types.InputDocumentFileLocation,
-        raw.types.InputPeerPhotoFileLocation,
-    ]:
+    async def get_location(file_id: FileId) -> Union[raw.types.InputPhotoFileLocation,
+                                                     raw.types.InputDocumentFileLocation,
+                                                     raw.types.InputPeerPhotoFileLocation,]:
         file_type = file_id.file_type
 
         if file_type == FileType.CHAT_PHOTO:
@@ -123,7 +109,8 @@ class ByteStreamer:
 
             location = raw.types.InputPeerPhotoFileLocation(
                 peer=peer,
-                photo_id=file_id.media_id,
+                volume_id=file_id.volume_id,
+                local_id=file_id.local_id,
                 big=file_id.thumbnail_source == ThumbnailSource.CHAT_PHOTO_BIG,
             )
         elif file_type == FileType.PHOTO:
@@ -151,50 +138,53 @@ class ByteStreamer:
         last_part_cut: int,
         part_count: int,
         chunk_size: int,
-    ):
+    ) -> Union[str, None]:
         client = self.client
-        work_loads[index] = work_loads.get(index, 0) + 1
-        logging.debug(f"Starting to yield file with client {index}.")
-        
-        # 1MB standard offset align for Telegram stream_media API
-        chunk_offset = offset // (1024 * 1024)
+        work_loads[index] += 1
+        logging.debug(f"Starting to yielding file with client {index}.")
+        media_session = await self.generate_media_session(client, file_id)
+
+        current_part = 1
+        location = await self.get_location(file_id)
 
         try:
-            current_part = 1
-            async for chunk in client.stream_media(
-                file_id.file_id, 
-                limit=part_count, 
-                offset=chunk_offset
-            ):
-                if not chunk:
-                    continue
+            r = await media_session.send(
+                raw.functions.upload.GetFile(
+                    location=location, offset=offset, limit=chunk_size
+                ),
+            )
+            if isinstance(r, raw.types.upload.File):
+                while True:
+                    chunk = r.bytes
+                    if not chunk:
+                        break
+                    elif part_count == 1:
+                        yield chunk[first_part_cut:last_part_cut]
+                    elif current_part == 1:
+                        yield chunk[first_part_cut:]
+                    elif current_part == part_count:
+                        yield chunk[:last_part_cut]
+                    else:
+                        yield chunk
 
-                if part_count == 1:
-                    yield chunk[first_part_cut:last_part_cut]
-                elif current_part == 1:
-                    yield chunk[first_part_cut:]
-                elif current_part == part_count:
-                    yield chunk[:last_part_cut]
-                else:
-                    yield chunk
+                    current_part += 1
+                    offset += chunk_size
 
-                current_part += 1
-                if current_part > part_count:
-                    break
+                    if current_part > part_count:
+                        break
 
-        except (GeneratorExit, asyncio.CancelledError):
-            # Raised normally when client stops playback, rewinds, or closes browser
+                    r = await media_session.send(
+                        raw.functions.upload.GetFile(
+                            location=location, offset=offset, limit=chunk_size
+                        ),
+                    )
+        except (TimeoutError, AttributeError):
             pass
-        except (TimeoutError, AttributeError, Exception) as e:
-            logging.warning(f"Client {index} streaming stream error: {e}")
         finally:
-            logging.debug(f"Finished yielding file on client {index}.")
-            work_loads[index] = max(0, work_loads.get(index, 1) - 1)
+            logging.debug(f"Finished yielding file with {current_part} parts.")
+            work_loads[index] -= 1
 
     async def clean_cache(self) -> None:
-        """
-        Function to clean the cache to reduce memory usage
-        """
         while True:
             await asyncio.sleep(self.clean_timer)
             self.cached_file_ids.clear()
