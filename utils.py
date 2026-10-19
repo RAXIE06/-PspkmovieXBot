@@ -12,7 +12,7 @@ from datetime import datetime
 import pytz
 from typing import Union, List
 
-from pyrogram.types import Message, InlineKeyboardButton
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors import (
     InputUserDeactivated,
     UserNotParticipant,
@@ -30,7 +30,7 @@ from imdbkit import IMDBKit  # pyrefly: ignore
 from info import (
     ULTRA_FAST_MODE, MAX_LIST_ELM, BAD_WORDS, LONG_IMDB_DESCRIPTION,
     IS_VERIFY, MAX_B_TN, TUTORIAL, TUTORIAL_2, TUTORIAL_3,
-    LOG_CHANNEL, TMDB_ON_SEARCH, GMAIL_USER, GMAIL_PASS
+    LOG_CHANNEL, TMDB_ON_SEARCH, GMAIL_USER, GMAIL_PASS, GRP_LNK
 )
 from Script import script
 from database.users_chats_db import db
@@ -39,6 +39,10 @@ from plugins.Dreamxfutures.Imdbposter import get_movie_detailsx
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# ==================== DYNAMIC BROADCAST BUTTON ==================== #
+SEARCH_BTN = InlineKeyboardMarkup([
+    [InlineKeyboardButton("SEARCH HERE ↗", url=GRP_LNK)]
+])
 
 # ==================== FAST: PRE-COMPILED REGEXES ==================== #
 
@@ -189,7 +193,7 @@ async def is_check_admin(bot, chat_id, user_id):
 
 async def users_broadcast(user_id, message, is_pin):
     try:
-        m = await message.copy(chat_id=user_id)
+        m = await message.copy(chat_id=user_id, reply_markup=SEARCH_BTN)
         if is_pin:
             await m.pin(both_sides=True)
         return True, "Success"
@@ -214,7 +218,7 @@ async def users_broadcast(user_id, message, is_pin):
 
 async def groups_broadcast(chat_id, message, is_pin):
     try:
-        m = await message.copy(chat_id=chat_id)
+        m = await message.copy(chat_id=chat_id, reply_markup=SEARCH_BTN)
         if is_pin:
             try:
                 await m.pin()
@@ -751,7 +755,6 @@ def extract_user(message: Message) -> Union[int, str]:
     if message.reply_to_message:
         user_id = message.reply_to_message.from_user.id
         user_first_name = message.reply_to_message.from_user.first_name
-
     elif len(message.command) > 1:
         if (
             len(message.entities) > 1 and
@@ -1113,7 +1116,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                             f"<b>🏷 ᴛɪᴛʟᴇ : <code>{search}</code>\n"
                             f"⏰ ʀᴇsᴜʟᴛ ɪɴ : <code>{remaining_seconds} Sᴇᴄᴏɴᴅs</code>\n\n"
                             f"📝 ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ : {query.from_user.mention}\n"
-                            f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ :⚡ {query.message.chat.title or temp.B_LINK or 'ᴅʀᴇᴀᴍxʙᴏᴛᴢ'}\n</b>"
+                            f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ :⚡ {query.message.chat.title or temp.B_LINK or 'FlixVault'}\n</b>"
                         )
                     else:
                         cap = (
@@ -1121,7 +1124,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                             f"🧱 ᴛᴏᴛᴀʟ ꜰɪʟᴇꜱ : <code>{total_results}</code>\n"
                             f"⏰ ʀᴇsᴜʟᴛ ɪɴ : <code>{remaining_seconds} Sᴇᴄᴏɴᴅs</code>\n\n"
                             f"📝 ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ : {query.from_user.mention}\n"
-                            f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ :⚡ {query.message.chat.title or temp.B_LINK or 'ᴅʀᴇᴀᴍxʙᴏᴛᴢ'}\n</b>"
+                            f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ :⚡ {query.message.chat.title or temp.B_LINK or 'FlixVault'}\n</b>"
                         )
                     cap += "\n\n<u>Your Requested Files Are Here</u> \n\n</b>"
                     for idx, file in enumerate(files, start=offset + 1):
@@ -1139,7 +1142,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                 cap = (
                     f"<b>🏷 ᴛɪᴛʟᴇ : <code>{search}</code>\n"
                     f"⏰ ʀᴇsᴜʟᴛ ɪɴ : <code>{remaining_seconds} Sᴇᴄᴏɴᴅs</code>\n\n"
-                    f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ : ⚡ {query.message.chat.title or temp.B_LINK or 'ᴅʀᴇᴀᴍxʙᴏᴛᴢ'}\n</b>"
+                    f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ : ⚡ {query.message.chat.title or temp.B_LINK or 'FlixVault'}\n</b>"
                 )
             else:
                 cap = (
@@ -1147,7 +1150,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                     f"🧱 ᴛᴏᴛᴀʟ ꜰɪʟᴇꜱ : <code>{total_results}</code>\n"
                     f"⏰ ʀᴇsᴜʟᴛ ɪɴ : <code>{remaining_seconds} Sᴇᴄᴏɴᴅs</code>\n\n"
                     f"📝 ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ : {query.from_user.mention}\n"
-                    f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ : ⚡ {query.message.chat.title or temp.B_LINK or 'ᴅʀᴇᴀᴍxʙᴏᴛᴢ'}\n</b>"
+                    f"⚜️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ : ⚡ {query.message.chat.title or temp.B_LINK or 'FlixVault'}\n</b>"
                 )
 
             cap += "\n\n<u>Your Requested Files Are Here</u>\n\n</b>"
@@ -1166,7 +1169,7 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
         return ""
 
 
-# ==================== SLICE GMAIL PAYMENT VERIFIER (UNCHANGED) ==================== #
+# ==================== SLICE GMAIL PAYMENT VERIFIER ==================== #
 
 UTR_PATTERNS = [
     r'(?:UTR|Utr|utr)\s*(?:No\.?|Number|ID|:)?\s*[:\-]?\s*([A-Za-z0-9]{8,22})',
@@ -1176,7 +1179,6 @@ UTR_PATTERNS = [
 
 
 def extract_utr_from_body(body: str):
-    """Email body se UTR / Transaction ID nikalta hai."""
     if not body:
         return None
     try:
@@ -1192,10 +1194,6 @@ def extract_utr_from_body(body: str):
 
 
 def _amount_matches(body: str, amount: float) -> bool:
-    """
-    Strict amount match — substring bug se bachne ke liye.
-    9.90 ko '9.9' se match nahi karega, aur '19.90' se bhi nahi.
-    """
     if amount is None:
         return True
     amt_str = f"{amount:.2f}"
@@ -1204,11 +1202,6 @@ def _amount_matches(body: str, amount: float) -> bool:
 
 
 def check_slice_email(expected_amount: float = None, target_utr: str = None, min_time: datetime = None):
-    """
-    Returns:
-        (True, utr_string)  -> payment mila, ye UTR unique hai (caller check kare)
-        (False, reason)     -> nahi mila
-    """
     if not GMAIL_USER or not GMAIL_PASS:
         return False, "Gmail credentials missing (GMAIL_USER / GMAIL_PASS)."
 
@@ -1261,7 +1254,6 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
                 except Exception:
                     pass
 
-            # ============ MANUAL UTR MODE (primary) ============ #
             if target_utr:
                 if str(target_utr).strip() not in body:
                     continue
@@ -1272,7 +1264,6 @@ def check_slice_email(expected_amount: float = None, target_utr: str = None, min
                 mail.logout()
                 return True, str(target_utr).strip()
 
-            # ============ AUTO MODE (backup) ============ #
             utr = extract_utr_from_body(body)
             if expected_amount is not None:
                 if not _amount_matches(body, expected_amount):
