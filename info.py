@@ -233,11 +233,11 @@ FQDN = re.sub(r'^https?://', '', str(FQDN)).rstrip('/')
 NO_PORT = is_enabled(environ.get('NO_PORT'), False)
 HAS_SSL = is_enabled(getenv('HAS_SSL'), True)
 
-# Trailing slash removed to avoid double slashes in routes
+# Trailing slash ke saath URL (jisse .com aur ID ke beech / rahe)
 if HAS_SSL:
-    URL = f"https://{FQDN}".rstrip('/')
+    URL = f"https://{FQDN}/"
 else:
-    URL = (f"http://{FQDN}" if NO_PORT else f"http://{FQDN}:{PORT}").rstrip('/')
+    URL = f"http://{FQDN}/" if NO_PORT else f"http://{FQDN}:{PORT}/")
     
 SLEEP_THRESHOLD = int(environ.get('SLEEP_THRESHOLD', '60'))
 WORKERS = int(environ.get('WORKERS', '4'))
