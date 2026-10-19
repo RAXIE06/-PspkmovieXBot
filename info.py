@@ -20,18 +20,18 @@ def is_enabled(value, default):
 # ============================
 # Bot Information Configuration
 # ============================
-SESSION = environ.get('SESSION', 'dreamxbotz_search')   # Session name for the bot
-API_ID = int(environ.get('API_ID', '21014933')) # API ID from my.telegram.org
-API_HASH = environ.get('API_HASH', 'c6576c45c80fd11776378fd931bed8e9')  # API Hash from my.telegram.org
-BOT_TOKEN = environ.get('BOT_TOKEN', "")    # Bot token from @BotFather
+SESSION = environ.get('SESSION', 'dreamxbotz_search')
+API_ID = int(environ.get('API_ID', '21014933'))
+API_HASH = environ.get('API_HASH', 'c6576c45c80fd11776378fd931bed8e9')
+BOT_TOKEN = environ.get('BOT_TOKEN', "")
 
 # ============================
 # Bot Settings Configuration
 # ============================
-CACHE_TIME = int(environ.get('CACHE_TIME', 300))    # Cache time in seconds (default: 5 minutes)
-USE_CAPTION_FILTER = is_enabled(environ.get('USE_CAPTION_FILTER', "True"), True)  # Use caption filter for search results (default: True)
-INDEX_CAPTION = is_enabled(environ.get('SAVE_CAPTION', "True"), True) # Save caption db when idexing make it False if you dont use USE_CAPTION_FILTER for search results (default: True)
-COVERX = is_enabled(environ.get('COVERX', "True"), True) # Use cover image for indexed files (default: True)
+CACHE_TIME = int(environ.get('CACHE_TIME', 300))
+USE_CAPTION_FILTER = is_enabled(environ.get('USE_CAPTION_FILTER', "True"), True)
+INDEX_CAPTION = is_enabled(environ.get('SAVE_CAPTION', "True"), True)
+COVERX = is_enabled(environ.get('COVERX', "True"), True)
 
 PICS_URL = (environ.get('PICS', 'https://image.zaw-myo.workers.dev/image/91ac8370-606e-4e0f-aafd-4a52878669f5')).split()
 PICS = (environ.get('PICS', 'https://graph.org/file/56b5deb73f3b132e2bb73.jpg https://graph.org/file/5303692652d91d52180c2.jpg https://graph.org/file/425b6f46efc7c6d64105f.jpg https://graph.org/file/876867e761c6c7a29855b.jpg')).split()
@@ -76,14 +76,14 @@ STAR_PREMIUM_PLANS = {
 }
 
 PREMIUM_PLANS = {
-    10: 7,       # 07 Days - 10 Rs
-    20: 15,      # 15 Days - 20 Rs
-    40: 30,      # 30 Days - 40 Rs
-    55: 45,      # 45 Days - 55 Rs
-    75: 60,      # 60 Days - 75 Rs
-    200: 180,    # 180 Days - 200 Rs
-    270: 240,    # 240 Days - 270 Rs
-    399: 365     # 365 Days - 399 Rs
+    10: 7,
+    20: 15,
+    40: 30,
+    55: 45,
+    75: 60,
+    200: 180,
+    270: 240,
+    399: 365
 }
 
 # ============================
@@ -233,15 +233,21 @@ FQDN = re.sub(r'^https?://', '', str(FQDN)).rstrip('/')
 NO_PORT = is_enabled(environ.get('NO_PORT'), False)
 HAS_SSL = is_enabled(getenv('HAS_SSL'), True)
 
+# Trailing slash removed to avoid double slashes in routes
 if HAS_SSL:
-    URL = f"https://{FQDN}/"
+    URL = f"https://{FQDN}".rstrip('/')
 else:
-    URL = f"http://{FQDN}/" if NO_PORT else f"http://{FQDN}:{PORT}/"
+    URL = (f"http://{FQDN}" if NO_PORT else f"http://{FQDN}:{PORT}").rstrip('/')
     
 SLEEP_THRESHOLD = int(environ.get('SLEEP_THRESHOLD', '60'))
 WORKERS = int(environ.get('WORKERS', '4'))
 SESSION_NAME = str(environ.get('SESSION_NAME', 'dreamXBotz'))
-MULTI_CLIENT = False
+
+# Multi-Client Settings loaded from environment
+MULTI_CLIENT = is_enabled(environ.get('MULTI_CLIENT', "False"), False)
+SESSION_1 = environ.get('SESSION_1', '')
+SESSION_2 = environ.get('SESSION_2', '')
+
 name = str(environ.get('name', 'DREAMXBOTZ'))
 PING_INTERVAL = int(environ.get("PING_INTERVAL", "298"))
 REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"]
