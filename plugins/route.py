@@ -96,6 +96,7 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     
     file_size = file_id.file_size
 
+    # Range parsing
     if range_header:
         from_bytes, until_bytes = range_header.replace("bytes=", "").split("-")
         from_bytes = int(from_bytes)
@@ -111,7 +112,6 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
             headers={"Content-Range": f"bytes */{file_size}"},
         )
 
-    # 1MB standard chunk size align
     chunk_size = 1024 * 1024
     until_bytes = min(until_bytes, file_size - 1)
 
@@ -128,12 +128,32 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
 
     file_name = file_id.file_name or f"{secrets.token_hex(2)}.mkv"
 
+    # Accurate MIME detection for VLC, MX Player, ExoPlayer
+    mime_type = file_id.mime_type
+    if not mime_type or mime_type == "application/octet-stream":
+        guessed = mimetypes.guess_type(file_name)[0]
+        if guessed:
+            mime_type = guessed
+        elif file_name.lower().endswith(".mkv"):
+            mime_type = "video/x-matroska"
+        elif file_name.lower().endswith(".mp4"):
+            mime_type = "video/mp4"
+        else:
+            mime_type = "video/mp4"
+
+    # User-Agent check: media players vs browsers
+    user_agent = request.headers.get("User-Agent", "").lower()
+    is_media_player = any(player in user_agent for player in ["vlc", "mxplayer", "exoplayer", "stagefright", "mpv", "lavf"])
+
+    # Players need 'inline' to seek and stream; direct browser hits trigger download
+    disposition = "inline" if (is_media_player or range_header) else "attachment"
+
     resp_headers = {
-        # Browser player open hone ke bajaye direct download start karne ke liye:
-        "Content-Type": "application/octet-stream",
+        "Content-Type": str(mime_type),
         "Content-Length": str(req_length),
-        "Content-Disposition": f'attachment; filename="{file_name}"',
+        "Content-Disposition": f'{disposition}; filename="{file_name}"',
         "Accept-Ranges": "bytes",
+        "Connection": "keep-alive",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type",
@@ -156,7 +176,7 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     except (ConnectionResetError, BadStatusLine):
         pass
     except Exception as e:
-        logging.warning(f"Client {index} download stream interrupted: {e}")
+        logging.warning(f"Client {index} media streaming interrupted: {e}")
     finally:
         try:
             await response.write_eof()
