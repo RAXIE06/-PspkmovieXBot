@@ -84,9 +84,7 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
 
     if faster_client in class_cache:
         tg_connect = class_cache[faster_client]
-        logging.debug(f"Using cached ByteStreamer object for client {index}")
     else:
-        logging.debug(f"Creating new ByteStreamer object for client {index}")
         tg_connect = ByteStreamer(faster_client)
         class_cache[faster_client] = tg_connect
 
@@ -98,7 +96,6 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     
     file_size = file_id.file_size
 
-    # Range parsing
     if range_header:
         from_bytes, until_bytes = range_header.replace("bytes=", "").split("-")
         from_bytes = int(from_bytes)
@@ -114,8 +111,8 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
             headers={"Content-Range": f"bytes */{file_size}"},
         )
 
-    # 512KB chunk size
-    chunk_size = 512 * 1024
+    # 1MB standard chunk size align
+    chunk_size = 1024 * 1024
     until_bytes = min(until_bytes, file_size - 1)
 
     offset = from_bytes - (from_bytes % chunk_size)
@@ -132,10 +129,9 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     file_name = file_id.file_name or f"{secrets.token_hex(2)}.mkv"
 
     resp_headers = {
-        # Forced download MIME type
+        # Browser player open hone ke bajaye direct download start karne ke liye:
         "Content-Type": "application/octet-stream",
         "Content-Length": str(req_length),
-        # Forced direct file download
         "Content-Disposition": f'attachment; filename="{file_name}"',
         "Accept-Ranges": "bytes",
         "Access-Control-Allow-Origin": "*",
@@ -160,7 +156,7 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
     except (ConnectionResetError, BadStatusLine):
         pass
     except Exception as e:
-        logging.warning(f"Download stream interrupted on client {index}: {e}")
+        logging.warning(f"Client {index} download stream interrupted: {e}")
     finally:
         try:
             await response.write_eof()
