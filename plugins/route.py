@@ -32,6 +32,15 @@ async def watch_handler(request: web.Request):
         else:
             id = int(re.search(r"(\d+)(?:\/\S+)?", path).group(1))
             secure_hash = request.rel_url.query.get("hash")
+
+        # Agar request MX Player, VLC, ya external media player se aayi hai,
+        # toh HTML page ke bajaye seedha direct stream serve karo:
+        user_agent = request.headers.get("User-Agent", "").lower()
+        is_media_player = any(p in user_agent for p in ["vlc", "mxplayer", "exoplayer", "stagefright", "mpv", "lavf", "justplayer"])
+        
+        if is_media_player:
+            return await media_streamer(request, id, secure_hash)
+
         return web.Response(text=await render_page(id, secure_hash), content_type='text/html')
     except InvalidHash as e:
         raise web.HTTPForbidden(text=e.message)
@@ -141,11 +150,10 @@ async def media_streamer(request: web.Request, id: int, secure_hash: str):
         else:
             mime_type = "video/mp4"
 
-    # User-Agent check: media players vs browsers
     user_agent = request.headers.get("User-Agent", "").lower()
-    is_media_player = any(player in user_agent for player in ["vlc", "mxplayer", "exoplayer", "stagefright", "mpv", "lavf"])
+    is_media_player = any(p in user_agent for p in ["vlc", "mxplayer", "exoplayer", "stagefright", "mpv", "lavf", "justplayer"])
 
-    # Players need 'inline' to seek and stream; direct browser hits trigger download
+    # Stream inline for players, attachment for direct browser hits without range
     disposition = "inline" if (is_media_player or range_header) else "attachment"
 
     resp_headers = {
