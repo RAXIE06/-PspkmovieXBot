@@ -14,30 +14,18 @@ from pyrogram.file_id import FileId, FileType, ThumbnailSource
 
 class ByteStreamer:
     def __init__(self, client: Client):
-        """A custom class that holds the cache of a specific client and class functions.
-        attributes:
-            client: the client that the cache is for.
-            cached_file_ids: a dict of cached file IDs.
-            cached_file_properties: a dict of cached file properties.
-        """
         self.clean_timer = 30 * 60
         self.client: Client = client
         self.cached_file_ids: Dict[int, FileId] = {}
         asyncio.create_task(self.clean_cache())
 
     async def get_file_properties(self, id: int) -> FileId:
-        """
-        Returns the properties of a media of a specific message in a FileId class.
-        """
         if id not in self.cached_file_ids:
             await self.generate_file_properties(id)
             logging.debug(f"Cached file properties for message with ID {id}")
         return self.cached_file_ids[id]
     
     async def generate_file_properties(self, id: int) -> FileId:
-        """
-        Generates the properties of a media file on a specific message.
-        """
         file_id = await get_file_ids(self.client, BIN_CHANNEL, id)
         logging.debug(f"Generated file ID and Unique ID for message with ID {id}")
         if not file_id:
@@ -48,9 +36,6 @@ class ByteStreamer:
         return self.cached_file_ids[id]
 
     async def generate_media_session(self, client: Client, file_id: FileId) -> Session:
-        """
-        Generates the media session for the DC that contains the media file.
-        """
         media_session = client.media_sessions.get(file_id.dc_id, None)
         if media_session is None:
             if file_id.dc_id != await client.storage.dc_id():
@@ -157,7 +142,6 @@ class ByteStreamer:
         work_loads[index] = work_loads.get(index, 0) + 1
         logging.debug(f"Starting to yield file with client {index}.")
         
-        # Pyrogram stream_media standard 1MB aligned offset
         chunk_offset = offset // (1024 * 1024)
         current_part = 1
 
@@ -186,15 +170,12 @@ class ByteStreamer:
         except (GeneratorExit, asyncio.CancelledError):
             pass
         except Exception as e:
-            logging.warning(f"Client {index} media streaming warning: {e}")
+            logging.warning(f"Client {index} streaming warning: {e}")
         finally:
-            logging.debug(f"Finished yielding file with {current_part} parts.")
+            logging.debug(f"Finished yielding file on client {index}.")
             work_loads[index] = max(0, work_loads.get(index, 1) - 1)
 
     async def clean_cache(self) -> None:
-        """
-        Function to clean the cache to reduce memory usage
-        """
         while True:
             await asyncio.sleep(self.clean_timer)
             self.cached_file_ids.clear()
