@@ -8,10 +8,13 @@ from pyrogram.errors.exceptions.bad_request_400 import MessageTooLong
 from database.users_chats_db import db
 from info import ADMINS
 from utils import users_broadcast, groups_broadcast, temp, get_readable_time, clear_junk, junk_group
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
 lock = asyncio.Lock()
+
+# Temporary store for pin choices during broadcast setup
+broadcast_cache = {}
 
 @Client.on_callback_query(filters.regex(r'^broadcast_cancel'))
 async def broadcast_cancel(bot, query):
@@ -26,27 +29,44 @@ async def broadcast_cancel(bot, query):
 @Client.on_message(filters.command("broadcast") & filters.user(ADMINS) & filters.private)
 async def broadcast_users(bot, message):
     if not message.reply_to_message:
-        return await message.reply("<b>Reply to a message to broadcast.</b>",parse_mode=enums.ParseMode.HTML)
+        return await message.reply("<b>Reply to a message to broadcast.</b>", parse_mode=enums.ParseMode.HTML)
     if lock.locked():
         return await message.reply("⚠️ Another broadcast is in progress. Please wait...")
-    ask = await message.reply(
-        "<b>Do you want to pin this message in users?</b>",
-        reply_markup=ReplyKeyboardMarkup([["Yes", "No"]], one_time_keyboard=True, resize_keyboard=True)
-    )
-    try:
-        dreamxbotz_user_response = await bot.listen(chat_id=message.chat.id, user_id=message.from_user.id, timeout=60)
-    except asyncio.TimeoutError:
-        await ask.delete()
-        return await message.reply("❌ Timed out. Broadcast cancelled.")
-    await ask.delete()
-    if dreamxbotz_user_response.text not in ("Yes", "No"):
-        return await message.reply("❌ Invalid input. Broadcast cancelled.")
 
-    is_pin = dreamxbotz_user_response.text == "Yes"
-    b_msg = message.reply_to_message
+    b_msg_id = message.reply_to_message.id
+    broadcast_cache[message.from_user.id] = b_msg_id
+
+    btn = [
+        [
+            InlineKeyboardButton("📌 Yes, Pin", callback_data=f"bcast_users#yes#{b_msg_id}"),
+            InlineKeyboardButton("❌ No Pin", callback_data=f"bcast_users#no#{b_msg_id}")
+        ]
+    ]
+    await message.reply(
+        "<b>Do you want to pin this message in users?</b>",
+        reply_markup=InlineKeyboardMarkup(btn),
+        parse_mode=enums.ParseMode.HTML
+    )
+
+@Client.on_callback_query(filters.regex(r'^bcast_users#(yes|no)#(\d+)'))
+async def broadcast_users_start(bot, query):
+    action, b_msg_id = query.data.split("#")[1], int(query.data.split("#")[2])
+    is_pin = (action == "yes")
+    user_id = query.from_user.id
+
+    if user_id not in ADMINS:
+        return await query.answer("You are not authorized!", show_alert=True)
+
+    try:
+        b_msg = await bot.get_messages(chat_id=query.message.chat.id, message_ids=b_msg_id)
+    except Exception:
+        return await query.message.edit("❌ Broadcast target message not found.")
+
+    await query.message.edit("📤 <b>Broadcasting your message...</b>", parse_mode=enums.ParseMode.HTML)
+    dreamxbotz_status_msg = query.message
+
     users = [user async for user in await db.get_all_users()]
     total_users = len(users)
-    dreamxbotz_status_msg = await message.reply_text("📤 <b>Broadcasting your message...</b>")
     success = blocked = deleted = failed = 0
     start_time = time.time()
     cancelled = False
@@ -90,9 +110,11 @@ async def broadcast_users(bot, message):
                 f"⏱️ Time: {elapsed}",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("❌ CANCEL", callback_data="broadcast_cancel#users")]
-                ])
+                ]),
+                parse_mode=enums.ParseMode.HTML
             )
             await asyncio.sleep(0.1)
+
     elapsed = get_readable_time(time.time() - start_time)
     final_status = (
         f"{'❌ <b>Broadcast Cancelled.</b>' if cancelled else '✅ <b>Broadcast Completed.</b>'}\n\n"
@@ -103,31 +125,47 @@ async def broadcast_users(bot, message):
         f"🗑️ Deleted: <code>{deleted}</code>\n"
         f"❌ Failed: <code>{failed}</code>"
     )
-    await dreamxbotz_status_msg.edit(final_status)
+    await dreamxbotz_status_msg.edit(final_status, parse_mode=enums.ParseMode.HTML)
 
 
 @Client.on_message(filters.command("grp_broadcast") & filters.user(ADMINS) & filters.private)
 async def broadcast_group(bot, message):
     if not message.reply_to_message:
         return await message.reply("<b>Reply to a message to group broadcast.</b>", parse_mode=enums.ParseMode.HTML)
-    ask = await message.reply(
-        "<b>Do you want to pin this message in groups?</b>",
-        reply_markup=ReplyKeyboardMarkup([["Yes", "No"]], one_time_keyboard=True, resize_keyboard=True)
-    )
-    try:
-        dreamxbotz_user_response = await bot.listen(chat_id=message.chat.id, user_id=message.from_user.id, timeout=60)
-    except asyncio.TimeoutError:
-        await ask.delete()
-        return await message.reply("❌ Timed out. Broadcast cancelled.")
-    await ask.delete()
-    if dreamxbotz_user_response.text not in ("Yes", "No"):
-        return await message.reply("❌ Invalid input. Broadcast cancelled.")
+    if lock.locked():
+        return await message.reply("⚠️ Another broadcast is in progress. Please wait...")
 
-    is_pin = dreamxbotz_user_response.text == "Yes"
-    b_msg = message.reply_to_message
+    b_msg_id = message.reply_to_message.id
+    btn = [
+        [
+            InlineKeyboardButton("📌 Yes, Pin", callback_data=f"bcast_groups#yes#{b_msg_id}"),
+            InlineKeyboardButton("❌ No Pin", callback_data=f"bcast_groups#no#{b_msg_id}")
+        ]
+    ]
+    await message.reply(
+        "<b>Do you want to pin this message in groups?</b>",
+        reply_markup=InlineKeyboardMarkup(btn),
+        parse_mode=enums.ParseMode.HTML
+    )
+
+@Client.on_callback_query(filters.regex(r'^bcast_groups#(yes|no)#(\d+)'))
+async def broadcast_groups_start(bot, query):
+    action, b_msg_id = query.data.split("#")[1], int(query.data.split("#")[2])
+    is_pin = (action == "yes")
+    user_id = query.from_user.id
+
+    if user_id not in ADMINS:
+        return await query.answer("You are not authorized!", show_alert=True)
+
+    try:
+        b_msg = await bot.get_messages(chat_id=query.message.chat.id, message_ids=b_msg_id)
+    except Exception:
+        return await query.message.edit("❌ Broadcast target message not found.")
+
     chats = await db.get_all_chats()
     total_chats = await db.total_chat_count()
-    dreamxbotz_status_msg = await message.reply_text("📤 <b>Broadcasting your message to groups...</b>")
+    await query.message.edit("📤 <b>Broadcasting your message to groups...</b>", parse_mode=enums.ParseMode.HTML)
+    dreamxbotz_status_msg = query.message
     start_time = time.time()
     done = success = failed = 0
     cancelled = False
@@ -157,7 +195,8 @@ async def broadcast_group(bot, message):
                     f"✅ Completed: <code>{done} / {total_chats}</code>\n"
                     f"📬 Success: <code>{success}</code>\n"
                     f"❌ Failed: <code>{failed}</code>",
-                    reply_markup=InlineKeyboardMarkup(btn)
+                    reply_markup=InlineKeyboardMarkup(btn),
+                    parse_mode=enums.ParseMode.HTML
                 )
     time_taken = get_readable_time(time.time() - start_time)
     dreamxbotz_text = (
@@ -169,11 +208,11 @@ async def broadcast_group(bot, message):
         f"❌ Failed: <code>{failed}</code>"
     )
     try:
-        await dreamxbotz_status_msg.edit(dreamxbotz_text)
+        await dreamxbotz_status_msg.edit(dreamxbotz_text, parse_mode=enums.ParseMode.HTML)
     except MessageTooLong:
         with open("reason.txt", "w+") as outfile:
             outfile.write(str(failed))
-        await message.reply_document(
+        await query.message.reply_document(
             "reason.txt", caption=dreamxbotz_text
         )
         os.remove("reason.txt")
@@ -193,7 +232,7 @@ async def remove_junkuser__db(bot, message):
         pti, sh = await clear_junk(int(user['id']), b_msg)
         if not pti:
             if sh == "Blocked":
-                blocked+=1
+                blocked += 1
             elif sh == "Deleted":
                 deleted += 1
             elif sh == "Error":
@@ -224,7 +263,7 @@ async def junk_clear_group(bot, message):
         pti, sh, ex = await junk_group(int(group['id']), b_msg)        
         if not pti:
             if sh == "deleted":
-                deleted+=1 
+                deleted += 1 
                 failed += ex 
                 try:
                     await bot.leave_chat(int(group['id']))
