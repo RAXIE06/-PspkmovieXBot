@@ -7,31 +7,31 @@ from Script import script
 id_pattern = re.compile(r'^.\d+$')
 
 def is_enabled(value, default):
-if value is None:
-return default
-value = str(value).strip().lower()
-if value in ["true", "yes", "1", "enable", "y"]:
-return True
-elif value in ["false", "no", "0", "disable", "n"]:
-return False
-else:
-return default
+    if value is None:
+        return default
+    value = str(value).strip().lower()
+    if value in ["true", "yes", "1", "enable", "y"]:
+        return True
+    elif value in ["false", "no", "0", "disable", "n"]:
+        return False
+    else:
+        return default
 
 # ============================
 # Bot Information Configuration
 # ============================
-SESSION = environ.get('SESSION', 'dreamxbotz_search') # Session name for the bot
-API_ID = int(environ.get('API_ID', '21014933')) # API ID from my.telegram.org
-API_HASH = environ.get('API_HASH', 'c6576c45c80fd11776378fd931bed8e9') # API Hash from my.telegram.org
-BOT_TOKEN = environ.get('BOT_TOKEN', "") # Bot token from @BotFather
+SESSION = environ.get('SESSION', 'dreamxbotz_search')
+API_ID = int(environ.get('API_ID', '21014933'))
+API_HASH = environ.get('API_HASH', 'c6576c45c80fd11776378fd931bed8e9')
+BOT_TOKEN = environ.get('BOT_TOKEN', "")
 
 # ============================
 # Bot Settings Configuration
 # ============================
-CACHE_TIME = int(environ.get('CACHE_TIME', 300)) # Cache time in seconds (default: 5 minutes)
-USE_CAPTION_FILTER = is_enabled(environ.get('USE_CAPTION_FILTER', "True"), True) # Use caption filter for search results (default: True)
-INDEX_CAPTION = is_enabled(environ.get('SAVE_CAPTION', "True"), True) # Save caption db when idexing make it False if you dont use USE_CAPTION_FILTER for search results (default: True)
-COVERX = is_enabled(environ.get('COVERX', "True"), True) # Use cover image for indexed files (default: True)
+CACHE_TIME = int(environ.get('CACHE_TIME', 300))
+USE_CAPTION_FILTER = is_enabled(environ.get('USE_CAPTION_FILTER', "True"), True)
+INDEX_CAPTION = is_enabled(environ.get('SAVE_CAPTION', "True"), True)
+COVERX = is_enabled(environ.get('COVERX', "True"), True)
 
 PICS_URL = (environ.get('PICS', 'https://image.zaw-myo.workers.dev/image/91ac8370-606e-4e0f-aafd-4a52878669f5')).split()
 PICS = (environ.get('PICS', 'https://graph.org/file/56b5deb73f3b132e2bb73.jpg https://graph.org/file/5303692652d91d52180c2.jpg https://graph.org/file/425b6f46efc7c6d64105f.jpg https://graph.org/file/876867e761c6c7a29855b.jpg')).split()
@@ -55,9 +55,9 @@ support_chat_id = environ.get('SUPPORT_CHAT_ID', '-100')
 reqst_channel = environ.get('REQST_CHANNEL_ID', '-100')
 SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'https://t.me/')
 
-# FORCE_SUB
+# FORCE_SUB 
 auth_req_channels = environ.get("AUTH_REQ_CHANNELS", "0")
-auth_channels = environ.get("AUTH_CHANNELS", "-1002811962655 -1003104099986")
+auth_channels     = environ.get("AUTH_CHANNELS", "-1002811962655 -1003104099986")
 
 # ============================
 # Payment Configuration
@@ -68,22 +68,22 @@ UPI_ID = environ.get('UPI_ID', 'themanish07@slc')
 UPI_NAME = environ.get('UPI_NAME', 'Manish Kumar')
 
 STAR_PREMIUM_PLANS = {
-10: "7day",
-20: "15day",
-40: "1month",
-55: "45day",
-75: "60day",
+    10: "7day",
+    20: "15day",    
+    40: "1month", 
+    55: "45day",
+    75: "60day",
 }
 
 PREMIUM_PLANS = {
-10: 7, # 07 Days - 10 Rs
-20: 15, # 15 Days - 20 Rs
-40: 30, # 30 Days - 40 Rs
-55: 45, # 45 Days - 55 Rs
-75: 60, # 60 Days - 75 Rs
-200: 180, # 180 Days - 200 Rs
-270: 240, # 240 Days - 270 Rs
-399: 365 # 365 Days - 399 Rs
+    10: 7,
+    20: 15,
+    40: 30,
+    55: 45,
+    75: 60,
+    200: 180,
+    270: 240,
+    399: 365
 }
 
 # ============================
@@ -187,7 +187,7 @@ MAINTENANCE = is_enabled(environ.get('MAINTENANCE', "False"), False)
 # ============================
 # Bot Configuration
 # ============================
-AUTH_REQ_CHANNELS = [int(ch) for ch in auth_req_channels.split() if ch and id_pattern.match(ch)]
+AUTH_REQ_CHANNELS = [int(ch) for ch in auth_req_channels.split() if ch and id_pattern.match(ch)] 
 AUTH_CHANNELS = [int(ch) for ch in auth_channels.split() if ch and id_pattern.match(ch)]
 REQST_CHANNEL = int(reqst_channel) if reqst_channel and id_pattern.search(reqst_channel) else None
 SUPPORT_CHAT_ID = int(support_chat_id) if support_chat_id and id_pattern.search(support_chat_id) else None
@@ -198,24 +198,24 @@ SEASON_COUNT = 12
 SEASONS = [f"S{str(i).zfill(2)}" for i in range(1, SEASON_COUNT + 1)]
 
 BAD_WORDS = {
-"PrivateMovieZ",
-"toonworld4all",
-"themoviesboss",
-"1tamilmv",
-"tamilblasters",
-"1tamilblasters",
-"skymovieshd",
-"extraflix",
-"hdm2",
-"moviesmod",
-"hdhub4u",
-"mkvcinemas",
-"primefix",
-"join",
-"www",
-"villa",
-"tg",
-"original"
+    "PrivateMovieZ",
+    "toonworld4all",
+    "themoviesboss",
+    "1tamilmv",
+    "tamilblasters",
+    "1tamilblasters",
+    "skymovieshd",
+    "extraflix",
+    "hdm2",
+    "moviesmod",
+    "hdhub4u",
+    "mkvcinemas",
+    "primefix",
+    "join",
+    "www",
+    "villa",
+    "tg",
+    "original"
 }
 
 # ============================
@@ -225,23 +225,29 @@ ON_HEROKU = 'DYNO' in environ
 APP_NAME = environ.get('APP_NAME', None) if ON_HEROKU else None
 BIND_ADDRESS = getenv('WEB_SERVER_BIND_ADDRESS', '0.0.0.0')
 FQDN = (
-environ.get('FQDN', BIND_ADDRESS)
-if not ON_HEROKU or environ.get('FQDN')
-else f"{APP_NAME}.herokuapp.com"
+    environ.get('FQDN', BIND_ADDRESS)
+    if not ON_HEROKU or environ.get('FQDN')
+    else f"{APP_NAME}.herokuapp.com"
 )
 FQDN = re.sub(r'^https?://', '', str(FQDN)).rstrip('/')
 NO_PORT = is_enabled(environ.get('NO_PORT'), False)
 HAS_SSL = is_enabled(getenv('HAS_SSL'), True)
 
+# Slashes properly aligned
 if HAS_SSL:
-URL = f"https://{FQDN}/"
+    URL = f"https://{FQDN}/"
 else:
-URL = f"http://{FQDN}/" if NO_PORT else f"http://{FQDN}:{PORT}/"
-
+    URL = f"http://{FQDN}/" if NO_PORT else f"http://{FQDN}:{PORT}/"
+    
 SLEEP_THRESHOLD = int(environ.get('SLEEP_THRESHOLD', '60'))
 WORKERS = int(environ.get('WORKERS', '4'))
 SESSION_NAME = str(environ.get('SESSION_NAME', 'dreamXBotz'))
-MULTI_CLIENT = False
+
+# Multi-Client Settings
+MULTI_CLIENT = is_enabled(environ.get('MULTI_CLIENT', "False"), False)
+SESSION_1 = environ.get('SESSION_1', '')
+SESSION_2 = environ.get('SESSION_2', '')
+
 name = str(environ.get('name', 'DREAMXBOTZ'))
 PING_INTERVAL = int(environ.get("PING_INTERVAL", "298"))
 REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"]
@@ -250,33 +256,33 @@ REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "�
 # Commands Bot
 # ============================
 Bot_cmds = {
-"start": "Sᴛᴀʀᴛ Mᴇ Bᴀʙʏ",
-"stats": "Gᴇᴛ Bᴏᴛ Sᴛᴀᴛs",
-"alive": " Cʜᴇᴄᴋ Bᴏᴛ Aʟɪᴠᴇ ᴏʀ Nᴏᴛ ",
-"settings": "ᴄʜᴀɴɢᴇ sᴇᴛᴛɪɴɢs",
-"id": "ɢᴇᴛ ɪᴅ ᴛᴇʟᴇɢʀᴀᴍ ",
-"info": "Gᴇᴛ Usᴇʀ ɪɴғᴏ ",
-"del_msg": "ʀᴇᴍᴏᴠᴇ ғɪʟᴇ ɴᴀᴍᴇ ᴄᴏʟʟᴇᴄᴛɪᴏɴ ɴᴏтɪғɪᴄᴀᴛɪᴏɴ...",
-"movie_update": "ᴏɴ ᴏғғ ᴀᴄᴄᴏʀᴅɪɴɢ ʏᴏᴜʀ ɴᴇᴇᴅᴇᴅ...",
-"pm_search": "ᴘᴍ sᴇᴀʀᴄʜ ᴏɴ ᴏғғ ᴀᴄᴄᴏʀᴅɪɴɢ ʏᴏᴜʀ ɴᴇᴇᴅᴇᴅ...",
-"trendlist": "Gᴇᴛ Tᴏᴘ Tʀᴀɴᴅɪɴɢ Sᴇᴀʀᴄʜ Lɪsᴛ",
-"broadcast": "ʙʀᴏᴀᴅᴄᴀꜱᴛ ᴀ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴀʟʟ ᴜꜱᴇʀꜱ.",
-"grp_broadcast": "ʙʀᴏᴀᴅᴄᴀsᴛ ᴀ ᴍᴇssᴀɢᴇ ᴛᴏ ᴀʟʟ ᴄᴏɴɴᴇᴄᴛᴇᴅ ɢʀᴏᴜᴘs",
-"send": "ꜱᴇɴᴅ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴀ ᴘᴀʀᴛɪᴄᴜʟᴀʀ ᴜꜱᴇʀ.",
-"add_premium": "ᴀᴅᴅ ᴀɴʏ ᴜꜱᴇʀ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ.",
-"remove_premium": "ʀᴇᴍᴏᴠᴇ ᴀɴʏ ᴜꜱᴇʀ ꜰʀᴏᴍ ᴘʀᴇᴍɪᴜᴍ.",
-"premium_users": "ɢᴇᴛ ʟɪꜱᴛ ᴏꜰ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ.",
-"restart": "ʀᴇꜱᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ.",
-"group_cmd": "ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ʟɪsᴛ",
-"admin_cmd": "ᴀᴅᴍɪɴ ᴄᴏᴍᴍᴀɴᴅs ʟɪsᴛ.",
-"reset_group": "Group Setting Default",
-"trial_reset": "User Trial Reset",
-"remove_fsub": "Remove Forced Subscription (group admin only)",
-"maintenance": "Maintenance Mode (Admin Only)",
+    "start": "Sᴛᴀʀᴛ Mᴇ Bᴀʙʏ",
+    "stats": "Gᴇᴛ Bᴏᴛ Sᴛᴀᴛs",
+    "alive": " Cʜᴇᴄᴋ Bᴏᴛ Aʟɪᴠᴇ ᴏʀ Nᴏᴛ ",
+    "settings": "ᴄʜᴀɴɢᴇ sᴇᴛᴛɪɴɢs",
+    "id": "ɢᴇᴛ ɪᴅ ᴛᴇʟᴇɢʀᴀᴍ ",
+    "info": "Gᴇᴛ Usᴇʀ ɪɴғᴏ ",
+    "del_msg": "ʀᴇᴍᴏᴠᴇ ғɪʟᴇ ɴᴀᴍᴇ ᴄᴏʟʟᴇᴄᴛɪᴏɴ ɴᴏтɪғɪᴄᴀᴛɪᴏɴ...",
+    "movie_update": "ᴏɴ ᴏғғ ᴀᴄᴄᴏʀᴅɪɴɢ ʏᴏᴜʀ ɴᴇᴇᴅᴇᴅ...",
+    "pm_search": "ᴘᴍ sᴇᴀʀᴄʜ ᴏɴ ᴏғғ ᴀᴄᴄᴏʀᴅɪɴɢ ʏᴏᴜʀ ɴᴇᴇᴅᴇᴅ...",
+    "trendlist": "Gᴇᴛ Tᴏᴘ Tʀᴀɴᴅɪɴɢ Sᴇᴀʀᴄʜ Lɪsᴛ",
+    "broadcast": "ʙʀᴏᴀᴅᴄᴀꜱᴛ ᴀ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴀʟʟ ᴜꜱᴇʀꜱ.",
+    "grp_broadcast": "ʙʀᴏᴀᴅᴄᴀsᴛ ᴀ ᴍᴇssᴀɢᴇ ᴛᴏ ᴀʟʟ ᴄᴏɴɴᴇᴄᴛᴇᴅ ɢʀᴏᴜᴘs",
+    "send": "ꜱᴇɴᴅ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴀ ᴘᴀʀᴛɪᴄᴜʟᴀʀ ᴜꜱᴇʀ.",
+    "add_premium": "ᴀᴅᴅ ᴀɴʏ ᴜꜱᴇʀ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ.",
+    "remove_premium": "ʀᴇᴍᴏᴠᴇ ᴀɴʏ ᴜꜱᴇʀ ꜰʀᴏᴍ ᴘʀᴇᴍɪᴜᴍ.",
+    "premium_users": "ɢᴇᴛ ʟɪꜱᴛ ᴏꜰ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ.",
+    "restart": "ʀᴇꜱᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ.",
+    "group_cmd": "ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ʟɪsᴛ",
+    "admin_cmd": "ᴀᴅᴍɪɴ ᴄᴏᴍᴍᴀɴᴅs ʟɪsᴛ.",
+    "reset_group": "Group Setting Default",
+    "trial_reset": "User Trial Reset",
+    "remove_fsub": "Remove Forced Subscription (group admin only)",
+    "maintenance": "Maintenance Mode (Admin Only)",
 }
 
 if not MULTIPLE_DB:
-DATABASE_URI2 = DATABASE_URI
+    DATABASE_URI2 = DATABASE_URI
 
 LOG_STR = "Current Customized Configurations are:-\n"
 LOG_STR += ("IMDB Results are enabled, Bot will be showing imdb details for your queries.\n" if IMDB else "IMDB Results are disabled.\n")
