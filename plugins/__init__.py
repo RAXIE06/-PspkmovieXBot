@@ -18,22 +18,29 @@ async def web_server():
     return web_app
 
 async def check_expired_premium(client):
-    while 1:
-        data = await db.get_expired(datetime.now())
-        for user in data:
-            user_id = user["id"]
-            await db.remove_premium_access(user_id)
-            try:
-                user = await client.get_users(user_id)
-                await client.send_message(
-                    chat_id=user_id,
-                    text=script.PREMIUM_END_TEXT.format(user.mention)
-                )
-                await client.send_message(PREMIUM_LOGS, text=f"<b>#Premium_Expire\n\nUser name: {user.mention}\nUser id: <code>{user_id}</code>")
-            except Exception as e:
-                logging.error("Premium expire notification error: %s", e)
-            await sleep(0.5)
-        await sleep(1)
+    while True:
+        try:
+            data = await db.get_expired(datetime.now())
+            for user in data:
+                user_id = user.get("id") # 🟢 FIX: .get() use kiya taaki KeyError se loop crash na ho
+                if not user_id:
+                    continue
+                
+                await db.remove_premium_access(user_id)
+                try:
+                    user_info = await client.get_users(user_id)
+                    await client.send_message(
+                        chat_id=user_id,
+                        text=script.PREMIUM_END_TEXT.format(user_info.mention)
+                    )
+                    await client.send_message(PREMIUM_LOGS, text=f"<b>#Premium_Expire\n\nUser name: {user_info.mention}\nUser id: <code>{user_id}</code>")
+                except Exception as e:
+                    logging.error("Premium expire notification error: %s", e)
+                await sleep(0.5)
+        except Exception as e:
+            logging.error(f"Error in check_expired_premium loop: {e}")
+            
+        await sleep(5) # 🟢 FIX: Har 5 sec baad check karega, taaki DB par load kam pade
 
 async def keep_alive():
     """Keep bot alive by sending periodic pings."""
