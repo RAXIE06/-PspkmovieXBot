@@ -573,7 +573,7 @@ async def myplan_cmd(client: Client, message: Message):
     )
 
 
-# ==================== ACTIVE PREMIUM USERS LIST ==================== #
+# ==================== ACTIVE PREMIUM USERS LIST (FAST & NO-HANG) ==================== #
 
 @Client.on_message(filters.command(["premium_users", "active_users"]) & filters.user(ADMINS))
 async def premium_users_list_cmd(client: Client, message: Message):
@@ -583,77 +583,86 @@ async def premium_users_list_cmd(client: Client, message: Message):
     now_utc = datetime.datetime.now(pytz.utc)
     now_ist = datetime.datetime.now(tz)
 
-    cursor = db.users.find({
-        "expiry_time": {"$ne": None, "$gt": now_utc}
-    }).sort("expiry_time", 1)
+    try:
+        # MongoDB se active users nikalo
+        cursor = db.users.find({
+            "expiry_time": {"$ne": None, "$gt": now_utc}
+        }).sort("expiry_time", 1)
 
-    users_list = []
-    async for doc in cursor:
-        users_list.append(doc)
+        users_list = []
+        async for doc in cursor:
+            users_list.append(doc)
 
-    if not users_list:
-        return await wait_msg.edit_text("❌ <b>Koi bhi active premium user nahi mila.</b>")
+        if not users_list:
+            return await wait_msg.edit_text("❌ <b>Koi bhi active premium user nahi mila.</b>")
 
-    text = f"<b>ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ ʟɪꜱᴛ ({len(users_list)}) :</b>\n\n"
+        text = f"<b>ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ ʟɪꜱᴛ ({len(users_list)}) :</b>\n\n"
 
-    for i, user in enumerate(users_list, 1):
-        u_id = user.get("id")
-        exp_dt = user.get("expiry_time")
+        for i, user in enumerate(users_list, 1):
+            u_id = user.get("id")
+            exp_dt = user.get("expiry_time")
+            # Database me agar name ho toh direct lo, warna default
+            user_name = user.get("name") or f"User <code>{u_id}</code>"
 
-        try:
-            tg_user = await client.get_users(u_id)
-            user_name = tg_user.mention
-        except Exception:
-            user_name = f"User <code>{u_id}</code>"
-
-        if isinstance(exp_dt, str):
+            # Telegram API ko fast timeout ke saath call karo (hang na ho)
             try:
-                exp_dt = datetime.datetime.fromisoformat(exp_dt)
+                tg_user = await asyncio.wait_for(client.get_users(u_id), timeout=1.5)
+                user_name = tg_user.mention
             except Exception:
+                pass  # Agar user ne block kiya ya slow hua toh bypass kar dega
+
+            if isinstance(exp_dt, str):
                 try:
-                    exp_dt = datetime.datetime.strptime(exp_dt, "%Y-%m-%d %H:%M:%S")
+                    exp_dt = datetime.datetime.fromisoformat(exp_dt)
                 except Exception:
-                    exp_dt = now_utc
+                    try:
+                        exp_dt = datetime.datetime.strptime(exp_dt, "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        exp_dt = now_utc
 
-        if isinstance(exp_dt, datetime.date) and not isinstance(exp_dt, datetime.datetime):
-            exp_dt = datetime.datetime.combine(exp_dt, datetime.time.max)
+            if isinstance(exp_dt, datetime.date) and not isinstance(exp_dt, datetime.datetime):
+                exp_dt = datetime.datetime.combine(exp_dt, datetime.time.max)
 
-        exp_ist = exp_dt.astimezone(tz) if getattr(exp_dt, 'tzinfo', None) else tz.localize(exp_dt)
+            exp_ist = exp_dt.astimezone(tz) if getattr(exp_dt, 'tzinfo', None) else tz.localize(exp_dt)
 
-        e_date = exp_ist.strftime("%d-%m-%Y")
-        e_time = exp_ist.strftime("%I:%M:%S %p")
+            e_date = exp_ist.strftime("%d-%m-%Y")
+            e_time = exp_ist.strftime("%I:%M:%S %p")
 
-        remaining = exp_ist - now_ist
-        if remaining.total_seconds() > 0:
-            total_seconds = int(remaining.total_seconds())
-            days, rem_sec = divmod(total_seconds, 86400)
-            hours, rem_sec = divmod(rem_sec, 3600)
-            minutes, _ = divmod(rem_sec, 60)
+            remaining = exp_ist - now_ist
+            if remaining.total_seconds() > 0:
+                total_seconds = int(remaining.total_seconds())
+                days, rem_sec = divmod(total_seconds, 86400)
+                hours, rem_sec = divmod(rem_sec, 3600)
+                minutes, _ = divmod(rem_sec, 60)
 
-            time_parts = []
-            if days > 0:
-                time_parts.append(f"{days} days")
-            if hours > 0:
-                time_parts.append(f"{hours} hours")
-            time_parts.append(f"{minutes} minutes")
-            time_left = ", ".join(time_parts) if time_parts else "less than 1 minute"
+                time_parts = []
+                if days > 0:
+                    time_parts.append(f"{days} days")
+                if hours > 0:
+                    time_parts.append(f"{hours} hours")
+                time_parts.append(f"{minutes} minutes")
+                time_left = ", ".join(time_parts) if time_parts else "less than 1 minute"
+            else:
+                time_left = "Expired"
+
+            text += (
+                f"<b>{i}. {user_name}</b>\n"
+                f" ᴜꜱᴇʀ ɪᴅ : <code>{u_id}</code>\n"
+                f" ᴇxᴘɪʀʏ ᴅᴀᴛᴇ : <code>{e_date}</code>\n"
+                f" ᴇxᴘɪʀʏ ᴛɪᴍᴇ : <code>{e_time}</code>\n"
+                f" ᴛɪᴍᴇ ʟᴇꜰᴛ : <code>{time_left}</code>\n\n"
+            )
+
+        if len(text) > 4096:
+            for chunk in [text[j:j+4000] for j in range(0, len(text), 4000)]:
+                await message.reply_text(chunk, disable_web_page_preview=True)
+            await wait_msg.delete()
         else:
-            time_left = "Expired"
+            await wait_msg.edit_text(text, disable_web_page_preview=True)
 
-        text += (
-            f"<b>{i}. {user_name}</b>\n"
-            f" ᴜꜱᴇʀ ɪᴅ : <code>{u_id}</code>\n"
-            f" ᴇxᴘɪʀʏ ᴅᴀᴛᴇ : <code>{e_date}</code>\n"
-            f" ᴇxᴘɪʀʏ ᴛɪᴍᴇ : <code>{e_time}</code>\n"
-            f" ᴛɪᴍᴇ ʟᴇꜰᴛ : <code>{time_left}</code>\n\n"
-        )
-
-    if len(text) > 4096:
-        for chunk in [text[j:j+4000] for j in range(0, len(text), 4000)]:
-            await message.reply_text(chunk, disable_web_page_preview=True)
-        await wait_msg.delete()
-    else:
-        await wait_msg.edit_text(text, disable_web_page_preview=True)
+    except Exception as e:
+        logger.error(f"Error fetching premium users: {e}")
+        await wait_msg.edit_text(f"❌ <b>Error fetching list:</b> <code>{e}</code>")
 
 
 # ==================== AUTO-EXPIRY BACKGROUND WORKER ==================== #
