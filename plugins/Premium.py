@@ -264,7 +264,6 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
     base_amount = int(query.data.split("_")[1])
     days = PREMIUM_PLANS.get(base_amount)
     
-    # 🟢 FIX: Agar koi galat amount ka callback aaye to crash na ho
     if days is None:
         return await query.answer("❌ Invalid Plan Selected!", show_alert=True)
 
