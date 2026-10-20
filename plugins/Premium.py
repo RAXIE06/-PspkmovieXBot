@@ -573,7 +573,7 @@ async def myplan_cmd(client: Client, message: Message):
     )
 
 
-# ==================== ACTIVE PREMIUM USERS LIST (FAST & NO-HANG) ==================== #
+# ==================== ACTIVE PREMIUM USERS LIST (FIXED) ==================== #
 
 @Client.on_message(filters.command(["premium_users", "active_users"]) & filters.user(ADMINS))
 async def premium_users_list_cmd(client: Client, message: Message):
@@ -584,7 +584,6 @@ async def premium_users_list_cmd(client: Client, message: Message):
     now_ist = datetime.datetime.now(tz)
 
     try:
-        # MongoDB se active users nikalo
         cursor = db.users.find({
             "expiry_time": {"$ne": None, "$gt": now_utc}
         }).sort("expiry_time", 1)
@@ -601,15 +600,13 @@ async def premium_users_list_cmd(client: Client, message: Message):
         for i, user in enumerate(users_list, 1):
             u_id = user.get("id")
             exp_dt = user.get("expiry_time")
-            # Database me agar name ho toh direct lo, warna default
             user_name = user.get("name") or f"User <code>{u_id}</code>"
 
-            # Telegram API ko fast timeout ke saath call karo (hang na ho)
             try:
                 tg_user = await asyncio.wait_for(client.get_users(u_id), timeout=1.5)
                 user_name = tg_user.mention
             except Exception:
-                pass  # Agar user ne block kiya ya slow hua toh bypass kar dega
+                pass
 
             if isinstance(exp_dt, str):
                 try:
@@ -655,10 +652,10 @@ async def premium_users_list_cmd(client: Client, message: Message):
 
         if len(text) > 4096:
             for chunk in [text[j:j+4000] for j in range(0, len(text), 4000)]:
-                await message.reply_text(chunk, disable_web_page_preview=True)
+                await message.reply_text(chunk)
             await wait_msg.delete()
         else:
-            await wait_msg.edit_text(text, disable_web_page_preview=True)
+            await wait_msg.edit_text(text)
 
     except Exception as e:
         logger.error(f"Error fetching premium users: {e}")
