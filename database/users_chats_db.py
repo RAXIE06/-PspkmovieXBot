@@ -345,7 +345,6 @@ class Database:
         if not expiry:
             return False
 
-        # Support String formats
         if isinstance(expiry, str):
             try:
                 expiry = datetime.datetime.fromisoformat(expiry)
@@ -359,15 +358,16 @@ class Database:
                     except Exception:
                         return False
 
-        # Support Plain Date formats
         if isinstance(expiry, datetime.date) and not isinstance(expiry, datetime.datetime):
             expiry = datetime.datetime.combine(expiry, datetime.time.max)
 
-        # Verification with current timestamp
+        # 🟢 FIX: Timezone handled properly (UTC comparison)
         if isinstance(expiry, datetime.datetime):
-            if expiry.tzinfo:
-                expiry = expiry.replace(tzinfo=None)
-            if datetime.datetime.now() <= expiry:
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=pytz.utc)
+            
+            now = datetime.datetime.now(pytz.utc)
+            if now <= expiry:
                 return True
             else:
                 await self.users.update_one({"id": int(user_id)}, {"$set": {"expiry_time": None}})
@@ -376,10 +376,10 @@ class Database:
         return False
 
     async def add_premium_user(self, user_id: int, days: int):
-        now = datetime.datetime.now()
+        # 🟢 FIX: Timezone handled properly (UTC saving)
+        now = datetime.datetime.now(pytz.utc)
         user = await self.get_user(int(user_id))
         
-        # Check existing expiry for stacking
         if user and user.get("expiry_time"):
             exp = user["expiry_time"]
             if isinstance(exp, str):
@@ -398,9 +398,9 @@ class Database:
                 exp = datetime.datetime.combine(exp, datetime.time.max)
 
             if isinstance(exp, datetime.datetime):
-                if exp.tzinfo:
-                    exp = exp.replace(tzinfo=None)
-                # Agar plan active hai toh usme din add karo, warna abhi se shuru karo
+                if exp.tzinfo is None:
+                    exp = exp.replace(tzinfo=pytz.utc)
+                
                 if exp > now:
                     new_expiry = exp + datetime.timedelta(days=days)
                 else:
@@ -448,7 +448,7 @@ class Database:
 
     async def give_free_trial(self, user_id):
         seconds = 5 * 60         
-        expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
+        expiry_time = datetime.datetime.now(pytz.utc) + datetime.timedelta(seconds=seconds)
         user_data = {"id": int(user_id), "expiry_time": expiry_time, "has_free_trial": True}
         await self.users.update_one({"id": int(user_id)}, {"$set": user_data}, upsert=True)
 
@@ -464,7 +464,7 @@ class Database:
         
     async def all_premium_users(self):
         count = await self.users.count_documents({
-            "expiry_time": {"$gt": datetime.datetime.now()}
+            "expiry_time": {"$gt": datetime.datetime.now(pytz.utc)}
         })
         return count
     
@@ -539,24 +539,16 @@ async def check_premium_status(user_id: int):
 
 # 🔒 UTR ko atomic tareeke se "claim" karo (race-condition-proof)
 async def claim_utr(user_id: int, utr: str, amount: float, days: int) -> bool:
-    """
-    UTR ko atomically reserve karta hai.
-    Returns:
-        True  -> ye pehla user hai, UTR mil gaya (premium do)
-        False -> UTR already kisi aur ne le liya
-    """
     try:
-        # unique index ki wajah se duplicate insert fail hoga
         await db.payments.insert_one({
             "utr": str(utr).strip(),
             "user_id": int(user_id),
             "amount": float(amount),
             "days": int(days),
-            "verified_at": datetime.datetime.now()
+            "verified_at": datetime.datetime.now(pytz.utc)
         })
         return True
     except Exception as e:
-        # DuplicateKeyError aayega agar UTR already used
         if "duplicate" in str(e).lower() or "E11000" in str(e):
             return False
         logger.error(f"claim_utr error: {e}")
@@ -569,20 +561,16 @@ async def is_utr_used(utr: str) -> bool:
 
 
 async def record_payment(user_id: int, utr: str, amount: float, days: int):
-    # Deprecated — ab claim_utr use karo
-    # Sirf backup ke liye rakha hai
     await db.payments.insert_one({
         "user_id": int(user_id),
         "utr": str(utr).strip(),
         "amount": float(amount),
         "days": int(days),
-        "verified_at": datetime.datetime.now()
+        "verified_at": datetime.datetime.now(pytz.utc)
     })
 
 
-# 🚀 Startup pe ek baar chalao — unique index banane ke liye
 async def ensure_payment_indexes():
-    """UTR field pe unique index banata hai taaki duplicate insert fail ho."""
     try:
         await db.payments.create_index("utr", unique=True)
         logger.info("✅ Unique index on payments.utr created/verified")
