@@ -2,6 +2,7 @@ from aiohttp import web
 from .route import routes
 from asyncio import sleep 
 from datetime import datetime
+import pytz
 from database.users_chats_db import db, ensure_payment_indexes
 from info import URL, PREMIUM_LOGS
 from Script import script
@@ -20,9 +21,12 @@ async def web_server():
 async def check_expired_premium(client):
     while True:
         try:
-            data = await db.get_expired(datetime.now())
+            # 🟢 FIX: UTC time use kiya gaya hai taaki timezone mismatch na ho
+            current_time = datetime.now(pytz.utc)
+            data = await db.get_expired(current_time)
+            
             for user in data:
-                user_id = user.get("id") # 🟢 FIX: .get() use kiya taaki KeyError se loop crash na ho
+                user_id = user.get("id") 
                 if not user_id:
                     continue
                 
@@ -40,7 +44,7 @@ async def check_expired_premium(client):
         except Exception as e:
             logging.error(f"Error in check_expired_premium loop: {e}")
             
-        await sleep(5) # 🟢 FIX: Har 5 sec baad check karega, taaki DB par load kam pade
+        await sleep(5) # Har 5 sec baad check karega
 
 async def keep_alive():
     """Keep bot alive by sending periodic pings."""
