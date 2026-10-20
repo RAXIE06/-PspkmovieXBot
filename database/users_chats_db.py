@@ -361,7 +361,6 @@ class Database:
         if isinstance(expiry, datetime.date) and not isinstance(expiry, datetime.datetime):
             expiry = datetime.datetime.combine(expiry, datetime.time.max)
 
-        # 🟢 FIX: Timezone handled properly (UTC comparison)
         if isinstance(expiry, datetime.datetime):
             if expiry.tzinfo is None:
                 expiry = expiry.replace(tzinfo=pytz.utc)
@@ -375,10 +374,18 @@ class Database:
 
         return False
 
-    async def add_premium_user(self, user_id: int, days: int):
-        # 🟢 FIX: Timezone handled properly (UTC saving)
+    async def add_premium_user(self, user_id: int, duration):
+        """
+        Supports both timedelta object (minutes, hours, days) and int (days)
+        """
         now = datetime.datetime.now(pytz.utc)
         user = await self.get_user(int(user_id))
+        
+        # Determine time_delta
+        if isinstance(duration, datetime.timedelta):
+            time_delta = duration
+        else:
+            time_delta = datetime.timedelta(days=int(duration))
         
         if user and user.get("expiry_time"):
             exp = user["expiry_time"]
@@ -402,13 +409,13 @@ class Database:
                     exp = exp.replace(tzinfo=pytz.utc)
                 
                 if exp > now:
-                    new_expiry = exp + datetime.timedelta(days=days)
+                    new_expiry = exp + time_delta
                 else:
-                    new_expiry = now + datetime.timedelta(days=days)
+                    new_expiry = now + time_delta
             else:
-                new_expiry = now + datetime.timedelta(days=days)
+                new_expiry = now + time_delta
         else:
-            new_expiry = now + datetime.timedelta(days=days)
+            new_expiry = now + time_delta
             
         await self.users.update_one(
             {"id": int(user_id)},
@@ -526,8 +533,8 @@ else:
 
 # ==================== PAYMENT & PREMIUM HELPERS ==================== #
 
-async def add_premium_user(user_id: int, days: int):
-    return await db.add_premium_user(user_id, days)
+async def add_premium_user(user_id: int, duration):
+    return await db.add_premium_user(user_id, duration)
 
 async def check_premium_status(user_id: int):
     user = await db.get_user(int(user_id))
