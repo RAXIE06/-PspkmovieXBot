@@ -2,16 +2,42 @@ import urllib.parse
 import random
 import asyncio
 import datetime
+import re
+import logging
 import pytz
 from pyrogram import Client, filters, enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from Script import script
-from info import UPI_ID, UPI_NAME, PREMIUM_PLANS, LOG_CHANNEL
+from info import UPI_ID, UPI_NAME, PREMIUM_PLANS, LOG_CHANNEL, ADMINS
 from database.users_chats_db import is_utr_used, claim_utr, db
 from utils import verify_payment_from_email
 
+logger = logging.getLogger(__name__)
+
 USER_PLAN_SESSIONS = {}
 TIMEZONE = "Asia/Kolkata"
+
+
+def parse_duration(time_str: str):
+    time_str = time_str.lower().strip()
+    match = re.match(r"^(\d+)\s*(min|m|minute|minutes|h|hour|hours|d|day|days|month|months|y|year|years)$", time_str)
+    if not match:
+        return None
+    
+    val = int(match.group(1))
+    unit = match.group(2)
+
+    if unit in ("min", "m", "minute", "minutes"):
+        return datetime.timedelta(minutes=val)
+    elif unit in ("h", "hour", "hours"):
+        return datetime.timedelta(hours=val)
+    elif unit in ("d", "day", "days"):
+        return datetime.timedelta(days=val)
+    elif unit in ("month", "months"):
+        return datetime.timedelta(days=val * 30)
+    elif unit in ("y", "year", "years"):
+        return datetime.timedelta(days=val * 365)
+    return None
 
 
 def get_plan_keyboard():
@@ -75,16 +101,19 @@ async def back_to_plans_cb(client: Client, query: CallbackQuery):
     await query.answer()
 
 
-def get_success_receipt(user_mention: str, user_id: int, days: int, exp_dt: datetime.datetime):
+def get_success_receipt(user_mention: str, user_id: int, duration_info, exp_dt: datetime.datetime):
     tz = pytz.timezone(TIMEZONE)
     now = datetime.datetime.now(tz)
     
     if isinstance(exp_dt, str):
         try:
-            exp_dt = datetime.datetime.strptime(exp_dt[:10], "%Y-%m-%d")
+            exp_dt = datetime.datetime.fromisoformat(exp_dt)
         except Exception:
-            exp_dt = now + datetime.timedelta(days=days)
-            
+            try:
+                exp_dt = datetime.datetime.strptime(exp_dt, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                exp_dt = now
+
     if isinstance(exp_dt, datetime.date) and not isinstance(exp_dt, datetime.datetime):
         exp_dt = datetime.datetime.combine(exp_dt, datetime.time.max)
 
@@ -95,11 +124,13 @@ def get_success_receipt(user_mention: str, user_id: int, days: int, exp_dt: date
     e_date = exp.strftime("%d-%m-%Y")
     e_time = exp.strftime("%I:%M:%S %p")
     
+    duration_str = f"{duration_info} Days" if isinstance(duration_info, int) else str(duration_info)
+    
     return (
         f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
         f"👤 <b>ᴜꜱᴇʀ :</b> {user_mention}\n"
         f"🆔 <b>ᴜꜱᴇʀ ɪᴅ :</b> <code>{user_id}</code>\n"
-        f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {days} Days\n\n"
+        f"⚡ <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ :</b> {duration_str}\n\n"
         f"📅 <b>ᴊᴏɪɴɪɴɢ ᴅᴀᴛᴇ :</b> <code>{j_date}</code>\n"
         f"⏰ <b>ᴊᴏɪɴɪɴɢ ᴛɪᴍᴇ :</b> <code>{j_time}</code>\n\n"
         f"⏳ <b>ᴇxᴘɪʀʏ ᴅᴀᴛᴇ :</b> <code>{e_date}</code>\n"
@@ -421,3 +452,157 @@ async def utr_handler(client: Client, message: Message):
             f"• UTR galat copy hua hai\n"
             f"• Payment fail ho gaya"
         )
+
+
+# ==================== MANUAL TESTING & CHECK COMMANDS ==================== #
+
+@Client.on_message(filters.command(["add_premium", "give_premium"]) & filters.user(ADMINS))
+async def add_premium_cmd(client: Client, message: Message):
+    if len(message.command) < 3:
+        return await message.reply_text(
+            "<b>Usage:</b>\n"
+            "<code>/add_premium user_id time</code>\n\n"
+            "<b>Examples:</b>\n"
+            "• <code>/add_premium 123456789 1min</code> (Testing ke liye)\n"
+            "• <code>/add_premium 123456789 10min</code>\n"
+            "• <code>/add_premium 123456789 1d</code>"
+        )
+
+    try:
+        user_id = int(message.command[1])
+    except ValueError:
+        return await message.reply_text("❌ Invalid User ID!")
+
+    duration_str = message.command[2]
+    time_delta = parse_duration(duration_str)
+
+    if not time_delta:
+        return await message.reply_text("❌ Invalid format! Use: <code>1min</code>, <code>10min</code>, <code>1h</code>, <code>1d</code>")
+
+    try:
+        expiry = await db.add_premium_user(user_id, time_delta)
+        tz = pytz.timezone(TIMEZONE)
+        exp_ist = expiry.astimezone(tz) if getattr(expiry, 'tzinfo', None) else tz.localize(expiry)
+        formatted_expiry = exp_ist.strftime("%d-%b-%Y %I:%M:%S %p")
+        
+        await message.reply_text(
+            f"✅ <b>Premium Added!</b>\n\n"
+            f"👤 <b>User ID:</b> <code>{user_id}</code>\n"
+            f"⏳ <b>Duration:</b> <code>{duration_str}</code>\n"
+            f"📅 <b>Expires At:</b> <code>{formatted_expiry} (IST)</code>"
+        )
+
+        try:
+            await client.send_message(
+                chat_id=user_id,
+                text=(
+                    f"🎉 <b>Premium Activated!</b>\n\n"
+                    f"⏳ <b>Validity:</b> <code>{duration_str}</code>\n"
+                    f"📅 <b>Expires:</b> <code>{formatted_expiry} (IST)</code>"
+                )
+            )
+        except Exception:
+            pass
+
+    except Exception as e:
+        logger.error(f"Error in add_premium_cmd: {e}")
+        await message.reply_text(f"❌ Error: {e}")
+
+
+@Client.on_message(filters.command(["remove_premium", "del_premium"]) & filters.user(ADMINS))
+async def remove_premium_cmd(client: Client, message: Message):
+    if len(message.command) < 2:
+        return await message.reply_text("<b>Usage:</b> <code>/remove_premium user_id</code>")
+
+    try:
+        user_id = int(message.command[1])
+        await db.remove_premium_access(user_id)
+        await message.reply_text(f"✅ Removed premium from <code>{user_id}</code>.")
+        try:
+            await client.send_message(user_id, "⚠️ <b>Your premium subscription has been removed by admin.</b>")
+        except Exception:
+            pass
+    except Exception as e:
+        await message.reply_text(f"❌ Error: {e}")
+
+
+@Client.on_message(filters.command("myplan") & filters.private)
+async def myplan_cmd(client: Client, message: Message):
+    user_id = message.from_user.id
+    has_access = await db.has_premium_access(user_id)
+    user = await db.get_user(user_id)
+
+    if not has_access or not user or not user.get("expiry_time"):
+        return await message.reply_text(
+            "❌ <b>You don't have an active premium plan.</b>\n\n"
+            "Use /plan to buy premium access!"
+        )
+
+    exp_dt = user["expiry_time"]
+    tz = pytz.timezone(TIMEZONE)
+    now = datetime.datetime.now(tz)
+    
+    if isinstance(exp_dt, str):
+        try:
+            exp_dt = datetime.datetime.fromisoformat(exp_dt)
+        except Exception:
+            exp_dt = now
+
+    if isinstance(exp_dt, datetime.date) and not isinstance(exp_dt, datetime.datetime):
+        exp_dt = datetime.datetime.combine(exp_dt, datetime.time.max)
+
+    exp = exp_dt.astimezone(tz) if getattr(exp_dt, 'tzinfo', None) else tz.localize(exp_dt)
+    
+    remaining = exp - now
+    if remaining.total_seconds() <= 0:
+        await db.remove_premium_access(user_id)
+        return await message.reply_text("⚠️ <b>Your premium plan has just expired!</b>")
+
+    mins, secs = divmod(int(remaining.total_seconds()), 60)
+    hours, mins = divmod(mins, 60)
+    days, hours = divmod(hours, 24)
+
+    rem_str = f"{days}d {hours}h {mins}m {secs}s" if days > 0 else f"{hours}h {mins}m {secs}s"
+    formatted_expiry = exp.strftime("%d-%b-%Y %I:%M:%S %p")
+
+    await message.reply_text(
+        f"👑 <b>Your Premium Subscription Status:</b>\n\n"
+        f"✅ <b>Status:</b> <code>Active</code>\n"
+        f"⏳ <b>Time Remaining:</b> <code>{rem_str}</code>\n"
+        f"📅 <b>Expiry:</b> <code>{formatted_expiry} (IST)</code>"
+    )
+
+
+# ==================== AUTO-EXPIRY BACKGROUND WORKER ==================== #
+
+async def auto_premium_expiry_worker(client: Client):
+    await asyncio.sleep(15)
+    logger.info("Auto-Premium Expiry Background Worker Started.")
+    while True:
+        try:
+            now_utc = datetime.datetime.now(pytz.utc)
+            # Expired users query
+            cursor = db.users.find({
+                "expiry_time": {"$ne": None, "$lte": now_utc}
+            })
+
+            async for user in cursor:
+                u_id = user["id"]
+                await db.remove_premium_access(u_id)
+                logger.info(f"Premium expired automatically for user {u_id}")
+
+                try:
+                    await client.send_message(
+                        chat_id=u_id,
+                        text=(
+                            "⚠️ <b>Your Premium Plan Has Expired!</b>\n\n"
+                            "Aapka subscription period poora ho gaya hai. Services resume karne ke liye /plan se recharge karein."
+                        )
+                    )
+                except Exception:
+                    pass
+
+        except Exception as e:
+            logger.error(f"Error in auto_premium_expiry_worker: {e}")
+
+        await asyncio.sleep(30)
