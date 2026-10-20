@@ -78,16 +78,23 @@ async def back_to_plans_cb(client: Client, query: CallbackQuery):
 def get_success_receipt(user_mention: str, user_id: int, days: int, exp_dt: datetime.datetime):
     tz = pytz.timezone(TIMEZONE)
     now = datetime.datetime.now(tz)
+    
     if isinstance(exp_dt, str):
         try:
             exp_dt = datetime.datetime.strptime(exp_dt[:10], "%Y-%m-%d")
         except Exception:
             exp_dt = now + datetime.timedelta(days=days)
+            
+    if isinstance(exp_dt, datetime.date) and not isinstance(exp_dt, datetime.datetime):
+        exp_dt = datetime.datetime.combine(exp_dt, datetime.time.max)
+
     exp = exp_dt.astimezone(tz) if getattr(exp_dt, 'tzinfo', None) else tz.localize(exp_dt)
+    
     j_date = now.strftime("%d-%m-%Y")
     j_time = now.strftime("%I:%M:%S %p")
     e_date = exp.strftime("%d-%m-%Y")
     e_time = exp.strftime("%I:%M:%S %p")
+    
     return (
         f"🎉 <b>ᴘʀᴇᴍɪᴜᴍ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ✅</b>\n\n"
         f"👤 <b>ᴜꜱᴇʀ :</b> {user_mention}\n"
@@ -104,7 +111,6 @@ def get_success_receipt(user_mention: str, user_id: int, days: int, exp_dt: date
 # ==================== HELPERS ==================== #
 
 def get_active_amounts(exclude_user_id=None):
-    """Active sessions ke amounts (memory se) — reservation ke liye."""
     amounts = set()
     for uid, sess in USER_PLAN_SESSIONS.items():
         if exclude_user_id is not None and uid == exclude_user_id:
@@ -117,7 +123,6 @@ def get_active_amounts(exclude_user_id=None):
 
 
 def get_users_with_amount(amount, exclude_user_id=None):
-    """Same amount pe active users ki list (collision detect ke liye)."""
     amount = round(amount, 2)
     users = []
     for uid, sess in USER_PLAN_SESSIONS.items():
@@ -130,7 +135,6 @@ def get_users_with_amount(amount, exclude_user_id=None):
 
 
 async def qr_expiry_task(client: Client, user_id: int, qr_msg: Message):
-    """5 min baad QR delete — sirf tab jab ye abhi bhi current QR ho."""
     await asyncio.sleep(300)
 
     session = USER_PLAN_SESSIONS.get(user_id)
@@ -161,13 +165,12 @@ async def qr_expiry_task(client: Client, user_id: int, qr_msg: Message):
 # ==================== AUTO VERIFY LOOP ==================== #
 
 async def auto_verify_loop(client: Client, user_id: int, qr_msg: Message, exact_amount: float, days: int, mention: str):
-    """Email check karo. Match mile to unique premium ya collision UTR."""
     session = USER_PLAN_SESSIONS.get(user_id)
     if not session:
         return
     created_at = session["created_at"]
 
-    for _ in range(25):  # 25 × 12s = 5 min
+    for _ in range(25):
         await asyncio.sleep(12)
 
         session = USER_PLAN_SESSIONS.get(user_id)
@@ -183,11 +186,9 @@ async def auto_verify_loop(client: Client, user_id: int, qr_msg: Message, exact_
         if not is_valid:
             continue
 
-        # ✅ Email match hua
         others = get_users_with_amount(exact_amount, exclude_user_id=user_id)
 
         if not others:
-            # 🔒 Unique — direct premium
             real_utr = str(result).strip()
             claimed = await claim_utr(user_id, real_utr, exact_amount, days)
             if not claimed:
@@ -232,7 +233,6 @@ async def auto_verify_loop(client: Client, user_id: int, qr_msg: Message, exact_
                     pass
             return
 
-        # ⚠️ Collision — same amount pe 2+ users
         collision_users = [user_id] + others
         for uid in collision_users:
             sess = USER_PLAN_SESSIONS.get(uid)
@@ -266,7 +266,6 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
     user_id = query.from_user.id
     mention = query.from_user.mention
 
-    # Purana QR + session delete karo
     if user_id in USER_PLAN_SESSIONS:
         prev = USER_PLAN_SESSIONS[user_id]
         if prev.get("qr_msg"):
@@ -275,7 +274,6 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
             except Exception:
                 pass
 
-    # 🔒 Unique amount — 1-99 paise discount, minimum ₹9
     used = get_active_amounts(exclude_user_id=user_id)
     exact_amount = None
     for _ in range(500):
@@ -289,7 +287,6 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
         break
 
     if exact_amount is None:
-        # Fallback — sab options used (bahut rare)
         exact_amount = round(max(9.0, base_amount - random.randint(1, 99) / 100.0), 2)
 
     note = f"Prem_{user_id}"
@@ -345,18 +342,15 @@ async def utr_handler(client: Client, message: Message):
     if message.text.startswith("/"):
         return
 
-    # UTR = exactly 12 digits
     if not text.isdigit() or len(text) != 12:
         return
 
     step = session.get("step")
-    # AUTO_CHECKING mein bhi allow (user wait nahi karna chahta), WAITING_UTR_CONFIRM bhi
     if step not in ("AUTO_CHECKING", "WAITING_UTR", "WAITING_UTR_CONFIRM"):
         return
 
     utr = text
 
-    # Courtesy duplicate check
     if await is_utr_used(utr):
         return await message.reply_text(
             "⚠️ <b>Yeh UTR pehle use ho chuka hai!</b>\n\n"
@@ -372,7 +366,6 @@ async def utr_handler(client: Client, message: Message):
         "<i>Please wait 10-15 seconds.</i>"
     )
 
-    # UTR + Amount dono match hone chahiye
     is_valid, msg = await verify_payment_from_email(
         target_utr=utr,
         expected_amount=amount,
@@ -390,7 +383,6 @@ async def utr_handler(client: Client, message: Message):
 
         expiry_dt = await db.add_premium_user(user_id, days)
 
-        # QR delete karo
         try:
             if session.get("qr_msg"):
                 await session["qr_msg"].delete()
