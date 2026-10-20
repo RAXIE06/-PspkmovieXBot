@@ -15,7 +15,8 @@ from database.users_chats_db import db, ensure_payment_indexes
 from info import MULTIPLE_DB, ON_HEROKU, LOG_STR, LOG_CHANNEL, PORT
 from utils import temp
 from Script import script
-from plugins import web_server, check_expired_premium, keep_alive
+from plugins import web_server, keep_alive
+from plugins.Premium import auto_premium_expiry_worker
 from dreamxbotz.Bot import dreamxbotz
 from dreamxbotz.util.keepalive import ping_server
 from dreamxbotz.Bot.clients import initialize_clients
@@ -71,7 +72,7 @@ async def dreamxbotz_start():
     else:
         logging.info("Single DB Mode On ! Files Will Be Save In First Database")
 
-    # 🚀 Payment UTR unique index — ek baar automatically bana dega
+    # 🚀 Payment UTR unique index — automatically ensures uniqueness
     await ensure_payment_indexes()
     
     me = bot_info
@@ -80,7 +81,9 @@ async def dreamxbotz_start():
     temp.B_NAME = me.first_name
     temp.B_LINK = me.mention
     dreamxbotz.username = '@' + me.username
-    asyncio.create_task(check_expired_premium(dreamxbotz))
+    
+    # ⏱️ Real-time background auto-expiry task (Minute & Day level check)
+    asyncio.create_task(auto_premium_expiry_worker(dreamxbotz))
     
     logging.info(f"{me.first_name} with Pyrogram v{__version__} (Layer {layer}) started on {me.username}.")
     logging.info(LOG_STR)
