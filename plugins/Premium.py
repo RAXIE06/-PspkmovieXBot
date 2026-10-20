@@ -263,6 +263,11 @@ async def auto_verify_loop(client: Client, user_id: int, qr_msg: Message, exact_
 async def plan_select_cb(client: Client, query: CallbackQuery):
     base_amount = int(query.data.split("_")[1])
     days = PREMIUM_PLANS.get(base_amount)
+    
+    # 🟢 FIX: Agar koi galat amount ka callback aaye to crash na ho
+    if days is None:
+        return await query.answer("❌ Invalid Plan Selected!", show_alert=True)
+
     user_id = query.from_user.id
     mention = query.from_user.mention
 
