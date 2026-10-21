@@ -1123,12 +1123,72 @@ async def save_template(client, message):
         f"✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴜᴘᴅᴀᴛᴇᴅ ᴛᴇᴍᴘʟᴀᴛᴇ ꜰᴏʀ <code>{title}</code> ᴛᴏ:\n\n{template}"
     )
 
-@Client.on_message((filters.command("request") | filters.regex(r"(?i)#request")) & filters.group)
+@Client.on_message(filters.command("request") | filters.regex(r"(?i)#request"))
 async def requests(bot, message):
-    if message.chat.id != SUPPORT_CHAT_ID:
-        return
     if not message.from_user:
-        return await message.reply_text("<b>⚠️ ᴜɴᴀʙʟᴇ ᴛᴏ ɪᴅᴇɴᴛɪꜰʏ ʏᴏᴜ.</b>")
+        return await message.reply_text("<b>⚠️ ᴜɴᴀʙʟᴇ ᴛᴏ ɪᴅᴇɴᴛɪꜰʏ ʏᴏᴜ (Anonymous Admin).</b>")
+    
+    reporter = str(message.from_user.id)
+    mention = message.from_user.mention
+
+    if message.reply_to_message:
+        target_msg = message.reply_to_message
+        content = target_msg.text or target_msg.caption or ""
+        msg_link = target_msg.link
+    else:
+        content = message.text or message.caption or ""
+        content = re.sub(r"(?i)[#/]?request", "", content).strip()
+        msg_link = getattr(message, 'link', "N/A")
+
+    content = content.strip()
+    if len(content) < 3:
+        return await message.reply_text(
+            "<b>⚠️ ᴘʟᴇᴀꜱᴇ ᴛʏᴘᴇ ᴛʜᴇ ᴍᴏᴠɪᴇ/ꜱᴇʀɪᴇꜱ ɴᴀᴍᴇ ᴡɪᴛʜ ʏᴇᴀʀ</b>\n\n"
+            "📌 <u>Exᴀᴍᴘʟᴇ:</u>\n"
+            "<code>/request Jawan 2023</code>"
+        )
+    
+    reported_post = None
+    try:
+        btn = [[
+            InlineKeyboardButton('ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ', url=msg_link),
+            InlineKeyboardButton('ꜱʜᴏᴡ ᴏᴘᴛɪᴏɴꜱ', callback_data=f'show_option#{reporter}')
+        ]]
+        req_text = f"<b>📝 ʀᴇǫᴜᴇꜱᴛ : <u>{content}</u>\n\n📚 ʀᴇᴘᴏʀᴛᴇᴅ ʙʏ : {mention}\n📖 ʀᴇᴘᴏʀᴛᴇʀ ɪᴅ : {reporter}\n\n</b>"
+        warning_text = "<b>⚠️ ʀᴇǫᴜᴇꜱᴛ ᴄʜᴀɴɴᴇʟ ɪꜱ ɴᴏᴛ ꜱᴇᴛ.</b>"
+        
+        if REQST_CHANNEL is not None:
+            try:
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=req_text, reply_markup=InlineKeyboardMarkup(btn))
+            except Exception:
+                for admin in ADMINS:
+                    await bot.send_message(chat_id=admin, text=warning_text)
+                reported_post = await bot.send_message(chat_id=ADMINS[0], text=req_text, reply_markup=InlineKeyboardMarkup(btn))
+        else:
+            for admin in ADMINS:
+                await bot.send_message(chat_id=admin, text=warning_text)
+            reported_post = await bot.send_message(chat_id=ADMINS[0], text=req_text, reply_markup=InlineKeyboardMarkup(btn))
+    except Exception as e:
+        logger.exception("Request failed")
+        return await message.reply_text(f"<b>⚠️ ꜱᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ. ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.</b>")
+
+    if reported_post:
+        try:
+            btn2 = [[
+                InlineKeyboardButton('ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ', url=reported_post.link)
+            ]]
+            await message.reply_text(
+                "<b>✅ ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ!\n\n"
+                "⏳ ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>",
+                reply_markup=InlineKeyboardMarkup(btn2)
+            )
+        except Exception:
+            await message.reply_text(
+                "<b>✅ ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ!\n\n"
+                "⏳ ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>"
+            )
+
+@Client.on_message(filters.command("send") & filters.user(ADMINS))
     
     reporter = str(message.from_user.id)
     mention = message.from_user.mention
