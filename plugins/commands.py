@@ -109,7 +109,7 @@ async def start(client, message):
                         InlineKeyboardButton('🍁 Update Channel 🍁', url=UPDATE_CHNL_LNK)
                       ]]
             reply_markup = InlineKeyboardMarkup(buttons)
-            await message.reply(script.GSTART_TXT.format(message.from_user.mention if message.from_user else message.chat.title, temp.U_NAME, temp.B_NAME), reply_markup=reply_markup, disable_web_page_preview=True)
+            await message.reply(script.GSTART_TXT.format(message.from_user.mention if message.from_user else message.chat.title, temp.U_NAME, temp.B_NAME), reply_markup=reply_markup)
             if sticker:
                 await sticker.delete()
             await asyncio.sleep(2) 
@@ -119,7 +119,7 @@ async def start(client, message):
                 await db.add_chat(message.chat.id, message.chat.title)
             return 
 
-        # ✅ ============ REFERRAL CHECK (BEFORE ADDING USER TO DB) ============ #
+        # ✅ ============ REFERRAL CHECK ============ #
         if len(message.command) == 2 and message.command[1].startswith("reff_"):
             try:
                 user_id = int(message.command[1].split("_")[1])
@@ -148,8 +148,7 @@ async def start(client, message):
                 await db.add_premium_user(user_id, 30)
                 await client.send_message(
                     chat_id=user_id,
-                    text=f"<b>Hᴇʏ {uss.mention}\n\nYᴏᴜ ɢᴏᴛ 1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 10 ᴜsᴇʀs ❗</b>",
-                    disable_web_page_preview=True             
+                    text=f"<b>Hᴇʏ {uss.mention}\n\nYᴏᴜ ɢᴏᴛ 1 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 10 ᴜsᴇʀs ❗</b>"             
                 )
                 for admin in ADMINS:
                     await client.send_message(chat_id=admin, text=f"Sᴜᴄᴄᴇss ғᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ ᴛʜɪs ᴜsᴇʀ:\n\nuser Nᴀᴍᴇ: {uss.mention}\n\nUsᴇʀ ɪᴅ: {uss.id}!")    
@@ -158,7 +157,6 @@ async def start(client, message):
                 await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))
                 await client.send_message(user_id, script.REFER_CONGRATS_ALRT.format(message.from_user.mention))
             
-            # Ab user ko DB me add karo
             if not await db.is_user_exist(message.from_user.id):
                 await db.add_user(message.from_user.id, message.from_user.first_name)
                 await client.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention))
@@ -724,7 +722,6 @@ async def myplan_cmd(client: Client, message: Message):
 
 @Client.on_callback_query(filters.regex(r"^(premium_info|upgrade|buy_premium)$"))
 async def upgrade_callback_sync(client: Client, query: CallbackQuery):
-    # Message 1: Features list with image
     try:
         await client.send_photo(
             chat_id=query.message.chat.id,
@@ -742,7 +739,6 @@ async def upgrade_callback_sync(client: Client, query: CallbackQuery):
         except Exception:
             pass
 
-    # Message 2: Plans list + Buy buttons
     await client.send_message(
         chat_id=query.message.chat.id,
         text=script.PREMIUM_TEXT,
@@ -775,8 +771,7 @@ async def refer_callback(client, query):
     await client.send_message(
         chat_id=query.message.chat.id,
         text=text,
-        reply_markup=InlineKeyboardMarkup(btn),
-        disable_web_page_preview=True
+        reply_markup=InlineKeyboardMarkup(btn)
     )
     await query.answer("Referral System Opened ✅")
 
@@ -828,8 +823,7 @@ async def shortlink_info_callback(client, query):
     await client.send_message(
         chat_id=query.message.chat.id,
         text=script.SHORTLINK_INFO,
-        reply_markup=InlineKeyboardMarkup(btn),
-        disable_web_page_preview=True
+        reply_markup=InlineKeyboardMarkup(btn)
     )
     await query.answer("Earn Money Guide 📖")
     raise StopPropagation
@@ -1054,7 +1048,6 @@ async def settings(client, message):
         await message.reply_text(
                 text="<b>ᴡʜᴇʀᴇ ᴅᴏ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴏᴘᴇɴ ꜱᴇᴛᴛɪɴɢꜱ ᴍᴇɴᴜ ? ⚙️</b>",
                 reply_markup=InlineKeyboardMarkup(btn),
-                disable_web_page_preview=True,
                 parse_mode=enums.ParseMode.HTML,
                 reply_to_message_id=message.id
         )
@@ -1130,7 +1123,6 @@ async def requests(bot, message):
 
     reporter = str(message.from_user.id)
     mention = message.from_user.mention
-    ...
 
     if message.reply_to_message:
         target_msg = message.reply_to_message
@@ -1184,69 +1176,6 @@ async def requests(bot, message):
             await message.reply_text(
                 "<b>✅ ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ!\n\n⏳ ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>"
             )
-
-@Client.on_message(filters.command("send") & filters.user(ADMINS))
-    reporter = str(message.from_user.id)
-    mention = message.from_user.mention
-
-    if message.reply_to_message:
-        target_msg = message.reply_to_message
-        content = target_msg.text or target_msg.caption or ""
-        msg_link = target_msg.link
-    else:
-        content = message.text or message.caption or ""
-        content = re.sub(r"(?i)[#/]?request", "", content).strip()
-        msg_link = message.link
-
-    content = content.strip()
-    if len(content) < 3:
-        return await message.reply_text("<b>ʏᴏᴜ ᴍᴜꜱᴛ ᴛʏᴘᴇ ᴀʙᴏᴜᴛ ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ [ᴍɪɴɪᴍᴜᴍ 3 ᴄʜᴀʀᴀᴄᴛᴇʀꜱ]. ʀᴇǫᴜᴇꜱᴛꜱ ᴄᴀɴ'ᴛ ʙᴇ ᴇᴍᴘᴛʏ.</b>")
-    
-    reported_post: Message | None = None
-    try:
-        btn = [[
-            InlineKeyboardButton('ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ', url=msg_link),
-            InlineKeyboardButton('ꜱʜᴏᴡ ᴏᴘᴛɪᴏɴꜱ', callback_data=f'show_option#{reporter}')
-        ]]
-        req_text = f"<b>📝 ʀᴇǫᴜᴇꜱᴛ : <u>{content}</u>\n\n📚 ʀᴇᴘᴏʀᴛᴇᴅ ʙʏ : {mention}\n📖 ʀᴇᴘᴏʀᴛᴇʀ ɪᴅ : {reporter}\n\n</b>"
-        warning_text = "<b>⚠️ ʀᴇǫᴜᴇꜱᴛ ᴄʜᴀɴɴᴇʟ ɪꜱ ɴᴏᴛ ꜱᴇᴛ.</b>"
-        if REQST_CHANNEL is not None:
-            try:
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=req_text, reply_markup=InlineKeyboardMarkup(btn))
-            except Exception:
-                for admin in ADMINS:
-                    await bot.send_message(chat_id=admin, text=warning_text)
-                reported_post = await bot.send_message(chat_id=admin, text=req_text, reply_markup=InlineKeyboardMarkup(btn))
-        else:
-            for admin in ADMINS:
-                await bot.send_message(chat_id=admin, text=warning_text)
-            reported_post = await bot.send_message(chat_id=admin, text=req_text, reply_markup=InlineKeyboardMarkup(btn))
-    except Exception:
-        logger.exception("Request failed")
-        return await message.reply_text( "<b>⚠️ ꜱᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ. ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.</b>")
-
-    if reported_post and REQST_CHANNEL is not None:
-        try:
-            invite_link = REQUEST_INVITE_LINK_CACHE.get(REQST_CHANNEL)
-            if not invite_link:
-                try:
-                    link = await bot.create_chat_invite_link(int(REQST_CHANNEL))
-                    invite_link = link.invite_link
-                    REQUEST_INVITE_LINK_CACHE[REQST_CHANNEL] = invite_link
-                except Exception:
-                    logger.exception("Failed to create invite link")
-                    invite_link = None
-            if invite_link:
-                btn = [[
-                    InlineKeyboardButton('ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ', url=invite_link),
-                    InlineKeyboardButton('ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ', url=reported_post.link)
-                ]]
-                await message.reply_text("<b>ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ! ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.\n\nᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ꜰɪʀꜱᴛ & ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ.</b>", reply_markup=InlineKeyboardMarkup(btn))
-            else:
-                await message.reply_text("<b>ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ! ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>")
-        except Exception:
-            logger.exception("Failed to send request confirmation")
-            await message.reply_text("<b>⚠️ ꜱᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ. ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.</b>")
 
 @Client.on_message(filters.command("send") & filters.user(ADMINS))
 async def send_msg(bot, message):
@@ -1402,8 +1331,8 @@ async def trendlist(client, message):
     formatted_list = "\n".join([f"{i+1}. <b>{msg}</b>" for i, msg in enumerate(truncated_messages)])
     additional_message = (
         "⚡️ 𝑨𝒍𝒍 𝒕𝒉𝒆 𝒓𝒆𝒔𝒖𝒍𝒕𝒔 𝒂𝒃𝒐𝒗𝒆 𝒄𝒐𝒎𝒆 𝒇𝒓𝒐𝒎 𝒘𝒉𝒂𝒕 𝒖𝒔𝒆𝒓𝒔 𝒉𝒂𝒗𝒆 𝒔𝒆𝒂𝒓𝒄𝒉𝒆𝒅 𝒇𝒐𝒓. "
-        "𝑻𝒉𝒆𝒚'𝒓𝒆 𝒔𝒉𝒐𝒘𝒏 𝒕𝒐 𝒚𝒐𝒖 𝒆𝒙𝒂𝒄𝒕𝒍𝒚 𝒂𝒔 𝒕𝒉𝒆𝒚 𝒘𝒆𝒓𝒆 𝒔𝒆𝒂𝒓𝒄𝒉𝒆𝒅, "
-        "𝒘𝒊𝒕𝒉𝒐𝒖𝒕 𝒂𝒏𝒚 𝒄𝒉𝒂𝒏𝒈𝒆𝒔 𝒃𝒚 𝒕𝒉𝒆 𝒐𝒘𝒏𝒆𝒓."
+        "𝑻𝒉𝒆𝒚'𝒓𝒆 𝒔𝒉𝒐𝒘𝒏 𝒕𝒐 𝒚𝒐𝒖 𝒆𝒙𝒂𝒄𝒕𝒍𝒚 𝒂𝒔 𝒕ʜ𝒆𝒚 𝒘𝒆𝒓𝒆 𝒔𝒆𝒂𝒓𝒄𝒉𝒆𝒅, "
+        "𝒘𝒊𝒕ʜ𝒐𝒖𝒕 𝒂𝒏𝒚 𝒄𝒉𝒂𝒏𝒈𝒆𝒔 𝒃𝒚 𝒕ʜ𝒆 𝒐𝒘𝒏𝒆𝒓."
     )
     formatted_list += f"\n\n{additional_message}"
     reply_text = f"<b>Top {len(truncated_messages)} Tʀᴀɴᴅɪɴɢ ᴏғ ᴛʜᴇ ᴅᴀʏ 👇:</b>\n\n{formatted_list}"
@@ -1497,7 +1426,7 @@ async def save_caption(client, message):
     except Exception:
         return await message.reply_text("<code>ɢɪᴠᴇ ᴍᴇ ᴀ ᴄᴀᴘᴛɪᴏɴ ᴀʟᴏɴɢ ᴡɪᴛʜ ɪᴛ.\n\nᴇxᴀᴍᴘʟᴇ -\n\nꜰᴏʀ ꜰɪʟᴇ ɴᴀᴍᴇ ꜱᴇɴᴅ <code>{file_name}</code>\nꜰᴏʀ ꜰɪʟᴇ ꜱɪᴢᴇ ꜱᴇɴᴅ <code>{file_size}</code>\n\n<code>/set_caption {file_name}</code></code>")
     await save_group_settings(grp_id, 'caption', caption)
-    await message.reply_text(f"ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄʜᴀɴɢᴇᴅ ᴄᴀᴘᴛɪᴏɴ ꜰᴏʀ {title}\n\nᴄᴀᴘᴛɪᴏɴ - {caption}", disable_web_page_preview=True)
+    await message.reply_text(f"ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄʜᴀɴɢᴇᴅ ᴄᴀᴘᴛɪᴏɴ ꜰᴏʀ {title}\n\nᴄᴀᴘᴛɪᴏɴ - {caption}")
     await client.send_message(LOG_API_CHANNEL, f"#Set_Caption\n\nɢʀᴏᴜᴘ ɴᴀᴍᴇ : {title}\n\nɢʀᴏᴜᴘ ɪᴅ: {grp_id}\nɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n\nᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.username}")
 
 @Client.on_message(filters.command(["set_tutorial", "set_tutorial_2", "set_tutorial_3"]))
@@ -1554,7 +1483,6 @@ async def set_tutorial(client, message: Message):
     except Exception:
         invite_link = "Not Available"
 
-    # disable_web_page_preview hata diya gaya hai taaki reply turant aaye
     await message.reply_text(
         f"<b>ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄʜᴀɴɢᴇᴅ {tutorial_key.replace('_', ' ').title()} ꜰᴏʀ {title}</b>\n\n"
         f"ʟɪɴᴋ - {tutorial_link}"
@@ -1604,7 +1532,7 @@ async def handle_shortner_command(c, m, shortner_key, api_key, log_prefix, fallb
             f"\n\nꜱɪᴛᴇ - {URL}\n\nᴀᴘɪ - `{API}`"
             f"\n\nɢʀᴏᴜᴘ - {grp_link}\nɢʀᴏᴜᴘ ɪᴅ - `{grp_id}`"
         )
-        await c.send_message(LOG_API_CHANNEL, log_message, disable_web_page_preview=True)
+        await c.send_message(LOG_API_CHANNEL, log_message)
     except Exception as e:
         await save_group_settings(grp_id, shortner_key, fallback_url)
         await save_group_settings(grp_id, api_key, fallback_api)
@@ -1657,13 +1585,13 @@ async def set_log(client, message):
     except Exception as e:
         return await message.reply_text(f'<b><u>😐 ᴍᴀᴋᴇ sᴜʀᴇ ᴛʜɪs ʙᴏᴛ ᴀᴅᴍɪɴ ɪɴ ᴛʜᴀᴛ ᴄʜᴀɴɴᴇʟ...</u>\n\n💔 ᴇʀʀᴏʀ - <code>{e}</code></b>')
     await save_group_settings(grp_id, 'log', log)
-    await message.reply_text(f"<b>✅ sᴜᴄᴄᴇssꜰᴜʟʟʏ sᴇᴛ ʏᴏᴜʀ ʟᴏɢ ᴄʜᴀɴɴᴇʟ ꜰᴏʀ {title}\n\nɪᴅ - `{log}`</b>", disable_web_page_preview=True)
+    await message.reply_text(f"<b>✅ sᴜᴄᴄᴇssꜰᴜʟʟʏ sᴇᴛ ʏᴏᴜʀ ʟᴏɢ ᴄʜᴀɴɴᴇʟ ꜰᴏʀ {title}\n\nɪᴅ - `{log}`</b>")
     user_id = message.from_user.id
     user_info = f"@{message.from_user.username}" if message.from_user.username else f"{message.from_user.mention}"
     link = (await client.get_chat(message.chat.id)).invite_link
     grp_link = f"[{message.chat.title}]({link})"
     log_message = f"#New_Log_Channel_Set\n\nɴᴀᴍᴇ - {user_info}\n\nɪᴅ - `{user_id}`\n\nʟᴏɢ ᴄʜᴀɴɴᴇʟ ɪᴅ - `{log}`\nɢʀᴏᴜᴘ ʟɪɴᴋ - `{grp_link}`\n\nɢʀᴏᴜᴘ ɪᴅ : `{grp_id}`"
-    await client.send_message(LOG_API_CHANNEL, log_message, disable_web_page_preview=True) 
+    await client.send_message(LOG_API_CHANNEL, log_message) 
 
 @Client.on_message(filters.command('set_time'))
 async def set_time(client, message):
@@ -1710,7 +1638,6 @@ async def all_settings(client, message):
     title = message.chat.title or "This Group"
     user_id = message.from_user.id if message.from_user else None
 
-    # Bot admin / Group admin check
     if user_id and not is_admin_check(user_id):
         is_adm = False
         try:
@@ -1736,7 +1663,6 @@ async def all_settings(client, message):
             [InlineKeyboardButton("♻️ ʀᴇꜱᴇᴛ ꜱᴇᴛᴛɪɴɢꜱ", callback_data=f"reset_group_{grp_id}")],
             [InlineKeyboardButton("🚫 ᴄʟᴏꜱᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
         ]
-        # disable_web_page_preview hata diya gaya hai
         dlt = await message.reply_text(text, reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(300)
         await dlt.delete()
@@ -1785,50 +1711,8 @@ async def reset_group_callback(client, callback_query):
         [InlineKeyboardButton("♻️ ʀᴇꜱᴇᴛ ꜱᴇᴛᴛɪɴɢꜱ", callback_data=f"reset_group_{grp_id}")],
         [InlineKeyboardButton("🚫 ᴄʟᴏꜱᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
     ]
-    # disable_web_page_preview yahan se bhi remove kar diya gaya hai
     await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
-@Client.on_callback_query(filters.regex(r"^reset_group_(\-\d+)$"))
-async def reset_group_callback(client, callback_query):
-    grp_id = int(callback_query.matches[0].group(1))
-    user_id = callback_query.from_user.id
-    if not await is_check_admin(client, grp_id, user_id):
-        return await callback_query.answer(script.NT_ADMIN_ALRT_TXT, show_alert=True)
-    await callback_query.answer("♻️ ʀᴇꜱᴇᴛᴛɪɴɢ ꜱᴇᴛᴛɪɴɢꜱ...")
-    defaults = {
-        'shortner': SHORTENER_WEBSITE,
-        'api': SHORTENER_API,
-        'shortner_two': SHORTENER_WEBSITE2,
-        'api_two': SHORTENER_API2,
-        'shortner_three': SHORTENER_WEBSITE3,
-        'api_three': SHORTENER_API3,
-        'custom_shortner': False,
-        'custom_shortner_two': False,
-        'custom_shortner_three': False,
-        'verify_time': TWO_VERIFY_GAP,
-        'third_verify_time': THREE_VERIFY_GAP,
-        'template': IMDB_TEMPLATE,
-        'tutorial': TUTORIAL,
-        'tutorial_2': TUTORIAL_2,
-        'tutorial_3': TUTORIAL_3,
-        'caption': CUSTOM_FILE_CAPTION,
-        'log': LOG_CHANNEL,
-        'is_verify': IS_VERIFY,
-        'fsub': AUTH_CHANNELS
-    }
-    current = await get_settings(grp_id)
-    if current == defaults:
-        return await callback_query.answer("✅ ꜱᴇᴛᴛɪɴɢꜱ ᴀʟʀᴇᴀᴅʏ ᴅᴇꜰᴀᴜʟᴛ.", show_alert=True)
-    for key, value in defaults.items():
-        await save_group_settings(grp_id, key, value)
-    updated = await get_settings(grp_id)
-    title = callback_query.message.chat.title
-    text = generate_settings_text(updated, title, reset_done=True)
-    buttons = [
-        [InlineKeyboardButton("♻️ ʀᴇꜱᴇᴛ ꜱᴇᴛᴛɪɴɢꜱ", callback_data=f"reset_group_{grp_id}")],
-        [InlineKeyboardButton("🚫 ᴄʟᴏꜱᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
-    ]
-    await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons), disable_web_page_preview=True)
 
 @Client.on_message(filters.command("verify") & filters.user(ADMINS))
 async def verify(bot, message):
