@@ -551,7 +551,9 @@ SHORTLINK_INFO2 = """<b>
 ›› ꜱᴛᴇᴘ 5 : ᴄᴏᴘʏ ʏᴏᴜʀ ᴀᴘɪ ꜰʀᴏᴍ ᴡᴇʙꜱɪᴛᴇ ᴀɴᴅ ᴛʜᴇɴ, ꜱɪᴍᴘʟʏ ꜱᴇᴛ ʏᴏᴜʀ ᴡᴇʙꜱɪᴛᴇ ᴀɴᴅ ᴀᴘɪ ᴜꜱɪɴɢ ᴛʜᴇ ᴄᴏᴍᴍᴀɴᴅꜱ.
 
 › ꜱʜᴏʀᴛɴᴇʀ 1 :</b> <code>/set_shortlink instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
+
 <b>› ꜱʜᴏʀᴛɴᴇʀ 2 :</b> <code>/set_shortlink_2 instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
+
 <b>› ꜱʜᴏʀᴛɴᴇʀ 3 :</b> <code>/set_shortlink_3 instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
 
 <b>›› ꜱᴛᴇᴘ 6 : ᴄʟɪᴄᴋ ᴏɴ ɴᴇxᴛ ʙᴜᴛᴛᴏɴ ᴛᴏ ᴋɴᴏᴡ ʜᴏᴡ ᴛᴏ ᴄᴏɴɴᴇᴄᴛ ʏᴏᴜʀ ᴛᴜᴛᴏʀɪᴀʟ ᴡɪᴛʜ ᴛʜɪs ʙᴏᴛ.
@@ -565,7 +567,9 @@ SHORTLINK_INFO2 = """<b>
 ›› ꜱᴛᴇᴘ 7 : ᴜꜱᴇ ᴛᴜᴛᴏʀɪᴀʟ ᴄᴏᴍᴍᴀɴᴅꜱ ᴛᴏ ᴀᴅᴅ ʜᴏᴡ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ ꜰᴏʀ ʏᴏᴜʀ ꜱʜᴏʀᴛɴᴇʀ ᴡᴇʙꜱɪᴛᴇꜱ.
 
 › ᴛᴜᴛᴏʀɪᴀʟ 1 :</b> <code>/set_tutorial https://t.me/Vega_Backup/9</code>
+
 <b>› ᴛᴜᴛᴏʀɪᴀʟ 2 :</b> <code>/set_tutorial_2 https://t.me/Vega_Backup/9</code>
+
 <b>› ᴛᴜᴛᴏʀɪᴀʟ 3 :</b> <code>/set_tutorial_3 https://t.me/Vega_Backup/9</code>
 
 <b>›› ꜱᴛᴇᴘ 8 : ɪꜰ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴄʜᴇᴄᴋ ᴡʜɪᴄʜ sʜᴏʀᴛᴇɴᴇʀ ʏᴏᴜ ʜᴀᴠᴇ ᴄᴏɴɴᴇᴄᴛᴇᴅ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴛʜᴇɴ sᴇɴᴅ /details ᴄᴏᴍᴍᴀɴᴅ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ.
