@@ -1641,7 +1641,7 @@ async def all_settings(client, message):
     title = message.chat.title or "This Group"
     user_id = message.from_user.id if message.from_user else None
 
-    # Safe Admin Check: Bot Owner/Admin hamesha allow honge
+    # Bot admin / Group admin check
     if user_id and not is_admin_check(user_id):
         is_adm = False
         try:
@@ -1661,18 +1661,63 @@ async def all_settings(client, message):
         settings = await get_settings(grp_id)
         if not settings:
             settings = {}
-            
+
         text = generate_settings_text(settings, title)
         btn = [
             [InlineKeyboardButton("♻️ ʀᴇꜱᴇᴛ ꜱᴇᴛᴛɪɴɢꜱ", callback_data=f"reset_group_{grp_id}")],
             [InlineKeyboardButton("🚫 ᴄʟᴏꜱᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
         ]
-        dlt = await message.reply_text(text, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True)
+        # disable_web_page_preview hata diya gaya hai
+        dlt = await message.reply_text(text, reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(300)
         await dlt.delete()
     except Exception as e:
         logger.exception("Error in /details command: %s", e)
         await message.reply_text(f"<b>⚠️ Error in /details:</b> <code>{e}</code>")
+
+
+@Client.on_callback_query(filters.regex(r"^reset_group_(\-\d+)$"))
+async def reset_group_callback(client, callback_query):
+    grp_id = int(callback_query.matches[0].group(1))
+    user_id = callback_query.from_user.id
+    if not await is_check_admin(client, grp_id, user_id):
+        return await callback_query.answer(script.NT_ADMIN_ALRT_TXT, show_alert=True)
+    await callback_query.answer("♻️ ʀᴇꜱᴇᴛᴛɪɴɢ ꜱᴇᴛᴛɪɴɢꜱ...")
+    defaults = {
+        'shortner': SHORTENER_WEBSITE,
+        'api': SHORTENER_API,
+        'shortner_two': SHORTENER_WEBSITE2,
+        'api_two': SHORTENER_API2,
+        'shortner_three': SHORTENER_WEBSITE3,
+        'api_three': SHORTENER_API3,
+        'custom_shortner': False,
+        'custom_shortner_two': False,
+        'custom_shortner_three': False,
+        'verify_time': TWO_VERIFY_GAP,
+        'third_verify_time': THREE_VERIFY_GAP,
+        'template': IMDB_TEMPLATE,
+        'tutorial': TUTORIAL,
+        'tutorial_2': TUTORIAL_2,
+        'tutorial_3': TUTORIAL_3,
+        'caption': CUSTOM_FILE_CAPTION,
+        'log': LOG_CHANNEL,
+        'is_verify': IS_VERIFY,
+        'fsub': AUTH_CHANNELS
+    }
+    current = await get_settings(grp_id)
+    if current == defaults:
+        return await callback_query.answer("✅ ꜱᴇᴛᴛɪɴɢꜱ ᴀʟʀᴇᴀᴅʏ ᴅᴇꜰᴀᴜʟᴛ.", show_alert=True)
+    for key, value in defaults.items():
+        await save_group_settings(grp_id, key, value)
+    updated = await get_settings(grp_id)
+    title = callback_query.message.chat.title
+    text = generate_settings_text(updated, title, reset_done=True)
+    buttons = [
+        [InlineKeyboardButton("♻️ ʀᴇꜱᴇᴛ ꜱᴇᴛᴛɪɴɢꜱ", callback_data=f"reset_group_{grp_id}")],
+        [InlineKeyboardButton("🚫 ᴄʟᴏꜱᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
+    ]
+    # disable_web_page_preview yahan se bhi remove kar diya gaya hai
+    await callback_query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
 @Client.on_callback_query(filters.regex(r"^reset_group_(\-\d+)$"))
 async def reset_group_callback(client, callback_query):
