@@ -1116,7 +1116,7 @@ async def save_template(client, message):
         f"✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴜᴘᴅᴀᴛᴇᴅ ᴛᴇᴍᴘʟᴀᴛᴇ ꜰᴏʀ <code>{title}</code> ᴛᴏ:\n\n{template}"
     )
 
-@Client.on_message(filters.command("request") | filters.regex(r"(?i)#request"))
+@Client.on_message((filters.command("request") | filters.regex(r"(?i)#request")))
 async def requests(bot, message):
     if not message.from_user:
         return await message.reply_text("<b>⚠️ ᴜɴᴀʙʟᴇ ᴛᴏ ɪᴅᴇɴᴛɪꜰʏ ʏᴏᴜ (Anonymous Admin).</b>")
@@ -1127,11 +1127,11 @@ async def requests(bot, message):
     if message.reply_to_message:
         target_msg = message.reply_to_message
         content = target_msg.text or target_msg.caption or ""
-        msg_link = target_msg.link
+        msg_link = getattr(target_msg, "link", None)
     else:
         content = message.text or message.caption or ""
         content = re.sub(r"(?i)[#/]?request", "", content).strip()
-        msg_link = getattr(message, "link", "N/A")
+        msg_link = getattr(message, "link", None)
 
     content = content.strip()
     if len(content) < 3:
@@ -1141,41 +1141,66 @@ async def requests(bot, message):
             "<code>/request Jawan 2023</code>"
         )
 
+    # Valid link check taaki button crash na ho
+    if not msg_link or not str(msg_link).startswith("http"):
+        btn_link = f"https://t.me/{temp.U_NAME}"
+    else:
+        btn_link = msg_link
+
     reported_post = None
     try:
         btn = [[
-            InlineKeyboardButton("ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ", url=msg_link),
+            InlineKeyboardButton("ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ", url=btn_link),
             InlineKeyboardButton("ꜱʜᴏᴡ ᴏᴘᴛɪᴏɴꜱ", callback_data=f"show_option#{reporter}")
         ]]
-        req_text = f"<b>📝 ʀᴇǫᴜᴇꜱᴛ : <u>{content}</u>\n\n📚 ʀᴇᴘᴏʀᴛᴇᴅ ʙʏ : {mention}\n📖 ʀᴇᴘᴏʀᴛᴇʀ ɪᴅ : {reporter}\n\n</b>"
-        warning_text = "<b>⚠️ ʀᴇǫᴜᴇꜱᴛ ᴄʜᴀɴɴᴇʟ ɪꜱ ɴᴏᴛ ꜱᴇᴛ.</b>"
+        req_text = (
+            f"<b>📝 ʀᴇǫᴜᴇꜱᴛ : <u>{content}</u>\n\n"
+            f"📚 ʀᴇᴘᴏʀᴛᴇᴅ ʙʏ : {mention}\n"
+            f"📖 ʀᴇᴘᴏʀᴛᴇʀ ɪᴅ : <code>{reporter}</code></b>"
+        )
 
-        if REQST_CHANNEL is not None:
+        target_chat = None
+        if REQST_CHANNEL:
             try:
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=req_text, reply_markup=InlineKeyboardMarkup(btn))
+                target_chat = int(REQST_CHANNEL)
             except Exception:
-                for admin in ADMINS:
-                    await bot.send_message(chat_id=admin, text=warning_text)
-                reported_post = await bot.send_message(chat_id=ADMINS[0], text=req_text, reply_markup=InlineKeyboardMarkup(btn))
-        else:
-            for admin in ADMINS:
-                await bot.send_message(chat_id=admin, text=warning_text)
-            reported_post = await bot.send_message(chat_id=ADMINS[0], text=req_text, reply_markup=InlineKeyboardMarkup(btn))
-    except Exception as e:
-        logger.exception("Request failed")
-        return await message.reply_text(f"<b>⚠️ ꜱᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ. ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.</b>")
+                target_chat = REQST_CHANNEL
 
-    if reported_post:
-        try:
+        if target_chat:
+            try:
+                reported_post = await bot.send_message(
+                    chat_id=target_chat,
+                    text=req_text,
+                    reply_markup=InlineKeyboardMarkup(btn)
+                )
+            except Exception as e:
+                logger.error("REQST_CHANNEL send failed: %s", e)
+                if ADMINS:
+                    reported_post = await bot.send_message(
+                        chat_id=int(ADMINS[0]),
+                        text=req_text,
+                        reply_markup=InlineKeyboardMarkup(btn)
+                    )
+        elif ADMINS:
+            reported_post = await bot.send_message(
+                chat_id=int(ADMINS[0]),
+                text=req_text,
+                reply_markup=InlineKeyboardMarkup(btn)
+            )
+
+        # User confirmation
+        if reported_post and getattr(reported_post, "link", None):
             btn2 = [[InlineKeyboardButton("ᴠɪᴇᴡ ʀᴇǫᴜᴇꜱᴛ", url=reported_post.link)]]
             await message.reply_text(
                 "<b>✅ ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ!\n\n⏳ ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>",
                 reply_markup=InlineKeyboardMarkup(btn2)
             )
-        except Exception:
-            await message.reply_text(
-                "<b>✅ ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ!\n\n⏳ ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>"
-            )
+        else:
+            await message.reply_text("<b>✅ ʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ʜᴀꜱ ʙᴇᴇɴ ᴀᴅᴅᴇᴅ!\n\n⏳ ᴘʟᴇᴀꜱᴇ ᴡᴀɪᴛ ꜰᴏʀ ꜱᴏᴍᴇ ᴛɪᴍᴇ.</b>")
+
+    except Exception as e:
+        logger.exception("Request failed: %s", e)
+        await message.reply_text(f"<b>⚠️ Error:</b> <code>{e}</code>")
 
 @Client.on_message(filters.command("send") & filters.user(ADMINS))
 async def send_msg(bot, message):
@@ -1331,8 +1356,8 @@ async def trendlist(client, message):
     formatted_list = "\n".join([f"{i+1}. <b>{msg}</b>" for i, msg in enumerate(truncated_messages)])
     additional_message = (
         "⚡️ 𝑨𝒍𝒍 𝒕𝒉𝒆 𝒓𝒆𝒔𝒖𝒍𝒕𝒔 𝒂𝒃𝒐𝒗𝒆 𝒄𝒐𝒎𝒆 𝒇𝒓𝒐𝒎 𝒘𝒉𝒂𝒕 𝒖𝒔𝒆𝒓𝒔 𝒉𝒂𝒗𝒆 𝒔𝒆𝒂𝒓𝒄𝒉𝒆𝒅 𝒇𝒐𝒓. "
-        "𝑻𝒉𝒆𝒚'𝒓𝒆 𝒔𝒉𝒐𝒘𝒏 𝒕𝒐 𝒚𝒐𝒖 𝒆𝒙𝒂𝒄𝒕𝒍𝒚 𝒂𝒔 𝒕𝒉𝒆𝒚 𝒘𝒆𝒓𝒆 𝒔𝒆𝒂𝒓𝒄𝒉𝒆𝒅, "
-        "𝒘𝒊𝒕𝒉𝒐𝒖𝒕 𝒂𝒏𝒚 𝒄𝒉𝒂𝒏𝒈𝒆𝒔 𝒃𝒚 𝒕𝒉𝒆 𝒐𝒘𝒏𝒆𝒓."
+        "𝑻𝒉𝒆𝒚'𝒓𝒆 𝒔𝒉𝒐𝒘𝒏 𝒕𝒐 𝒚𝒐𝒖 𝒆𝒙𝒂𝒄𝒕𝒍𝒚 𝒂𝒔 𝒕ʜ𝒆𝒚 𝒘𝒆𝒓𝒆 𝒔𝒆𝒂𝒓𝒄𝒉𝒆𝒅, "
+        "𝒘𝒊𝒕ʜ𝒐𝒖𝒕 𝒂𝒏𝒚 𝒄𝒉𝒂𝒏𝒈𝒆𝒔 𝒃𝒚 𝒕ʜ𝒆 𝒐𝒘𝒏𝒆𝒓."
     )
     formatted_list += f"\n\n{additional_message}"
     reply_text = f"<b>Top {len(truncated_messages)} Tʀᴀɴᴅɪɴɢ ᴏғ ᴛʜᴇ ᴅᴀʏ 👇:</b>\n\n{formatted_list}"
