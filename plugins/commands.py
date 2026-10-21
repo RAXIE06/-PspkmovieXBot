@@ -1185,7 +1185,6 @@ async def requests(bot, message):
             )
 
 @Client.on_message(filters.command("send") & filters.user(ADMINS))
-    
     reporter = str(message.from_user.id)
     mention = message.from_user.mention
 
