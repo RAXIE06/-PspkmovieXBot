@@ -1130,6 +1130,7 @@ async def requests(bot, message):
 
     reporter = str(message.from_user.id)
     mention = message.from_user.mention
+    ...
 
     if message.reply_to_message:
         target_msg = message.reply_to_message
