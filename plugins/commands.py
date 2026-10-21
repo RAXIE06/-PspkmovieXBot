@@ -1447,12 +1447,14 @@ async def save_caption(client, message):
 @Client.on_message(filters.command(["set_tutorial", "set_tutorial_2", "set_tutorial_3"]))
 async def set_tutorial(client, message: Message):
     grp_id = message.chat.id
-    title = message.chat.title
+    title = message.chat.title or "This Group"
     chat_type = message.chat.type
+
     if chat_type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         return await message.reply_text(
             f"<b>ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ɪɴ ɢʀᴏᴜᴘ...\n\nGroup Name: {title}\nGroup ID: {grp_id}</b>"
         )
+
     user_id = message.from_user.id if message.from_user else None
     if user_id and not is_admin_check(user_id):
         is_adm = False
@@ -1474,8 +1476,9 @@ async def set_tutorial(client, message: Message):
     except IndexError:
         return await message.reply_text(
             f"<b>ᴄᴏᴍᴍᴀɴᴅ ɪɴᴄᴏᴍᴘʟᴇᴛᴇ !!\n\nᴜꜱᴇ ʟɪᴋᴇ ᴛʜɪꜱ -</b>\n\n"
-            f"<code>/{message.command[0]} https://t.me/dreamxbotz</code>"
+            f"<code>/{message.command[0]} https://t.me/Vega_Backup/9</code>"
         )
+
     cmd = message.command[0]
     if cmd == "set_tutorial":
         tutorial_key = "tutorial"
@@ -1486,24 +1489,34 @@ async def set_tutorial(client, message: Message):
     else:
         tutorial_key = "tutorial"
 
+    # Save to database
     await save_group_settings(grp_id, tutorial_key, tutorial_link)
+
+    # Safe invite link fetch
     try:
         invite_link = await client.export_chat_invite_link(grp_id)
     except Exception:
         invite_link = "Not Available"
+
+    # disable_web_page_preview hata diya gaya hai taaki reply turant aaye
     await message.reply_text(
         f"<b>ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄʜᴀɴɢᴇᴅ {tutorial_key.replace('_', ' ').title()} ꜰᴏʀ {title}</b>\n\n"
-        f"ʟɪɴᴋ - {tutorial_link}",
-        disable_web_page_preview=True
+        f"ʟɪɴᴋ - {tutorial_link}"
     )
-    await client.send_message(
-        LOG_API_CHANNEL,
-        f"#Set_{tutorial_key.title()}_Video\n\n"
-        f"ɢʀᴏᴜᴘ ɴᴀᴍᴇ : {title}\n"
-        f"ɢʀᴏᴜᴘ ɪᴅ : {grp_id}\n"
-        f"ɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n"
-        f"ᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {message.from_user.mention if message.from_user else 'Admin'}"
-    )
+
+    if LOG_API_CHANNEL:
+        try:
+            user_mention = message.from_user.mention if message.from_user else "Admin"
+            await client.send_message(
+                LOG_API_CHANNEL,
+                f"#Set_{tutorial_key.title()}_Video\n\n"
+                f"ɢʀᴏᴜᴘ ɴᴀᴍᴇ : {title}\n"
+                f"ɢʀᴏᴜᴘ ɪᴅ : {grp_id}\n"
+                f"ɪɴᴠɪᴛᴇ ʟɪɴᴋ : {invite_link}\n"
+                f"ᴜᴘᴅᴀᴛᴇᴅ ʙʏ : {user_mention}"
+            )
+        except Exception:
+            pass
 
 async def handle_shortner_command(c, m, shortner_key, api_key, log_prefix, fallback_url, fallback_api):
     grp_id = m.chat.id
