@@ -543,18 +543,17 @@ This Is A Private Project. All Rights Reserved.\n
 ★ ᴅᴏɴ'ᴛ ᴡᴀɪᴛ ᴀɴʏ ʟᴏɴɢᴇʀ ᴛᴏ ꜱᴛᴀʀᴛ ᴇᴀʀɴɪɴɢ ᴍᴏɴᴇʏ ꜰʀᴏᴍ ʏᴏᴜʀ ᴛᴇʟᴇɢʀᴀᴍ ɢʀᴏᴜᴘ. ᴀᴅᴅ ᴏᴜʀ ʙᴏᴛ ᴛᴏᴅᴀʏ ᴀɴᴅ ꜱᴛᴀʀᴛ ᴍᴀᴋɪɴɢ ᴍᴏɴᴇʏ 💰! </b>
 """
 
-SHORTLINK_INFO2 = """<b>
+    SHORTLINK_INFO2 = """<b>
 ❗<u>ʜᴏᴡ ᴛᴏ ᴄᴏɴɴᴇᴄᴛ ʏᴏᴜʀ sʜᴏʀᴛɴᴇʀ</u>❗
 
 ›› ꜱᴛᴇᴘ 4 : ɪꜰ ʏᴏᴜ ᴅᴏɴ'ᴛ ᴜꜱɪɴɢ ᴀɴʏ ꜱʜᴏʀᴛɴᴇʀ ᴡᴇʙꜱɪᴛᴇ ᴛʜᴇɴ ᴍᴀᴋᴇ ᴀᴄᴄᴏᴜɴᴛ ꜰɪʀꜱᴛ ᴏɴ instantearn.in (ʏᴏᴜ ᴄᴀɴ ᴀʟꜱᴏ ᴜꜱᴇ ᴏᴛʜᴇʀ ʟɪɴᴋ ꜱʜᴏʀᴛɴᴇʀ ᴡᴇʙꜱɪᴛᴇ).
 
-›› ꜱᴛᴇᴘ 5 : ᴄᴏᴘʏ ʏᴏᴜʀ ᴀᴘɪ ꜰʀᴏᴍ ᴡᴇʙꜱɪᴛᴇ ᴀɴᴅ ᴛʜᴇɴ, ꜱɪᴍᴘʟʏ ꜱᴇᴛ ʏᴏᴜʀ ᴡᴇʙꜱɪᴛᴇ ᴀɴᴅ ᴀᴘɪ ᴜꜱɪɴɢ ᴛʜᴇ ᴄᴏᴍᴍᴀɴᴅꜱ.
+›› ꜱᴛᴇᴘ 5 : ᴄᴏᴘʏ ʏᴏᴜʀ ᴀᴘɪ ꜰʀᴏᴍ ᴡᴇʙꜱɪᴛᴇ ᴀɴᴅ ᴛʜᴇɴ, ꜱɪᴍᴘʟʏ ꜱᴇᴛ ʏᴏᴜʀ ᴡᴇʙꜱɪᴛᴇ ᴀɴᴅ ᴀᴘɪ ᴜꜱɪɴɢ ᴛʜᴇ /set_shortner ᴄᴏᴍᴍᴀɴᴅ.
 
-› ꜱʜᴏʀᴛɴᴇʀ 1 :</b> <code>/set_shortlink instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
-
-<b>› ꜱʜᴏʀᴛɴᴇʀ 2 :</b> <code>/set_shortlink_2 instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
-
-<b>› ꜱʜᴏʀᴛɴᴇʀ 3 :</b> <code>/set_shortlink_3 instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
+› ʟɪᴋᴇ ᴛʜɪꜱ :</b>
+1sᴛ sʜᴏʀᴛɴᴇʀ : <code>/set_shortner instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
+2ɴᴅ sʜᴏʀᴛɴᴇʀ : <code>/set_shortner_2 instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
+3ʀᴅ sʜᴏʀᴛɴᴇʀ : <code>/set_shortner_3 instantearn.in 1502a197c85d59929d50f1cba1d5e6f967d1e962</code>
 
 <b>›› ꜱᴛᴇᴘ 6 : ᴄʟɪᴄᴋ ᴏɴ ɴᴇxᴛ ʙᴜᴛᴛᴏɴ ᴛᴏ ᴋɴᴏᴡ ʜᴏᴡ ᴛᴏ ᴄᴏɴɴᴇᴄᴛ ʏᴏᴜʀ ᴛᴜᴛᴏʀɪᴀʟ ᴡɪᴛʜ ᴛʜɪs ʙᴏᴛ.
 
@@ -564,13 +563,12 @@ SHORTLINK_INFO2 = """<b>
     SHORTLINK_INFO3 = """<b>
 ❗<u>ʜᴏᴡ ᴛᴏ ᴄᴏɴɴᴇᴄᴛ ʏᴏᴜʀ ᴛᴜᴛᴏʀɪᴀʟ</u>❗
 
-›› ꜱᴛᴇᴘ 7 : ᴜꜱᴇ ᴛᴜᴛᴏʀɪᴀʟ ᴄᴏᴍᴍᴀɴᴅꜱ ᴛᴏ ᴀᴅᴅ ʜᴏᴡ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ ꜰᴏʀ ʏᴏᴜʀ ꜱʜᴏʀᴛɴᴇʀ ᴡᴇʙꜱɪᴛᴇꜱ.
+›› ꜱᴛᴇᴘ 7 : ᴜꜱᴇ /set_tutorial ᴛᴏ ᴀᴅᴅ ʜᴏᴡ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ ꜰᴏʀ ʏᴏᴜʀ ꜱʜᴏʀᴛɴᴇʀ ᴡᴇʙꜱɪᴛᴇ.
 
-› ᴛᴜᴛᴏʀɪᴀʟ 1 :</b> <code>/set_tutorial https://t.me/Vega_Backup/9</code>
-
-<b>› ᴛᴜᴛᴏʀɪᴀʟ 2 :</b> <code>/set_tutorial_2 https://t.me/Vega_Backup/9</code>
-
-<b>› ᴛᴜᴛᴏʀɪᴀʟ 3 :</b> <code>/set_tutorial_3 https://t.me/Vega_Backup/9</code>
+› ʟɪᴋᴇ ᴛʜɪꜱ :</b>
+1sᴛ ᴛᴜᴛᴏʀɪᴀʟ : <code>/set_tutorial https://t.me/Vega_Backup/9</code>
+2ɴᴅ ᴛᴜᴛᴏʀɪᴀʟ : <code>/set_tutorial_2 https://t.me/Vega_Backup/9</code>
+3ʀᴅ ᴛᴜᴛᴏʀɪᴀʟ : <code>/set_tutorial_3 https://t.me/Vega_Backup/9</code>
 
 <b>›› ꜱᴛᴇᴘ 8 : ɪꜰ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴄʜᴇᴄᴋ ᴡʜɪᴄʜ sʜᴏʀᴛᴇɴᴇʀ ʏᴏᴜ ʜᴀᴠᴇ ᴄᴏɴɴᴇᴄᴛᴇᴅ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴛʜᴇɴ sᴇɴᴅ /details ᴄᴏᴍᴍᴀɴᴅ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ.
 
