@@ -1027,13 +1027,15 @@ async def delete_all_index(bot, message):
 @Client.on_message(filters.command('settings'))
 async def settings(client, message):
     user_id = message.from_user.id if message.from_user else None
+    grp_id = message.chat.id
+    
     if not user_id:
-        return await message.reply_text("ʏᴏᴜ'ʀᴇ ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ.")
-    chat_type = message.chat.type
-    if chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
-        grp_id = message.chat.id
-        if not await is_check_admin(client, grp_id, message.from_user.id):
-            return await message.reply_text(script.NT_ADMIN_ALRT_TXT)
+        return await message.reply_text("⚠️ Aap Anonymous Admin hain. Kripya bina anonymous admin ke command dein.", quote=True)
+
+    if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        if not await is_check_admin(client, grp_id, user_id):
+            return await message.reply_text(script.NT_ADMIN_ALRT_TXT, quote=True)
+            
         await db.connect_group(grp_id, user_id)
         btn = [[
                 InlineKeyboardButton("👤 ᴏᴘᴇɴ ɪɴ ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ 👤", callback_data=f"opnsetpm#{grp_id}")
@@ -1047,7 +1049,7 @@ async def settings(client, message):
                 parse_mode=enums.ParseMode.HTML,
                 reply_to_message_id=message.id
         )
-    elif chat_type == enums.ChatType.PRIVATE:
+    elif message.chat.type == enums.ChatType.PRIVATE:
         connected_groups = await db.get_connected_grps(user_id)
         if not connected_groups:
             return await message.reply_text("Nᴏ Cᴏɴɴᴇᴄᴛᴇᴅ Gʀᴏᴜᴘs Fᴏᴜɴᴅ .")
@@ -1435,21 +1437,26 @@ async def save_caption(client, message):
 async def set_tutorial(client, message: Message):
     grp_id = message.chat.id
     title = message.chat.title
-    chat_type = message.chat.type
-    if chat_type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+    
+    if not message.from_user:
+        return await message.reply_text("⚠️ Aap Anonymous Admin hain. Kripya bina anonymous admin ke command dein.", quote=True)
+
+    if message.chat.type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         return await message.reply_text(
-            f"<b>ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ɪɴ ɢʀᴏᴜᴘ...\n\nGroup Name: {title}\nGroup ID: {grp_id}</b>"
+            f"<b>ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ɪɴ ɢʀᴏᴜᴘ...</b>", quote=True
         )
+        
     if not await is_check_admin(client, grp_id, message.from_user.id):
-        return await message.reply_text(script.NT_ADMIN_ALRT_TXT)
+        return await message.reply_text(script.NT_ADMIN_ALRT_TXT, quote=True)
 
     try:
         tutorial_link = message.text.split(" ", 1)[1]
     except IndexError:
         return await message.reply_text(
             f"<b>ᴄᴏᴍᴍᴀɴᴅ ɪɴᴄᴏᴍᴘʟᴇᴛᴇ !!\n\nᴜꜱᴇ ʟɪᴋᴇ ᴛʜɪꜱ -</b>\n\n"
-            f"<code>/{message.command[0]} https://t.me/dreamxbotz</code>"
+            f"<code>/{message.command[0]} https://t.me/dreamxbotz</code>", quote=True
         )
+        
     if message.command[0] == "set_tutorial":
         tutorial_key = "tutorial"
     else:
@@ -1460,7 +1467,7 @@ async def set_tutorial(client, message: Message):
     await message.reply_text(
         f"<b>ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄʜᴀɴɢᴇᴅ {tutorial_key.replace('_', ' ').title()} ꜰᴏʀ {title}</b>\n\n"
         f"ʟɪɴᴋ - {tutorial_link}",
-        disable_web_page_preview=True
+        disable_web_page_preview=True, quote=True
     )
     await client.send_message(
         LOG_API_CHANNEL,
