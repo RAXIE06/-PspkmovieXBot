@@ -1636,22 +1636,43 @@ async def set_time_2(client, message):
 async def all_settings(client, message):
     if message.chat.type not in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         return await message.reply_text("<b>ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ɪɴ ɢʀᴏᴜᴘ...</b>")
+
     grp_id = message.chat.id
-    title = message.chat.title
-    if not await is_check_admin(client, grp_id, message.from_user.id):
-        return await message.reply_text(script.NT_ADMIN_ALRT_TXT)
+    title = message.chat.title or "This Group"
+    user_id = message.from_user.id if message.from_user else None
+
+    # Safe Admin Check: Bot Owner/Admin hamesha allow honge
+    if user_id and not is_admin_check(user_id):
+        is_adm = False
+        try:
+            is_adm = await is_check_admin(client, grp_id, user_id)
+        except Exception:
+            pass
+        if not is_adm:
+            try:
+                member = await client.get_chat_member(grp_id, user_id)
+                is_adm = member.status in [enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER]
+            except Exception:
+                pass
+        if not is_adm:
+            return await message.reply_text(script.NT_ADMIN_ALRT_TXT)
+
     try:
         settings = await get_settings(grp_id)
+        if not settings:
+            settings = {}
+            
+        text = generate_settings_text(settings, title)
+        btn = [
+            [InlineKeyboardButton("♻️ ʀᴇꜱᴇᴛ ꜱᴇᴛᴛɪɴɢꜱ", callback_data=f"reset_group_{grp_id}")],
+            [InlineKeyboardButton("🚫 ᴄʟᴏꜱᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
+        ]
+        dlt = await message.reply_text(text, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True)
+        await asyncio.sleep(300)
+        await dlt.delete()
     except Exception as e:
-        return await message.reply_text(f"<b>⚠️ ᴇʀʀᴏʀ ꜰᴇᴛᴄʜɪɴɢ ꜱᴇᴛᴛɪɴɢꜱ:</b>\n<code>{e}</code>")
-    text = generate_settings_text(settings, title)
-    btn = [
-        [InlineKeyboardButton("♻️ ʀᴇꜱᴇᴛ ꜱᴇᴛᴛɪɴɢꜱ", callback_data=f"reset_group_{grp_id}")],
-        [InlineKeyboardButton("🚫 ᴄʟᴏꜱᴇ", callback_data="close_data", style=enums.ButtonStyle.DANGER)]
-    ]
-    dlt = await message.reply_text(text, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True)
-    await asyncio.sleep(300)
-    await dlt.delete()
+        logger.exception("Error in /details command: %s", e)
+        await message.reply_text(f"<b>⚠️ Error in /details:</b> <code>{e}</code>")
 
 @Client.on_callback_query(filters.regex(r"^reset_group_(\-\d+)$"))
 async def reset_group_callback(client, callback_query):
