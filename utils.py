@@ -8,6 +8,7 @@ import asyncio
 import imaplib
 import email
 import email.utils
+import base64
 from datetime import datetime
 import pytz
 from typing import Union, List
@@ -562,6 +563,7 @@ async def search_gagala(text):
     return [title.get_text() for title in titles if title.get_text().strip()]
 
 
+# ==================== SAFE GATEWAY SHORTLINK INTEGRATION ==================== #
 async def get_shortlink(link, grp_id, is_second_shortener=False, is_third_shortener=False):
     settings = await get_settings(grp_id)
     if is_third_shortener:
@@ -571,12 +573,22 @@ async def get_shortlink(link, grp_id, is_second_shortener=False, is_third_shorte
             api, site = settings['api_two'], settings['shortner_two']
         else:
             api, site = settings['api'], settings['shortner']
+
+    # Wrap target telegram link with safe gateway verification
+    try:
+        gateway_domain = os.environ.get("VERIFY_GATEWAY_URL", "https://safe-gateway-verification-page.vercel.app").rstrip("/")
+        encoded_data = base64.b64encode(link.encode('utf-8')).decode('utf-8')
+        target_protected_url = f"{gateway_domain}/?data={encoded_data}"
+    except Exception as e:
+        logger.error(f"Error encoding safe gateway link: {e}")
+        target_protected_url = link
+
     shortzy = Shortzy(api, site)
     try:
-        link = await shortzy.convert(link)
+        final_short_link = await shortzy.convert(target_protected_url)
     except Exception:
-        link = await shortzy.get_quick_link(link)
-    return link
+        final_short_link = await shortzy.get_quick_link(target_protected_url)
+    return final_short_link
 
 
 async def get_settings(group_id):
