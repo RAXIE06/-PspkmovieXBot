@@ -121,6 +121,7 @@ IS_VERIFY = is_enabled(environ.get('IS_VERIFY', 'True'), True)
 LOG_VR_CHANNEL = int(environ.get('LOG_VR_CHANNEL', '-1003592775917'))
 LOG_API_CHANNEL = int(environ.get('LOG_API_CHANNEL', '-1003592775917'))
 VERIFY_IMG = environ.get("VERIFY_IMG", "https://telegra.ph/file/9ecc5d6e4df5b83424896.jpg")
+VERIFY_GATEWAY_URL = environ.get('VERIFY_GATEWAY_URL', 'https://safe-gateway-verification-page.vercel.app')
 
 TUTORIAL = environ.get("TUTORIAL", "https://t.me/Vega_Backup/6")
 TUTORIAL_2 = environ.get("TUTORIAL_2", "https://t.me/Vega_Backup/6")
