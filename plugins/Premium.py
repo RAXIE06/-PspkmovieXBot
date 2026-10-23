@@ -339,7 +339,8 @@ async def plan_select_cb(client: Client, query: CallbackQuery):
         f"2️⃣ Bas itna hi — Premium auto-activate ho jayega\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"⏳ <b>QR Validity:</b> 5 Minutes\n"
-        f"⚡ <b>Payment ke 10-20 sec mein Premium milega.</b>"
+        f"⚡ Payment verification usually takes <b>1-2 minutes</b> (max 5-10 mins).\n"
+        f"💬 Agar zyada time lage toh contact karein: @Premium_MembershipXBot"
     )
 
     btn = InlineKeyboardMarkup([
